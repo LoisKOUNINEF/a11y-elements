@@ -1,0 +1,61 @@
+a11y-select {
+  display: contents;
+}
+
+.a11y-select {
+  display: flex;
+  flex-direction: column;
+  gap: var(--a11y-select-gap, 0.25rem);
+  width: 100%;
+  cursor: pointer;
+}
+
+.a11y-select:has(.a11y-select__control:disabled) {
+  cursor: not-allowed;
+}
+
+.a11y-select__label {
+  font-size: var(--a11y-select-label-font-size, 0.875rem);
+  font-weight: var(--a11y-select-label-font-weight, 600);
+  color: var(--a11y-select-color-text-muted, #6b7280);
+}
+
+.a11y-select__label:empty { display: none; }
+
+.a11y-select__control {
+  width: 100%;
+  padding: var(--a11y-select-control-padding-y, 0.5rem) var(--a11y-select-control-padding-x, 1rem);
+  background-color: var(--a11y-select-color-surface, #f3f4f6);
+  color: var(--a11y-select-color-text, #111827);
+  border: var(--a11y-select-control-border-width, 1px) solid var(--a11y-select-color-border, #d1d5db);
+  border-radius: var(--a11y-select-control-border-radius, 4px);
+  font-family: var(--a11y-select-control-font-family, Arial, sans-serif);
+  font-size: var(--a11y-select-control-font-size, 1rem);
+  line-height: var(--a11y-select-control-line-height, 1.4);
+  cursor: inherit;
+  transition:
+    border-color  var(--a11y-select-control-transition-duration, 0.2s) ease,
+    box-shadow    var(--a11y-select-control-transition-duration, 0.2s) ease;
+}
+
+.a11y-select__control:hover:not(:disabled) {
+  border-color: var(--a11y-select-color-border-strong, #9ca3af);
+}
+
+.a11y-select__control:focus-visible {
+  outline: var(--a11y-select-focus-outline-width, 2px) solid var(--a11y-select-color-primary, #2563eb);
+  outline-offset: var(--a11y-select-focus-outline-offset, 2px);
+  border-color: var(--a11y-select-color-primary, #2563eb);
+}
+
+.a11y-select__control:disabled {
+  background-color: var(--a11y-select-color-disabled-bg, #e5e7eb);
+  color: var(--a11y-select-color-disabled-text, #9ca3af);
+  border-color: var(--a11y-select-color-border, #d1d5db);
+  cursor: not-allowed;
+}
+
+.a11y-select__control option {
+  background-color: var(--a11y-select-color-surface, #f3f4f6);
+  color: var(--a11y-select-color-text, #111827);
+}

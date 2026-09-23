@@ -1,0 +1,124 @@
+.a11y-modal-overlay {
+  z-index: var(--a11y-z-modal, 510);
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(5px);
+  background-color: var(--a11y-modal-color-overlay, rgba(0, 0, 0, 0.5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* A generous gutter so there's always visible backdrop around the dialog
+     — the "click outside to dismiss" target. */
+  box-sizing: border-box;
+  padding: var(--a11y-modal-overlay-padding, clamp(1rem, 10vmin, 6rem));
+  opacity: 0;
+}
+
+.a11y-modal-overlay--fullscreen {
+  padding: 0;
+}
+
+.a11y-modal-overlay.a11y-is-open {
+  animation: a11y-modal-show var(--a11y-modal-transition-duration, 0.3s) ease forwards;
+}
+
+.a11y-modal-wrapper {
+  overflow-y: auto;
+  position: relative;
+  overscroll-behavior: none;
+  background: var(--a11y-modal-color-background, #ffffff);
+  color: var(--a11y-modal-color-text, #111827);
+  box-shadow:
+    0
+    var(--a11y-modal-shadow-offset-y, 2px)
+    var(--a11y-modal-shadow-blur, 2px)
+    color-mix(in srgb, var(--a11y-modal-color-text, #111827), transparent var(--a11y-modal-shadow-fade, 80%));
+  border-radius: var(--a11y-modal-border-radius, 1rem);
+  width: 100%;
+  height: 100%;
+  transform: scale(var(--a11y-modal-initial-scale, 0.95));
+  opacity: 0;
+  transition:
+    opacity var(--a11y-modal-transition-duration, 0.3s) ease,
+    transform var(--a11y-modal-transition-duration, 0.3s) ease;
+}
+
+.a11y-modal-wrapper.a11y-is-open {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.a11y-modal-wrapper--fullscreen {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Hidden until shown: `_show()`/`_hide()` add/remove this class around the
+   open/close transition, so gating on it (rather than the `open` attribute,
+   which is already gone by the time the close transition starts) keeps the
+   element visible for the whole fade-out instead of vanishing instantly. */
+a11y-modal {
+  display: none;
+}
+
+.a11y-modal-content {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+  padding: var(--a11y-modal-content-padding, 1.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.a11y-modal-close-button {
+  position: absolute;
+  z-index: 2;
+  top: 0.5rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: var(--a11y-modal-close-button-size, 1.5rem);
+  cursor: pointer;
+  padding: 0 1rem;
+  color: var(--a11y-modal-color-text, #111827);
+}
+
+.a11y-modal-close-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.a11y-modal-close-button:focus-visible {
+  outline: 2px solid var(--a11y-modal-color-secondary, #6b7280);
+}
+
+/* Shared "modal footer buttons" convention for consumer-authored content. */
+.a11y-modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--a11y-modal-footer-gap, 1rem);
+  margin-top: var(--a11y-modal-footer-margin-top, 1.5rem);
+}
+
+.a11y-modal-buttons button {
+  background-color: inherit;
+  transition: background-color ease-in-out var(--a11y-modal-transition-duration, 0.3s);
+  padding: var(--a11y-modal-footer-button-padding, 0.5rem 1rem);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.a11y-modal-buttons button:hover {
+  background-color: var(--a11y-modal-color-secondary-hover, #4b5563);
+  color: var(--a11y-modal-color-background, #ffffff);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the fade, drop the zoom. */
+  .a11y-modal-wrapper,
+  .a11y-modal-wrapper.a11y-is-open {
+    transform: none;
+  }
+}

@@ -1,0 +1,5 @@
+/* Transparent wrapper — the real <a> it enhances handles all visual layout;
+   this element shouldn't introduce an extra inline box around it. */
+a11y-anchor {
+  display: contents;
+}

@@ -1,0 +1,73 @@
+/* The host is a transparent wrapper — the real `<label class="a11y-checkbox">`
+   it builds around the consumer's <input> carries all visual layout. */
+a11y-checkbox {
+  display: contents;
+}
+
+.a11y-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--a11y-checkbox-gap, 0.5rem);
+  cursor: pointer;
+}
+
+.a11y-checkbox:has(.a11y-checkbox__input:disabled) {
+  cursor: not-allowed;
+  opacity: var(--a11y-checkbox-disabled-opacity, 0.6);
+}
+
+.a11y-checkbox__input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: var(--a11y-checkbox-input-size, 1.125rem);
+  height: var(--a11y-checkbox-input-size, 1.125rem);
+  border: var(--a11y-checkbox-input-border-width, 2px) solid var(--a11y-checkbox-color-border-strong, #9ca3af);
+  border-radius: var(--a11y-checkbox-border-radius, 2px);
+  background-color: var(--a11y-checkbox-color-background, #ffffff);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: var(--a11y-checkbox-checkmark-background-size, 75%);
+  cursor: inherit;
+  transition:
+    background-color var(--a11y-checkbox-transition-duration, 0.2s) ease,
+    border-color     var(--a11y-checkbox-transition-duration, 0.2s) ease;
+}
+
+.a11y-checkbox__input:checked {
+  background-color: var(--a11y-checkbox-color-primary, #2563eb);
+  border-color: var(--a11y-checkbox-color-primary, #2563eb);
+  /* white checkmark */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.5 3.5 6.5-7' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.a11y-checkbox__input:indeterminate {
+  background-color: var(--a11y-checkbox-color-primary, #2563eb);
+  border-color: var(--a11y-checkbox-color-primary, #2563eb);
+  /* white dash */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 4'%3E%3Cpath d='M2 2h12' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.a11y-checkbox__input:focus-visible {
+  outline: var(--a11y-checkbox-focus-outline-width, 2px) solid var(--a11y-checkbox-color-primary, #2563eb);
+  outline-offset: var(--a11y-checkbox-focus-outline-offset, 2px);
+}
+
+.a11y-checkbox__input:disabled {
+  background-color: var(--a11y-checkbox-color-disabled-bg, #e5e7eb);
+  border-color: var(--a11y-checkbox-color-border, #d1d5db);
+  cursor: not-allowed;
+}
+
+.a11y-checkbox__input:disabled:checked,
+.a11y-checkbox__input:disabled:indeterminate {
+  background-color: var(--a11y-checkbox-color-border-strong, #9ca3af);
+}
+
+.a11y-checkbox__label {
+  font-size: var(--a11y-checkbox-label-font-size, 1rem);
+  color: var(--a11y-checkbox-color-text, #111827);
+  line-height: var(--a11y-checkbox-label-line-height, 1.4);
+}
+
+.a11y-checkbox__label:empty { display: none; }

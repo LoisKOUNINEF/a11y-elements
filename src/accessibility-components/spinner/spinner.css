@@ -1,0 +1,39 @@
+/* Styling contract: BEM classes `.a11y-spinner` / `.a11y-spinner__ring`, unchanged
+   from the original component. Tunables are CSS custom properties
+   (`--a11y-spinner-*`), settable by any consumer with zero build step. */
+
+@keyframes a11y-spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.a11y-spinner {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.a11y-spinner__ring {
+  border-radius: var(--a11y-spinner-border-radius, 50%);
+  animation: a11y-spinner-spin var(--a11y-spinner-duration, 1s) linear infinite;
+  width: var(--a11y-spinner-size, 2rem);
+  height: var(--a11y-spinner-size, 2rem);
+  border: var(--a11y-spinner-thickness, 3px) solid transparent;
+  border-top-color: var(--a11y-spinner-color, #2563eb);
+}
+
+.a11y-spinner--sm .a11y-spinner__ring {
+  --a11y-spinner-size: var(--a11y-spinner-size-sm, 1rem);
+  --a11y-spinner-thickness: var(--a11y-spinner-thickness-sm, 2px);
+}
+
+.a11y-spinner--lg .a11y-spinner__ring {
+  --a11y-spinner-size: var(--a11y-spinner-size-lg, 3rem);
+  --a11y-spinner-thickness: var(--a11y-spinner-thickness-lg, 4px);
+}
+
+.a11y-spinner--xl .a11y-spinner__ring {
+  --a11y-spinner-size: var(--a11y-spinner-size-xl, 4rem);
+  --a11y-spinner-thickness: var(--a11y-spinner-thickness-xl, 5px);
+}

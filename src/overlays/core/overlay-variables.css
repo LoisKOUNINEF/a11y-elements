@@ -1,0 +1,35 @@
+:root {
+  /* Shared default palette for overlay "status" colors (success/error/info).
+     Any consumer can override these globally, or override a single
+     component's own `--a11y-<component>-color-*` token instead. */
+  --a11y-color-success: rgb(76 175 80);
+  --a11y-color-error: rgb(244 67 54);
+  --a11y-color-info: rgb(33 150 243);
+  --a11y-color-warning: rgb(244 67 54);
+  --a11y-color-text: white;
+
+  /* Single source of truth for overlay stacking, as CSS custom properties so
+     any consumer can read/override it without a build step. */
+  --a11y-z-base: 0;
+  --a11y-z-sticky-header: 100;
+  --a11y-z-sticky-footer: 110;
+  --a11y-z-floating-button: 120;
+  --a11y-z-sidebar: 200;
+  --a11y-z-mobile-nav: 210;
+  --a11y-z-dropdown: 300;
+  --a11y-z-popover: 310;
+  --a11y-z-tooltip: 320;
+  --a11y-z-context-menu: 330;
+  --a11y-z-snackbar: 400;
+  --a11y-z-toast: 410;
+  --a11y-z-notification-banner: 420;
+  --a11y-z-modal-backdrop: 500;
+  --a11y-z-modal: 510;
+  --a11y-z-drawer-backdrop: 520;
+  --a11y-z-drawer: 530;
+  --a11y-z-fullscreen-overlay: 540;
+  --a11y-z-blocking-loader: 600;
+  --a11y-z-emergency-dialog: 610;
+  --a11y-z-debug-panel: 700;
+  --a11y-z-inspector: 710;
+}

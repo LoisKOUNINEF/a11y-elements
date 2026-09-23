@@ -1,0 +1,23 @@
+/* Shared menu-item styling, consumed by dropdown and context-menu. */
+[role='menuitem'] {
+  padding: var(--a11y-menu-item-padding, 0.5rem 1rem);
+  cursor: pointer;
+  color: var(--a11y-menu-item-color-text, #111827);
+  outline: none;
+}
+
+[role='menuitem']:hover,
+[role='menuitem']:focus-visible {
+  background-color: var(--a11y-menu-item-color-secondary-hover, #4b5563);
+  color: var(--a11y-menu-item-color-background, #ffffff);
+}
+
+[role='menuitem'][aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: var(--a11y-menu-item-disabled-opacity, 0.5);
+}
+
+[role='menuitem'][aria-disabled='true']:hover {
+  background-color: transparent;
+  color: var(--a11y-menu-item-color-text, #111827);
+}

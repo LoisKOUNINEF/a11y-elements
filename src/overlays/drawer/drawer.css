@@ -1,0 +1,77 @@
+.a11y-drawer-backdrop {
+  z-index: var(--a11y-z-drawer-backdrop, 520);
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(5px);
+  background-color: var(--a11y-drawer-color-overlay, rgba(0, 0, 0, 0.5));
+  opacity: 0;
+}
+
+.a11y-drawer-backdrop.a11y-is-open {
+  animation: a11y-modal-show var(--a11y-drawer-transition-duration, 0.3s) ease forwards;
+}
+
+.a11y-drawer-wrapper {
+  position: fixed;
+  z-index: var(--a11y-z-drawer, 530);
+  background: var(--a11y-drawer-color-background, #ffffff);
+  color: var(--a11y-drawer-color-text, #111827);
+  box-shadow:
+    0
+    var(--a11y-drawer-shadow-offset-y, 2px)
+    var(--a11y-drawer-shadow-blur, 10px)
+    color-mix(in srgb, var(--a11y-drawer-color-text, #111827), transparent var(--a11y-drawer-shadow-fade, 80%));
+  overflow-y: auto;
+  transition: transform var(--a11y-drawer-transition-duration, 0.3s) ease;
+}
+
+.a11y-drawer-wrapper--left,
+.a11y-drawer-wrapper--right {
+  top: 0;
+  bottom: 0;
+  width: var(--a11y-drawer-width, min(400px, 90vw));
+}
+
+.a11y-drawer-wrapper--top,
+.a11y-drawer-wrapper--bottom {
+  left: 0;
+  right: 0;
+  height: var(--a11y-drawer-height, min(480px, 90vh));
+}
+
+.a11y-drawer-wrapper--left { left: 0; transform: translateX(-100%); }
+.a11y-drawer-wrapper--right { right: 0; transform: translateX(100%); }
+.a11y-drawer-wrapper--top { top: 0; transform: translateY(-100%); }
+.a11y-drawer-wrapper--bottom { bottom: 0; transform: translateY(100%); }
+
+.a11y-drawer-wrapper.a11y-is-open {
+  transform: translate(0, 0);
+}
+
+/* Hidden until shown — see modal.css's `a11y-modal` rule for why this is
+   gated on the content class rather than the `open` attribute. */
+a11y-drawer {
+  display: none;
+}
+
+.a11y-drawer-content {
+  display: block;
+  position: relative;
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--a11y-drawer-content-padding, 1.5rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Fade in place instead of sliding in from the edge. */
+  .a11y-drawer-wrapper {
+    transform: none;
+    opacity: 0;
+    transition: opacity var(--a11y-drawer-transition-duration, 0.3s) ease;
+  }
+
+  .a11y-drawer-wrapper.a11y-is-open {
+    transform: none;
+    opacity: 1;
+  }
+}

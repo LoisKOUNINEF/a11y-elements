@@ -1,0 +1,23 @@
+.a11y-context-menu-wrapper {
+  z-index: var(--a11y-z-context-menu, 330);
+  background: var(--a11y-context-menu-color-background, #ffffff);
+  color: var(--a11y-context-menu-color-text, #111827);
+  border-radius: var(--a11y-context-menu-border-radius, 0.5rem);
+  box-shadow:
+    0
+    var(--a11y-context-menu-shadow-offset-y, 2px)
+    var(--a11y-context-menu-shadow-blur, 10px)
+    color-mix(in srgb, var(--a11y-context-menu-color-text, #111827), transparent var(--a11y-context-menu-shadow-fade, 85%));
+  min-width: var(--a11y-context-menu-min-width, 160px);
+}
+
+/* Hidden until shown — see modal.css's `a11y-modal` rule for why this is
+   gated on the content class rather than the `open` attribute. */
+a11y-context-menu {
+  display: none;
+}
+
+.a11y-context-menu-content {
+  display: block;
+  padding: var(--a11y-context-menu-content-padding, 0.25rem 0);
+}

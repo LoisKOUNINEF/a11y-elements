@@ -1,0 +1,19 @@
+.a11y-tooltip-wrapper {
+  z-index: var(--a11y-z-tooltip, 320);
+  background: var(--a11y-tooltip-color-text, #111827);
+  color: var(--a11y-tooltip-color-background, #ffffff);
+  border-radius: var(--a11y-tooltip-border-radius, 0.35rem);
+  font-size: var(--a11y-tooltip-font-size, 0.85rem);
+  max-width: var(--a11y-tooltip-max-width, 240px);
+}
+
+/* Hidden until shown — see modal.css's `a11y-modal` rule for why this is
+   gated on the content class rather than the `open` attribute. */
+a11y-tooltip {
+  display: none;
+}
+
+.a11y-tooltip-content {
+  display: block;
+  padding: var(--a11y-tooltip-content-padding, 0.35rem 0.6rem);
+}

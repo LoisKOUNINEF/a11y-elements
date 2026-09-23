@@ -1,0 +1,15 @@
+import { ModalElement } from './modal.element.js';
+
+if (!customElements.get('a11y-modal')) {
+  customElements.define('a11y-modal', ModalElement);
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'a11y-modal': ModalElement;
+  }
+}
+
+export { ModalElement };
+// Re-exported so zero-build `<script type="module">` users can reach it too.
+export { dismissAllOverlays } from '../../core/overlay-registry.js';

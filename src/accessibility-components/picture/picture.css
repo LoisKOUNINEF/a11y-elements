@@ -1,0 +1,28 @@
+/* Consumers author real <picture>/<img>/<figcaption> children inside
+   <a11y-picture class="a11y-picture">; styled by nested-tag selectors here
+   exactly as the old bare-`figure` version was, just scoped to the class
+   since a custom element has no tag-based CSS match of its own. */
+.a11y-picture {
+  display: block;
+  margin: 0;
+}
+
+.a11y-picture picture {
+  display: block;
+  line-height: 0; /* collapse inline gap below img */
+}
+
+.a11y-picture img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.a11y-picture figcaption {
+  margin-top: var(--a11y-picture-caption-margin-top, 0.25rem);
+  font-size: var(--a11y-picture-caption-font-size, 0.875rem);
+  color: var(--a11y-picture-color-text-muted, #6b7280);
+  line-height: var(--a11y-picture-caption-line-height, 1.4);
+}
+
+.a11y-picture figcaption:empty { display: none; }

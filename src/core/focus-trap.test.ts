@@ -1,0 +1,208 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { FocusTrapHelper } from './focus-trap.js';
+
+let container: HTMLElement;
+let outside: HTMLButtonElement;
+
+beforeEach(() => {
+  outside = document.createElement('button');
+  outside.textContent = 'outside';
+  document.body.appendChild(outside);
+
+  container = document.createElement('div');
+  container.innerHTML = `
+    <button id="first">First</button>
+    <button id="middle">Middle</button>
+    <button id="last">Last</button>
+  `;
+  document.body.appendChild(container);
+});
+
+afterEach(() => {
+  document.body.innerHTML = '';
+});
+
+function tab(target: HTMLElement, shiftKey = false): void {
+  const evt = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, cancelable: true });
+  target.dispatchEvent(evt);
+}
+
+function escape(target: HTMLElement): void {
+  target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+}
+
+describe('FocusTrapHelper', () => {
+  it('focuses the first focusable element on activate', () => {
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    expect(document.activeElement).toBe(container.querySelector('#first'));
+  });
+
+  it('falls back to focusing the container itself when nothing inside is focusable', () => {
+    const empty = document.createElement('div');
+    document.body.appendChild(empty);
+    const trap = new FocusTrapHelper({ container: empty });
+    trap.activate();
+    expect(document.activeElement).toBe(empty);
+    expect(empty.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('wraps Tab from the last element back to the first', () => {
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    const last = container.querySelector<HTMLElement>('#last')!;
+    last.focus();
+    tab(container);
+    expect(document.activeElement).toBe(container.querySelector('#first'));
+  });
+
+  it('wraps Shift+Tab from the first element back to the last', () => {
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    tab(container, true);
+    expect(document.activeElement).toBe(container.querySelector('#last'));
+  });
+
+  it('moves focus to the next element when Tab is pressed on a middle element', () => {
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    const middle = container.querySelector<HTMLElement>('#middle')!;
+    middle.focus();
+    const evt = new KeyboardEvent('keydown', { key: 'Tab', cancelable: true });
+    container.dispatchEvent(evt);
+    expect(evt.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(container.querySelector('#last'));
+  });
+
+  it('moves focus to the previous element when Shift+Tab is pressed on a middle element', () => {
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    const middle = container.querySelector<HTMLElement>('#middle')!;
+    middle.focus();
+    tab(container, true);
+    expect(document.activeElement).toBe(container.querySelector('#first'));
+  });
+
+  it('excludes disabled elements from the focusable set', () => {
+    container.innerHTML = `
+      <button id="first">First</button>
+      <button id="disabled-btn" disabled>Disabled</button>
+      <button id="last">Last</button>
+    `;
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    tab(container);
+    expect(document.activeElement).toBe(container.querySelector('#last'));
+  });
+
+  it('calls onDeactivate on Escape by default', () => {
+    const onDeactivate = vi.fn();
+    const trap = new FocusTrapHelper({ container, options: { onDeactivate } });
+    trap.activate();
+    escape(container);
+    expect(onDeactivate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call onDeactivate on Escape when escapeDeactivates is false', () => {
+    const onDeactivate = vi.fn();
+    const trap = new FocusTrapHelper({ container, options: { onDeactivate, escapeDeactivates: false } });
+    trap.activate();
+    escape(container);
+    expect(onDeactivate).not.toHaveBeenCalled();
+  });
+
+  it('restores focus to the previously active element on deactivate by default', () => {
+    outside.focus();
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    trap.deactivate();
+    expect(document.activeElement).toBe(outside);
+  });
+
+  it('does not restore focus when returnFocusOnDeactivate is false', () => {
+    outside.focus();
+    const trap = new FocusTrapHelper({ container, options: { returnFocusOnDeactivate: false } });
+    trap.activate();
+    trap.deactivate();
+    expect(document.activeElement).not.toBe(outside);
+  });
+
+  it('is idempotent: activating twice or deactivating twice is a no-op the second time', () => {
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    const firstActive = document.activeElement;
+    container.querySelector<HTMLElement>('#middle')!.focus();
+    trap.activate(); // no-op, must not re-capture focus
+    expect(document.activeElement).not.toBe(firstActive);
+    trap.deactivate();
+    trap.deactivate(); // no-op, must not throw
+    expect(trap.getIsActive()).toBe(false);
+  });
+
+  it('does not touch `inert` anywhere by default (no hardcoded #app assumption)', () => {
+    const appLike = document.createElement('div');
+    appLike.id = 'app';
+    document.body.appendChild(appLike);
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    // jsdom has no default `inert` reflection (reading an untouched element's
+    // `.inert` is `undefined`, not `false`); what matters is the trap never
+    // sets it, i.e. it stays falsy either way.
+    expect(appLike.inert).toBeFalsy();
+    trap.deactivate();
+    expect(appLike.inert).toBeFalsy();
+  });
+
+  it('marks the configured inertTarget inert while active, via element or selector', () => {
+    const shell = document.createElement('div');
+    shell.id = 'a11y-shell';
+    document.body.appendChild(shell);
+
+    const byElement = new FocusTrapHelper({ container, options: { inertTarget: shell } });
+    byElement.activate();
+    expect(shell.inert).toBe(true);
+    byElement.deactivate();
+    expect(shell.inert).toBe(false);
+
+    const bySelector = new FocusTrapHelper({ container, options: { inertTarget: '#a11y-shell' } });
+    bySelector.activate();
+    expect(shell.inert).toBe(true);
+    bySelector.deactivate();
+    expect(shell.inert).toBe(false);
+  });
+
+  it('updateFocusableElements re-queries so newly-added children participate in wrapping', () => {
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    const extra = document.createElement('button');
+    extra.id = 'extra';
+    container.appendChild(extra);
+    trap.updateFocusableElements();
+    extra.focus();
+    tab(container);
+    expect(document.activeElement).toBe(container.querySelector('#first'));
+  });
+});
+
+describe('FocusTrapHelper — dynamic content', () => {
+  it('reaches elements added after activation', () => {
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    const added = container.appendChild(document.createElement('button'));
+    const last = container.querySelector<HTMLElement>('#last')!;
+    last.focus();
+    tab(container);
+    expect(document.activeElement).toBe(added);
+    trap.deactivate();
+  });
+
+  it('skips elements inside hidden or inert subtrees', () => {
+    container.querySelector('#middle')!.setAttribute('hidden', '');
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    expect(document.activeElement!.id).toBe('first');
+    tab(container);
+    expect(document.activeElement!.id).toBe('last');
+    trap.deactivate();
+  });
+});

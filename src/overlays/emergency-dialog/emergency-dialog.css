@@ -1,0 +1,15 @@
+/* Hidden until shown — see modal.css's `a11y-modal` rule for why this is
+   gated on the content class rather than the `open` attribute. Shares
+   `.a11y-modal-content`'s `display: block` (defined in modal.css) since
+   emergency-dialog doesn't override `getContentClass()`. */
+a11y-emergency-dialog {
+  display: none;
+}
+
+.a11y-emergency-dialog-overlay {
+  z-index: var(--a11y-z-emergency-dialog, 610);
+}
+
+.a11y-emergency-dialog-wrapper {
+  border-top: var(--a11y-emergency-dialog-accent-width, 4px) solid var(--a11y-color-error, rgb(244 67 54));
+}

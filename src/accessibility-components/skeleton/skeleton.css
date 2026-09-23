@@ -1,0 +1,71 @@
+@keyframes a11y-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: var(--a11y-skeleton-pulse-min-opacity, 0.45); }
+}
+
+.a11y-skeleton {
+  display: block;
+  background-color: var(--a11y-skeleton-color-surface, #f3f4f6);
+  border-radius: var(--a11y-skeleton-border-radius, 4px);
+  animation: a11y-skeleton-pulse var(--a11y-skeleton-pulse-duration, 1.5s) ease-in-out infinite;
+}
+
+.a11y-skeleton.a11y-skeleton--rect {
+  width:  var(--a11y-skeleton-width, 100%);
+  height: var(--a11y-skeleton-height, var(--a11y-skeleton-default-height, 1em));
+}
+
+.a11y-skeleton.a11y-skeleton--circle {
+  /* height defaults to match width so the shape stays circular */
+  width:  var(--a11y-skeleton-width, var(--a11y-skeleton-circle-default-size, 2.5rem));
+  height: var(--a11y-skeleton-height, var(--a11y-skeleton-width, var(--a11y-skeleton-circle-default-size, 2.5rem)));
+  border-radius: 50%;
+}
+
+.a11y-skeleton.a11y-skeleton--text {
+  width:  var(--a11y-skeleton-width, 100%);
+  height: var(--a11y-skeleton-height, var(--a11y-skeleton-default-height, 1em));
+  border-radius: var(--a11y-skeleton-text-border-radius, 2px);
+}
+
+/* multiline: the element becomes a flex column sized by its line children.
+   Also carries `.a11y-skeleton--text` (fixed single-line width/height) when
+   variant="text" — height/width must be reset here or the flex column gets
+   squeezed into one line's height and every child collapses toward 0px. */
+.a11y-skeleton.a11y-skeleton--multiline {
+  background: none;
+  animation: none;
+  border-radius: 0;
+  width: auto;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--a11y-skeleton-multiline-gap, 0.5rem);
+}
+
+.a11y-skeleton__line {
+  display: block;
+  height: var(--a11y-skeleton-height, var(--a11y-skeleton-default-height, 1em));
+  background-color: var(--a11y-skeleton-color-surface, #f3f4f6);
+  border-radius: var(--a11y-skeleton-line-border-radius, 2px);
+  animation: a11y-skeleton-pulse var(--a11y-skeleton-pulse-duration, 1.5s) ease-in-out infinite;
+}
+
+/* Stagger animation slightly per line for a wave feel */
+.a11y-skeleton__line:nth-child(2) { animation-delay: calc(var(--a11y-skeleton-stagger-delay, 0.1s) * 1); }
+.a11y-skeleton__line:nth-child(3) { animation-delay: calc(var(--a11y-skeleton-stagger-delay, 0.1s) * 2); }
+.a11y-skeleton__line:nth-child(4) { animation-delay: calc(var(--a11y-skeleton-stagger-delay, 0.1s) * 3); }
+.a11y-skeleton__line:nth-child(n+5) { animation-delay: calc(var(--a11y-skeleton-stagger-delay, 0.1s) * 4); }
+
+/* Last line is shorter — mimics real text paragraphs */
+.a11y-skeleton__line:last-child {
+  width: var(--a11y-skeleton-last-line-width, 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* A static placeholder conveys "loading" just as well as a pulsing one. */
+  .a11y-skeleton,
+  .a11y-skeleton__line {
+    animation: none;
+  }
+}

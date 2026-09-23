@@ -1,0 +1,23 @@
+.a11y-popover-wrapper {
+  z-index: var(--a11y-z-popover, 310);
+  background: var(--a11y-popover-color-background, #ffffff);
+  color: var(--a11y-popover-color-text, #111827);
+  border-radius: var(--a11y-popover-border-radius, 0.5rem);
+  box-shadow:
+    0
+    var(--a11y-popover-shadow-offset-y, 2px)
+    var(--a11y-popover-shadow-blur, 10px)
+    color-mix(in srgb, var(--a11y-popover-color-text, #111827), transparent var(--a11y-popover-shadow-fade, 85%));
+  max-width: var(--a11y-popover-max-width, 320px);
+}
+
+/* Hidden until shown — see modal.css's `a11y-modal` rule for why this is
+   gated on the content class rather than the `open` attribute. */
+a11y-popover {
+  display: none;
+}
+
+.a11y-popover-content {
+  display: block;
+  padding: var(--a11y-popover-content-padding, 1rem);
+}

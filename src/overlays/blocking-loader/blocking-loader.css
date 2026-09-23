@@ -1,0 +1,18 @@
+.a11y-blocking-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--a11y-z-blocking-loader, 600);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--a11y-blocking-loader-gap, 1rem);
+  background-color: var(--a11y-blocking-loader-color-overlay, rgba(0, 0, 0, 0.5));
+  backdrop-filter: blur(5px);
+  color: var(--a11y-blocking-loader-color-text, #111827);
+}
+
+.a11y-blocking-loader-overlay__message {
+  font-size: var(--a11y-blocking-loader-message-font-size, 1rem);
+  font-weight: var(--a11y-blocking-loader-message-font-weight, 600);
+}

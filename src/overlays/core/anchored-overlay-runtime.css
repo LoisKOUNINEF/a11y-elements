@@ -1,0 +1,24 @@
+/* Shared fade+scale-in animation contract for popover/tooltip/dropdown/context-menu. */
+.a11y-anchored-overlay-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transform: scale(var(--a11y-anchored-overlay-initial-scale, 0.97));
+  transition:
+    opacity var(--a11y-anchored-overlay-transition-duration, 0.15s) ease,
+    transform var(--a11y-anchored-overlay-transition-duration, 0.15s) ease;
+}
+
+.a11y-anchored-overlay-wrapper.a11y-is-open {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the fade, drop the scale. */
+  .a11y-anchored-overlay-wrapper,
+  .a11y-anchored-overlay-wrapper.a11y-is-open {
+    transform: none;
+  }
+}

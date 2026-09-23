@@ -1,0 +1,93 @@
+a11y-radio-group {
+  display: contents;
+}
+
+/* The fieldset is itself the flex column laying out legend + options — no
+   separate .a11y-radio-group__options wrapper needed since the consumer already
+   authors their own option markup directly as children. */
+.a11y-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--a11y-radio-group-options-gap, 0.5rem);
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0; /* fieldset min-width override */
+}
+
+.a11y-radio-group:disabled {
+  opacity: var(--a11y-radio-group-disabled-opacity, 0.6);
+  cursor: not-allowed;
+}
+
+.a11y-radio-group__legend {
+  font-size: var(--a11y-radio-group-legend-font-size, 0.875rem);
+  font-weight: 600;
+  color: var(--a11y-radio-group-color-text-muted, #6b7280);
+  padding: 0;
+  margin-bottom: var(--a11y-radio-group-legend-margin-bottom, 0.5rem);
+}
+
+.a11y-radio-group__legend:empty { display: none; }
+
+/* Consumer-authored option wrapper convention (e.g. <label>), styled if present. */
+.a11y-radio-group__option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--a11y-radio-group-option-gap, 0.5rem);
+  cursor: pointer;
+}
+
+.a11y-radio-group__option:has(.a11y-radio__input:disabled) {
+  cursor: not-allowed;
+  opacity: var(--a11y-radio-group-disabled-opacity, 0.6);
+}
+
+.a11y-radio__input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: var(--a11y-radio-group-input-size, 1.125rem);
+  height: var(--a11y-radio-group-input-size, 1.125rem);
+  border: var(--a11y-radio-group-input-border-width, 2px) solid var(--a11y-radio-group-color-border-strong, #9ca3af);
+  border-radius: 50%;
+  background-color: var(--a11y-radio-group-color-background, #ffffff);
+  cursor: inherit;
+  transition:
+    background-color var(--a11y-radio-group-input-transition-duration, 0.2s) ease,
+    border-color     var(--a11y-radio-group-input-transition-duration, 0.2s) ease,
+    box-shadow       var(--a11y-radio-group-input-transition-duration, 0.2s) ease;
+}
+
+.a11y-radio__input:checked {
+  border-color: var(--a11y-radio-group-color-primary, #2563eb);
+  /* inner dot via inset box-shadow — adapts to theme automatically */
+  box-shadow:
+    inset 0 0 0 var(--a11y-radio-group-checked-inner-ring, 0.2rem) var(--a11y-radio-group-color-background, #ffffff),
+    inset 0 0 0 var(--a11y-radio-group-checked-outer-ring, 0.5rem) var(--a11y-radio-group-color-primary, #2563eb);
+}
+
+.a11y-radio__input:focus-visible {
+  outline: var(--a11y-radio-group-focus-outline-width, 2px) solid var(--a11y-radio-group-color-primary, #2563eb);
+  outline-offset: var(--a11y-radio-group-focus-outline-offset, 2px);
+}
+
+.a11y-radio__input:disabled {
+  background-color: var(--a11y-radio-group-color-disabled-bg, #e5e7eb);
+  border-color: var(--a11y-radio-group-color-border, #d1d5db);
+  cursor: not-allowed;
+}
+
+.a11y-radio__input:disabled:checked {
+  box-shadow:
+    inset 0 0 0 var(--a11y-radio-group-checked-inner-ring, 0.2rem) var(--a11y-radio-group-color-background, #ffffff),
+    inset 0 0 0 var(--a11y-radio-group-checked-outer-ring, 0.5rem) var(--a11y-radio-group-color-border-strong, #9ca3af);
+}
+
+.a11y-radio__label {
+  font-size: var(--a11y-radio-group-label-font-size, 1rem);
+  color: var(--a11y-radio-group-color-text, #111827);
+  line-height: var(--a11y-radio-group-label-line-height, 1.4);
+}
+
+.a11y-radio__label:empty { display: none; }

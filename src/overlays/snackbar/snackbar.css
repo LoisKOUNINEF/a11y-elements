@@ -1,0 +1,72 @@
+/* Positioned containers — one per gravity direction. Items stack in column
+   inside; no JS offset calculation needed. */
+.a11y-snackbar-region__bottom,
+.a11y-snackbar-region__top {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--a11y-snackbar-stack-gap, 0.5rem);
+  width: var(--a11y-snackbar-container-width, 350px);
+  max-width: 90vw;
+  pointer-events: none;
+  z-index: var(--a11y-z-snackbar, 400);
+}
+
+.a11y-snackbar-region__bottom .a11y-snackbar,
+.a11y-snackbar-region__top .a11y-snackbar {
+  pointer-events: auto;
+}
+
+.a11y-snackbar-region__bottom {
+  bottom: var(--a11y-snackbar-offset, 1rem);
+  flex-direction: column-reverse; /* new items appear at bottom, push existing ones up */
+}
+
+.a11y-snackbar-region__top {
+  top: var(--a11y-snackbar-offset, 1rem);
+}
+
+.a11y-snackbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--a11y-color-info, rgb(33 150 243));
+  color: var(--a11y-color-text, white);
+  padding: var(--a11y-snackbar-padding, 0.75rem 1.5rem);
+  border-radius: var(--a11y-snackbar-border-radius, 0.5rem);
+  box-shadow:
+    0
+    var(--a11y-snackbar-shadow-offset-y, 2px)
+    var(--a11y-snackbar-shadow-blur, 6px)
+    var(--a11y-snackbar-shadow-color, rgba(0, 0, 0, 0.3));
+  gap: var(--a11y-snackbar-gap, 1rem);
+  width: 100%;
+  animation: a11y-snackbar-fade-in var(--a11y-snackbar-animation-duration, 0.3s) ease;
+}
+
+.a11y-snackbar--success { background: var(--a11y-color-success, rgb(76 175 80)); }
+.a11y-snackbar--error   { background: var(--a11y-color-error, rgb(244 67 54)); }
+.a11y-snackbar--info    { background: var(--a11y-color-info, rgb(33 150 243)); }
+.a11y-snackbar--warning { background: var(--a11y-color-warning, rgb(244 67 54)); }
+
+.a11y-snackbar button {
+  background: transparent;
+  border: none;
+  color: var(--a11y-color-text, white);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+@keyframes a11y-snackbar-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a11y-snackbar {
+    animation: none;
+  }
+}

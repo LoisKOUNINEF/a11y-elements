@@ -1,0 +1,78 @@
+a11y-switch {
+  display: contents;
+}
+
+.a11y-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--a11y-switch-gap, 0.5rem);
+  cursor: pointer;
+}
+
+.a11y-switch:has(.a11y-switch__input:disabled) {
+  cursor: not-allowed;
+  opacity: var(--a11y-switch-disabled-opacity, 0.6);
+}
+
+.a11y-switch__input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: var(--a11y-switch-track-width, 2.75rem);
+  height: var(--a11y-switch-track-height, 1.5rem);
+  border-radius: var(--a11y-switch-border-radius, 9999px);
+  background-color: var(--a11y-switch-color-border-strong, #9ca3af);
+  cursor: inherit;
+  transition: background-color var(--a11y-switch-transition-duration, 0.2s) ease;
+  --a11y-switch-thumb-offset: calc((var(--a11y-switch-track-height, 1.5rem) - var(--a11y-switch-thumb-size, 1.125rem)) / 2);
+}
+
+/* Sliding thumb */
+.a11y-switch__input::before {
+  content: "";
+  position: absolute;
+  top: var(--a11y-switch-thumb-offset);
+  left: var(--a11y-switch-thumb-offset);
+  width: var(--a11y-switch-thumb-size, 1.125rem);
+  height: var(--a11y-switch-thumb-size, 1.125rem);
+  border-radius: 50%;
+  background-color: var(--a11y-switch-color-background, #ffffff);
+  box-shadow:
+    0
+    var(--a11y-switch-thumb-shadow-offset-y, 1px)
+    var(--a11y-switch-thumb-shadow-blur, 3px)
+    var(--a11y-switch-thumb-shadow-color, rgba(0 0 0 / 25%));
+  transition: transform var(--a11y-switch-transition-duration, 0.2s) ease;
+}
+
+.a11y-switch__input:checked {
+  background-color: var(--a11y-switch-color-primary, #2563eb);
+}
+
+.a11y-switch__input:checked::before {
+  transform: translateX(calc(var(--a11y-switch-track-width, 2.75rem) - var(--a11y-switch-thumb-size, 1.125rem) - (var(--a11y-switch-thumb-offset) * 2)));
+}
+
+.a11y-switch__input:focus-visible {
+  outline: var(--a11y-switch-focus-outline-width, 2px) solid var(--a11y-switch-color-primary, #2563eb);
+  outline-offset: var(--a11y-switch-focus-outline-offset, 2px);
+}
+
+.a11y-switch__input:disabled {
+  background-color: var(--a11y-switch-color-disabled-bg, #e5e7eb);
+  cursor: not-allowed;
+}
+
+.a11y-switch__input:disabled::before {
+  background-color: var(--a11y-switch-color-disabled-text, #9ca3af);
+  box-shadow: none;
+}
+
+.a11y-switch__label {
+  font-size: var(--a11y-switch-label-font-size, 1rem);
+  color: var(--a11y-switch-color-text, #111827);
+  line-height: var(--a11y-switch-label-line-height, 1.4);
+}
+
+.a11y-switch__label:empty { display: none; }

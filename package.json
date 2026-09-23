@@ -1,0 +1,93 @@
+{
+  "name": "a11y-elements",
+  "version": "0.1.0",
+  "description": "Framework-agnostic accessibility Custom Elements (Web Components) — behavior, not a themed UI kit.",
+  "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Loïs KOUNINEF",
+    "url": "https://github.com/LoisKOUNINEF"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LoisKOUNINEF/a11y-elements.git"
+  },
+  "homepage": "https://github.com/LoisKOUNINEF/a11y-elements#readme",
+  "bugs": {
+    "url": "https://github.com/LoisKOUNINEF/a11y-elements/issues"
+  },
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "web-components",
+    "custom-elements",
+    "aria",
+    "wcag",
+    "framework-agnostic"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    "./a11y.css": "./dist/a11y.css",
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js",
+      "default": "./dist/core/index.js"
+    },
+    "./accessibility-components/*": {
+      "types": "./dist/accessibility-components/*/define.d.ts",
+      "import": "./dist/accessibility-components/*/define.js",
+      "default": "./dist/accessibility-components/*/define.js"
+    },
+    "./accessibility-components/*/element": {
+      "types": "./dist/accessibility-components/*/*.element.d.ts",
+      "import": "./dist/accessibility-components/*/*.element.js",
+      "default": "./dist/accessibility-components/*/*.element.js"
+    },
+    "./overlays/core/*": {
+      "types": "./dist/overlays/core/*.d.ts",
+      "import": "./dist/overlays/core/*.js",
+      "default": "./dist/overlays/core/*.js"
+    },
+    "./overlays/*": {
+      "types": "./dist/overlays/*/define.d.ts",
+      "import": "./dist/overlays/*/define.js",
+      "default": "./dist/overlays/*/define.js"
+    },
+    "./overlays/*/element": {
+      "types": "./dist/overlays/*/*.element.d.ts",
+      "import": "./dist/overlays/*/*.element.js",
+      "default": "./dist/overlays/*/*.element.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": [
+    "**/define.ts",
+    "**/define.js",
+    "dist/browser/**",
+    "**/*.css"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && npm run build:types && npm run build:browser",
+    "build:types": "tsc -p tsconfig.json",
+    "build:browser": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "validate:pack": "npm run build && publint",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "jsdom": "^25.0.1",
+    "publint": "^0.2.12",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -2,17 +2,17 @@
    Grows as each component/overlay is added. Every
    value is a CSS custom property (--a11y-<component>-<token>) with the
    shipped default as its fallback, so consumers can retheme anything. */
-@import url('accessibility-components/spinner/spinner.css');
-@import url('accessibility-components/skeleton/skeleton.css');
-@import url('accessibility-components/avatar/avatar.css');
-@import url('accessibility-components/progress/progress.css');
-@import url('accessibility-components/picture/picture.css');
-@import url('accessibility-components/visually-hidden/visually-hidden.css');
-@import url('accessibility-components/checkbox/checkbox.css');
-@import url('accessibility-components/switch/switch.css');
-@import url('accessibility-components/select/select.css');
-@import url('accessibility-components/radio-group/radio-group.css');
-@import url('accessibility-components/anchor/anchor.css');
+@import url('components/spinner/spinner.css');
+@import url('components/skeleton/skeleton.css');
+@import url('components/avatar/avatar.css');
+@import url('components/progress/progress.css');
+@import url('components/picture/picture.css');
+@import url('components/visually-hidden/visually-hidden.css');
+@import url('components/checkbox/checkbox.css');
+@import url('components/switch/switch.css');
+@import url('components/select/select.css');
+@import url('components/radio-group/radio-group.css');
+@import url('components/anchor/anchor.css');
 @import url('overlays/core/overlay-variables.css');
 @import url('overlays/core/overlay-runtime.css');
 @import url('overlays/core/modal-overlay-runtime.css');

@@ -6,7 +6,7 @@ import { defineConfig } from 'tsup';
  * tsup flattens array entries to their basename, which would collide since
  * every component has its own `define.ts` — map each one to an output path
  * that mirrors its source location instead (e.g.
- * `accessibility-components/spinner/define.ts` -> `dist/browser/accessibility-components/spinner/define.js`).
+ * `components/spinner/define.ts` -> `dist/browser/components/spinner/define.js`).
  */
 function findDefineEntries(root: string): Record<string, string> {
   const entries: Record<string, string> = {};

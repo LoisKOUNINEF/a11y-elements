@@ -12,7 +12,7 @@ Load a component's standalone browser bundle directly, no bundler required:
 
 ```html
 <link rel="stylesheet" href="node_modules/a11y-elements/dist/a11y.css" />
-<script type="module" src="node_modules/a11y-elements/dist/browser/accessibility-components/spinner/define.js"></script>
+<script type="module" src="node_modules/a11y-elements/dist/browser/components/spinner/define.js"></script>
 
 <a11y-spinner></a11y-spinner>
 ```
@@ -35,7 +35,7 @@ Import via the package's `exports` map, which exposes real per-component ESM out
 
 ```js
 import 'a11y-elements/a11y.css';
-import 'a11y-elements/accessibility-components/checkbox';
+import 'a11y-elements/components/checkbox';
 import 'a11y-elements/overlays/modal';
 import { A11yElement } from 'a11y-elements/core';
 ```
@@ -83,7 +83,7 @@ Each section shows an example, the element's own attributes/properties/methods, 
 
 **Overlays:** [`<a11y-blocking-loader>`](#a11y-blocking-loader) · [`<a11y-context-menu>`](#a11y-context-menu) · [`<a11y-drawer>`](#a11y-drawer) · [`<a11y-dropdown>`](#a11y-dropdown) · [`<a11y-emergency-dialog>`](#a11y-emergency-dialog) · [`<a11y-modal>`](#a11y-modal) · [`<a11y-notification-banner>`](#a11y-notification-banner) · [`<a11y-popover>`](#a11y-popover) · [`<a11y-snackbar>`](#a11y-snackbar) · [`<a11y-tooltip>`](#a11y-tooltip)
 
-Import paths follow the folder names: `a11y-elements/accessibility-components/<name>` or `a11y-elements/overlays/<name>` (add `/element` for the class), and `dist/browser/<group>/<name>/define.js` for zero-build.
+Import paths follow the folder names: `a11y-elements/components/<name>` or `a11y-elements/overlays/<name>` (add `/element` for the class), and `dist/browser/<group>/<name>/define.js` for zero-build.
 
 Attributes that set a CSS variable (spinner `size`/`color`/…, avatar `size`, skeleton `width`/`height`) win over your own inline value for that variable only while they're set. See [Scope to one instance](#scope-to-one-instance).
 
@@ -155,8 +155,8 @@ Wraps a real `<input type="checkbox">` in a `<label>` with a visible label text.
 ```
 
 ```ts
-import 'a11y-elements/accessibility-components/checkbox';
-import type { CheckboxElement } from 'a11y-elements/accessibility-components/checkbox/element';
+import 'a11y-elements/components/checkbox';
+import type { CheckboxElement } from 'a11y-elements/components/checkbox/element';
 
 const checkbox = document.getElementById('terms') as CheckboxElement;
 checkbox.onChange = (checked) => console.log('accepted:', checked);
@@ -513,7 +513,9 @@ No attributes or CSS variables. The class `a11y-visually-hidden` is also usable 
 
 ##### Overlays in a framework
 
-**Removing them is up to you.** An overlay authored inside a component isn't inside that component's DOM any more, so when your framework removes the component's subtree (an unmount, an SPA navigation), the overlay stays in `<body>`, and the next render adds a second copy with the same `id`. Call `removeOverlaysWithin(host)` on unmount. It removes every overlay authored inside `host`, even after `host` has left the document, and returns how many it removed. It's exported from `a11y-elements/core` and from every overlay's `define.js`.
+###### Removing them is up to you. 
+
+An overlay authored inside a component isn't inside that component's DOM any more, so when your framework removes the component's subtree (an unmount, a SPA navigation), the overlay stays in `<body>`, and the next render adds a second copy with the same `id`. Call `removeOverlaysWithin(host)` on unmount. It removes every overlay authored inside `host`, even after `host` has left the document, and returns how many it removed. It's exported from `a11y-elements/core` and from every overlay's `define.js`.
 
 ```js
 import { removeOverlaysWithin } from 'a11y-elements/core';
@@ -524,13 +526,21 @@ onUnmount(() => removeOverlaysWithin(hostElement)); // your framework's unmount 
 
 Nothing is removed automatically, so subtrees your framework detaches and reattaches later (keep-alive caches, keyed moves) keep their overlays.
 
-**Don't reach overlay content through the host.** If the overlay's bundle is already loaded, `host.innerHTML = '…<a11y-modal>…'` upgrades the overlay and moves it to `<body>` during that same assignment, so a later `host.querySelectorAll(...)` (to bind handlers, or to translate `data-*` attributes) finds nothing inside it. If the bundle loads after rendering, the same query does find it, so the result depends on load order. Instead:
+##### Don't reach overlay content through the host. 
+
+If the overlay's bundle is already loaded, `host.innerHTML = '…<a11y-modal>…'` upgrades the overlay and moves it to `<body>` during that same assignment, so a later `host.querySelectorAll(...)` finds nothing inside it. 
+
+If the bundle loads after rendering, the same query does find it, so the result depends on load order. 
+
+**Instead:**
 
 * get the overlay by `id` (`document.getElementById`) and query inside it;
 * bind events on the overlay element itself, or delegate from it;
 * put final text into the markup before injecting it, rather than in a pass after rendering.
 
-**Dialogs** (`<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`) also share:
+##### Dialogs (`<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`)
+
+They also share:
 
 * A focus trap (Tab stays inside, focus returns to the trigger on close) and a page scroll lock (`html.a11y-no-scroll`).
 * Escape, a click on the backdrop, or the × close button close it, unless it's `non-dismissible`.
@@ -544,7 +554,9 @@ Nothing is removed automatically, so subtrees your framework detaches and reatta
 | `dismissible` | property (read-only) | `true` | Inverse of `non-dismissible`. |
 | `onClose` | callback | — | Called once the close transition has finished. |
 
-**Anchored overlays** (`<a11y-popover>`, `<a11y-tooltip>`, `<a11y-dropdown>`, `<a11y-context-menu>`) are positioned next to an anchor. They flip to the opposite side when there isn't room, and close on a click outside or Escape.
+##### Anchored overlays (`<a11y-popover>`, `<a11y-tooltip>`, `<a11y-dropdown>`, `<a11y-context-menu>`)
+
+They are positioned next to an anchor. They flip to the opposite side when there isn't room, and close on a click outside or Escape.
 
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
@@ -554,7 +566,9 @@ Nothing is removed automatically, so subtrees your framework detaches and reatta
 | `offset` | attribute | `8` | Gap to the anchor, in px. |
 | `updatePosition()` | method | — | Recomputes the position (it already follows scroll, resize and size changes). |
 
-**Menus** (`<a11y-dropdown>`, `<a11y-context-menu>`): items are your own children with `role="menuitem"`. Arrow keys, Home and End move between them, and Enter/Space fire a real `click`. The menu closes after an item is clicked or when focus leaves it. Mark an item `aria-disabled="true"` to skip it.
+##### Menus (`<a11y-dropdown>`, `<a11y-context-menu>`)
+
+Items are your own children with `role="menuitem"`. Arrow keys, Home and End move between them, and Enter/Space fire a real `click`. The menu closes after an item is clicked or when focus leaves it. Mark an item `aria-disabled="true"` to skip it.
 
 <details>
 <summary>CSS variables shared by anchored overlays and menus</summary>

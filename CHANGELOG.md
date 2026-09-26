@@ -2,6 +2,12 @@
 
 ## 0.2.0
 
+### Breaking changes
+
+- The `accessibility-components` folder is renamed to `components`. 
+
+Update imports from `a11y-elements/accessibility-components/<name>` (and `/element`) to `a11y-elements/components/<name>`, and zero-build scripts from `dist/browser/accessibility-components/<name>/define.js` to `dist/browser/components/<name>/define.js`.
+
 ### Changes
 
 - New `removeOverlaysWithin(host)`, exported from `a11y-elements/core` and from every overlay's `define.js`. 

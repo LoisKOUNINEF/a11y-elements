@@ -33,15 +33,15 @@
       "import": "./dist/core/index.js",
       "default": "./dist/core/index.js"
     },
-    "./accessibility-components/*": {
-      "types": "./dist/accessibility-components/*/define.d.ts",
-      "import": "./dist/accessibility-components/*/define.js",
-      "default": "./dist/accessibility-components/*/define.js"
+    "./components/*": {
+      "types": "./dist/components/*/define.d.ts",
+      "import": "./dist/components/*/define.js",
+      "default": "./dist/components/*/define.js"
     },
-    "./accessibility-components/*/element": {
-      "types": "./dist/accessibility-components/*/*.element.d.ts",
-      "import": "./dist/accessibility-components/*/*.element.js",
-      "default": "./dist/accessibility-components/*/*.element.js"
+    "./components/*/element": {
+      "types": "./dist/components/*/*.element.d.ts",
+      "import": "./dist/components/*/*.element.js",
+      "default": "./dist/components/*/*.element.js"
     },
     "./overlays/core/*": {
       "types": "./dist/overlays/core/*.d.ts",

@@ -4,8 +4,8 @@ import '../snackbar/define.js';
 import '../dropdown/define.js';
 import '../blocking-loader/define.js';
 import { ModalElement } from '../modal/define.js';
-import { SpinnerElement } from '../../accessibility-components/spinner/define.js';
-import { CheckboxElement } from '../../accessibility-components/checkbox/define.js';
+import { SpinnerElement } from '../../components/spinner/define.js';
+import { CheckboxElement } from '../../components/checkbox/define.js';
 import { removeOverlaysWithin } from '../../core/overlay-registry.js';
 
 afterEach(() => {

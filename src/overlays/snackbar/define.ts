@@ -36,3 +36,4 @@ export function notify(message: string, options: NotifyOptions = {}): void {
 
 // Re-exported so zero-build `<script type="module">` users can reach them too.
 export { resetStrings, setStrings } from '../../core/strings.js';
+export { removeOverlaysWithin } from '../../core/overlay-registry.js';

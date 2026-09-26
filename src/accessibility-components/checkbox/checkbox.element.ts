@@ -32,7 +32,7 @@ export class CheckboxElement extends A11yWrapperElement {
 
 
   /** Called with the input's current `checked` state on every native `change` event. */
-  onChange?: (checked: boolean) => void;
+  declare onChange?: (checked: boolean) => void;
 
   getValue(): boolean {
     return this._input()?.checked ?? false;

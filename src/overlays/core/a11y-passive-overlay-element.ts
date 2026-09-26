@@ -1,4 +1,5 @@
 import { A11yElement } from '../../core/a11y-element.js';
+import { forgetPortalOrigin, recordPortalOrigin } from '../../core/overlay-registry.js';
 
 const DEFAULT_MAX_STACK = 3;
 
@@ -29,13 +30,23 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
   protected _activeCount = 0;
 
   override connectedCallback(): void {
+    this._initConnect();
     this._connected = true;
-    this._watchStrings();
-    if (this.parentNode !== document.body) document.body.appendChild(this);
+    const origin = this.parentNode;
+    if (origin !== document.body) {
+      document.body.appendChild(this);
+      // Recorded only now: that move ran a nested disconnect, which forgets the origin.
+      if (origin instanceof Element) recordPortalOrigin(this, origin);
+    }
     this.setAttribute('aria-live', 'polite');
     this.setAttribute('aria-atomic', 'false');
     this.setAttribute('aria-relevant', 'additions removals');
     this.classList.add('a11y-passive-overlay-region');
+  }
+
+  override disconnectedCallback(): void {
+    forgetPortalOrigin(this);
+    super.disconnectedCallback();
   }
 
   /** Never re-renders (that would wipe the item containers) — a raised `max-stack` just shows queued items. */

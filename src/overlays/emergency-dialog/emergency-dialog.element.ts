@@ -15,7 +15,7 @@ import type { IFocusTrapOptions } from '../../core/focus-trap.js';
  * ```
  */
 export class EmergencyDialogElement extends A11yModalOverlayElement {
-  onClose?: () => void;
+  declare onClose?: () => void;
 
   override get dismissible(): boolean {
     return false;

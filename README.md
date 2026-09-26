@@ -506,10 +506,29 @@ No attributes or CSS variables. The class `a11y-visually-hidden` is also usable 
 #### Common to all overlays
 
 * **Open/close** with the `open` attribute or property, or `show()` / `close()`.
-* **Before the element is defined** (lazy-loaded bundles), use `setAttribute('open', '')` rather than `.open = true`: a property set before upgrade hides the element's own accessor.
+* **Before the element is defined** (lazy-loaded bundles), setting `.open = true`, `onClose` or any other property works: it's applied once the element upgrades. `setAttribute('open', '')` works too.
 * **Events:** `a11y-overlay-open` and `a11y-overlay-close` fire on `document`, with `event.detail.name` set to the tag name.
 * **`dismissAllOverlays()`** closes every open overlay (e.g. on navigation). It's exported from `a11y-elements/core` and from every overlay's `define.js`.
-* **Body mounting:** every overlay moves itself to `<body>` when connected, so a `position: fixed` layer isn't clipped by an ancestor. If your framework removes the subtree it was authored in, remove the overlay yourself too.
+* **Body mounting:** every overlay (including the snackbar and notification-banner regions) moves itself to `<body>` when connected, so a `position: fixed` layer isn't clipped by an ancestor. See [Overlays in a framework](#overlays-in-a-framework) below.
+
+##### Overlays in a framework
+
+**Removing them is up to you.** An overlay authored inside a component isn't inside that component's DOM any more, so when your framework removes the component's subtree (an unmount, an SPA navigation), the overlay stays in `<body>`, and the next render adds a second copy with the same `id`. Call `removeOverlaysWithin(host)` on unmount. It removes every overlay authored inside `host`, even after `host` has left the document, and returns how many it removed. It's exported from `a11y-elements/core` and from every overlay's `define.js`.
+
+```js
+import { removeOverlaysWithin } from 'a11y-elements/core';
+// or: import { removeOverlaysWithin } from './node_modules/a11y-elements/dist/browser/overlays/modal/define.js';
+
+onUnmount(() => removeOverlaysWithin(hostElement)); // your framework's unmount hook
+```
+
+Nothing is removed automatically, so subtrees your framework detaches and reattaches later (keep-alive caches, keyed moves) keep their overlays.
+
+**Don't reach overlay content through the host.** If the overlay's bundle is already loaded, `host.innerHTML = '…<a11y-modal>…'` upgrades the overlay and moves it to `<body>` during that same assignment, so a later `host.querySelectorAll(...)` (to bind handlers, or to translate `data-*` attributes) finds nothing inside it. If the bundle loads after rendering, the same query does find it, so the result depends on load order. Instead:
+
+* get the overlay by `id` (`document.getElementById`) and query inside it;
+* bind events on the overlay element itself, or delegate from it;
+* put final text into the markup before injecting it, rather than in a pass after rendering.
 
 **Dialogs** (`<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`) also share:
 

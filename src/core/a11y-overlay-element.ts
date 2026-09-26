@@ -1,5 +1,12 @@
 import { A11yElement } from './a11y-element.js';
-import { registerOpenOverlay, unregisterOpenOverlay, emitOverlayOpen, emitOverlayClose } from './overlay-registry.js';
+import {
+  registerOpenOverlay,
+  unregisterOpenOverlay,
+  emitOverlayOpen,
+  emitOverlayClose,
+  recordPortalOrigin,
+  forgetPortalOrigin,
+} from './overlay-registry.js';
 
 /**
  * Base for the overlay family (modal, drawer, popover, tooltip, snackbar,
@@ -25,7 +32,9 @@ import { registerOpenOverlay, unregisterOpenOverlay, emitOverlayOpen, emitOverla
  * of `document.body` if it isn't already — matching the old framework's
  * constructor-time force-mount — so a `position: fixed` backdrop/wrapper
  * isn't clipped or offset by an ancestor's `overflow`/`transform`. This
- * happens once, independent of `open`/`_show()`/`_hide()` churn.
+ * happens once, independent of `open`/`_show()`/`_hide()` churn. The
+ * parent it left is recorded, so `removeOverlaysWithin(host)` can remove it
+ * along with the subtree it was authored in.
  *
  * **Reparenting `this`** (modal/anchored overlays move `this` into
  * wrapper/backdrop chrome they build): moving an already-connected custom
@@ -63,8 +72,8 @@ export abstract class A11yOverlayElement extends A11yElement {
 
   override connectedCallback(): void {
     if (this._internalMove) return; // reparented by our own _moveSelfTo() — not a real connect event
+    this._initConnect();
     this._connected = true;
-    this._watchStrings();
     this._portalToBody();
     this.onConnect?.();
     if (!this.open) return;
@@ -87,6 +96,7 @@ export abstract class A11yOverlayElement extends A11yElement {
       }
     }
     unregisterOpenOverlay(this);
+    forgetPortalOrigin(this);
     super.disconnectedCallback();
   }
 
@@ -130,7 +140,10 @@ export abstract class A11yOverlayElement extends A11yElement {
   }
 
   private _portalToBody(): void {
-    if (this.parentNode !== document.body) this._moveSelfTo(document.body);
+    const origin = this.parentNode;
+    if (origin === document.body) return;
+    this._moveSelfTo(document.body);
+    if (origin instanceof Element) recordPortalOrigin(this, origin);
   }
 
   /**

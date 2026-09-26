@@ -21,7 +21,7 @@ export class SelectElement extends A11yWrapperElement {
   }
 
 
-  onChange?: (value: string) => void;
+  declare onChange?: (value: string) => void;
 
   getValue(): string {
     return this._select()?.value ?? '';

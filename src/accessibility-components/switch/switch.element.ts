@@ -18,7 +18,7 @@ export class SwitchElement extends A11yWrapperElement {
   }
 
 
-  onChange?: (checked: boolean) => void;
+  declare onChange?: (checked: boolean) => void;
 
   getValue(): boolean {
     return this._input()?.checked ?? false;

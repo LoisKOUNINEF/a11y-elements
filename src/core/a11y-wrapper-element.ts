@@ -31,8 +31,8 @@ export abstract class A11yWrapperElement extends A11yElement {
   private _wiredNodes = new WeakSet<Node>();
 
   override connectedCallback(): void {
+    this._initConnect();
     this._connected = true;
-    this._watchStrings();
     this._sync();
     this._observer = new MutationObserver(() => this._sync());
     this._observer.observe(this, this.observerInit());

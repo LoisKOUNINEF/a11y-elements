@@ -12,6 +12,8 @@ interface Dismissible {
 interface SharedState {
   openOverlays: Set<Dismissible>;
   scrollLocks: number;
+  /** Each body-mounted overlay → the parent it was authored in, for `removeOverlaysWithin()`. */
+  portalOrigins: Map<Element, Node>;
 }
 
 /**
@@ -23,7 +25,9 @@ interface SharedState {
  */
 const STATE_KEY = Symbol.for('a11y-elements/overlay-state');
 const store = globalThis as unknown as Record<symbol, SharedState | undefined>;
-const state: SharedState = (store[STATE_KEY] ??= { openOverlays: new Set(), scrollLocks: 0 });
+const state: SharedState = (store[STATE_KEY] ??= { openOverlays: new Set(), scrollLocks: 0, portalOrigins: new Map() });
+// A state object created by an older bundle on the same page predates this field.
+state.portalOrigins ??= new Map();
 
 /**
  * Tracks every currently-open overlay instance so a consumer's own SPA
@@ -44,6 +48,34 @@ export function unregisterOpenOverlay(overlay: Dismissible): void {
 
 export function dismissAllOverlays(): void {
   for (const overlay of Array.from(state.openOverlays)) overlay.close();
+}
+
+/** Remembers where an overlay was authored before it moved itself to `<body>`. */
+export function recordPortalOrigin(overlay: Element, origin: Node): void {
+  state.portalOrigins.set(overlay, origin);
+}
+
+/** Drops the record once an overlay leaves the document for real, so it isn't kept alive. */
+export function forgetPortalOrigin(overlay: Element): void {
+  state.portalOrigins.delete(overlay);
+}
+
+/**
+ * Overlays move themselves to `<body>`, so removing the subtree they were
+ * authored in (a component unmount, an SPA navigation) leaves them behind.
+ * Call this with that subtree's root to remove every overlay authored inside
+ * it (or directly in it) — it works after `host` has left the document too.
+ * Returns how many were removed.
+ */
+export function removeOverlaysWithin(host: Node): number {
+  let removed = 0;
+  for (const [overlay, origin] of Array.from(state.portalOrigins)) {
+    if (!host.contains(origin)) continue;
+    overlay.remove(); // its disconnectedCallback tears it down and forgets it
+    state.portalOrigins.delete(overlay);
+    removed++;
+  }
+  return removed;
 }
 
 const NO_SCROLL_CLASS = 'a11y-no-scroll';

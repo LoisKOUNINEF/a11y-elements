@@ -33,8 +33,8 @@ export abstract class A11yElement extends HTMLElement {
   private _stringsListener: EventListener | null = null;
 
   connectedCallback(): void {
+    this._initConnect();
     this._connected = true;
-    this._watchStrings();
     this.update();
   }
 
@@ -47,11 +47,35 @@ export abstract class A11yElement extends HTMLElement {
   }
 
   /**
-   * Subscribes `onStringsChange()` (when defined) to `setStrings()` until
-   * disconnect. Every `connectedCallback` override that doesn't call super
-   * must call this itself.
+   * Connect-time setup shared by every base class. Every `connectedCallback`
+   * override that doesn't call super must call this itself, before setting
+   * `_connected` (so replayed setters only write attributes, and the normal
+   * connect path then acts on them).
    */
-  protected _watchStrings(): void {
+  protected _initConnect(): void {
+    this._upgradeProperties();
+    this._watchStrings();
+  }
+
+  /**
+   * A property set on the element before its class was defined (e.g.
+   * `el.open = true` before a lazy-loaded bundle runs) is an own property
+   * that shadows the class accessor. Replay each one through the setter.
+   */
+  private _upgradeProperties(): void {
+    for (let proto = Object.getPrototypeOf(this); proto && proto !== HTMLElement.prototype; proto = Object.getPrototypeOf(proto)) {
+      for (const name of Object.getOwnPropertyNames(proto)) {
+        if (!Object.prototype.hasOwnProperty.call(this, name) || !Object.getOwnPropertyDescriptor(proto, name)?.set) continue;
+        const self = this as unknown as Record<string, unknown>;
+        const value = self[name];
+        delete self[name];
+        self[name] = value;
+      }
+    }
+  }
+
+  /** Subscribes `onStringsChange()` (when defined) to `setStrings()` until disconnect. */
+  private _watchStrings(): void {
     if (!this.onStringsChange || this._stringsListener) return;
     this._stringsListener = () => {
       if (this._connected) this.onStringsChange?.();

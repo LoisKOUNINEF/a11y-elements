@@ -23,7 +23,7 @@ export class ModalElement extends A11yModalOverlayElement {
   }
 
   /** Called once this modal has finished closing (after its close transition). */
-  onClose?: () => void;
+  declare onClose?: () => void;
 
   protected override createBackdrop(): HTMLElement {
     const el = super.createBackdrop();

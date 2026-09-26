@@ -22,7 +22,7 @@ export class RadioGroupElement extends A11yWrapperElement {
   }
 
 
-  onChange?: (value: string) => void;
+  declare onChange?: (value: string) => void;
 
   getValue(): string {
     return this._fieldset()?.querySelector<HTMLInputElement>('.a11y-radio__input:checked')?.value ?? '';

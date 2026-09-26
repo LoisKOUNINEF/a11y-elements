@@ -16,7 +16,7 @@ export class PopoverElement extends A11yAnchoredOverlayElement {
     return [...super.observedAttributes, 'interactive', 'trap-focus'];
   }
 
-  onClose?: () => void;
+  declare onClose?: () => void;
 
   protected override wantsFocusTrap(): boolean {
     // A plain boolean attribute can only express "force true" via presence —

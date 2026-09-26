@@ -15,7 +15,7 @@ export class DrawerElement extends A11yModalOverlayElement {
     return [...super.observedAttributes, 'edge'];
   }
 
-  onClose?: () => void;
+  declare onClose?: () => void;
 
   get edge(): DrawerEdge {
     const value = this.getAttribute('edge');

@@ -1,0 +1,51 @@
+a11y-textarea {
+  display: flex;
+  flex-direction: column;
+  gap: var(--a11y-textarea-gap, 0.25rem);
+}
+
+a11y-textarea > textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--a11y-textarea-control-padding-y, 0.5rem) var(--a11y-textarea-control-padding-x, 0.75rem);
+  background-color: var(--a11y-textarea-color-background, #ffffff);
+  color: var(--a11y-textarea-color-text, #111827);
+  border: var(--a11y-textarea-control-border-width, 1px) solid var(--a11y-textarea-color-border, #d1d5db);
+  border-radius: var(--a11y-textarea-control-border-radius, 4px);
+  font-family: var(--a11y-textarea-control-font-family, inherit);
+  font-size: var(--a11y-textarea-control-font-size, 1rem);
+  line-height: var(--a11y-textarea-control-line-height, 1.4);
+  transition:
+    border-color var(--a11y-textarea-transition-duration, 0.2s) ease,
+    box-shadow   var(--a11y-textarea-transition-duration, 0.2s) ease;
+}
+
+a11y-textarea > textarea {
+  min-height: var(--a11y-textarea-min-height, 6rem);
+  resize: var(--a11y-textarea-resize, vertical);
+}
+
+a11y-textarea > textarea:hover:not(:disabled) {
+  border-color: var(--a11y-textarea-color-border-strong, #9ca3af);
+}
+
+a11y-textarea > textarea:focus-visible {
+  outline: var(--a11y-textarea-focus-outline-width, 2px) solid var(--a11y-textarea-color-primary, #2563eb);
+  outline-offset: var(--a11y-textarea-focus-outline-offset, 2px);
+  border-color: var(--a11y-textarea-color-primary, #2563eb);
+}
+
+/* Set by bindField() only once the error is shown (after blur or a submit attempt). */
+a11y-textarea > textarea[aria-invalid="true"] {
+  border-color: var(--a11y-textarea-color-error, #b91c1c);
+}
+
+a11y-textarea > textarea[aria-invalid="true"]:focus-visible {
+  outline-color: var(--a11y-textarea-color-error, #b91c1c);
+}
+
+a11y-textarea > textarea:disabled {
+  background-color: var(--a11y-textarea-color-disabled-bg, #e5e7eb);
+  color: var(--a11y-textarea-color-disabled-text, #9ca3af);
+  cursor: not-allowed;
+}

@@ -1,0 +1,39 @@
+/* Parts shared by <a11y-input> and <a11y-textarea>. They're plain markers
+   (not registered elements), linked to the control by bindField(). */
+a11y-hint,
+a11y-error,
+a11y-counter {
+  display: block;
+  font-size: var(--a11y-field-part-font-size, 0.875rem);
+  line-height: var(--a11y-field-part-line-height, 1.4);
+}
+
+a11y-hint {
+  color: var(--a11y-field-color-text-muted, #6b7280);
+}
+
+a11y-error {
+  color: var(--a11y-field-color-error, #b91c1c);
+  font-weight: var(--a11y-field-error-font-weight, 600);
+}
+
+a11y-error[hidden],
+a11y-counter[hidden] {
+  display: none;
+}
+
+a11y-counter {
+  color: var(--a11y-field-color-text-muted, #6b7280);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Announcement only: read through aria-live / aria-describedby, never shown. */
+.a11y-counter__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}

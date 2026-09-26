@@ -1,3 +1,4 @@
+import { syncIdRef } from '../../core/dom-sync.js';
 import { A11yAnchoredOverlayElement } from '../core/a11y-anchored-overlay-element.js';
 
 let idCounter = 0;
@@ -108,10 +109,7 @@ export class TooltipElement extends A11yAnchoredOverlayElement {
 
   /** Adds/removes this tooltip's id in the anchor's `aria-describedby` token list, preserving any ids the consumer set. */
   private _setDescribedBy(anchor: HTMLElement, present: boolean): void {
-    const ids = (anchor.getAttribute('aria-describedby') ?? '').split(/\s+/).filter((id) => id && id !== this.id);
-    if (present) ids.push(this.id);
-    if (ids.length) anchor.setAttribute('aria-describedby', ids.join(' '));
-    else anchor.removeAttribute('aria-describedby');
+    syncIdRef(anchor, 'aria-describedby', this.id, present);
   }
 
   private _scheduleShow(): void {

@@ -70,6 +70,9 @@ setStrings({
 | `loading` | `Loading` | `<a11y-spinner>`, `<a11y-blocking-loader>` | `label` / `message` |
 | `progress` | `Progress` | `<a11y-progress>` without a label | `label` / `aria-label` |
 | `avatar` | `Avatar` | `<a11y-avatar>` with no `alt` or `initials` | `alt` / `initials` |
+| `characterCount` | `{count} / {max}` | the visible text of an `<a11y-counter>` | — |
+| `charactersRemaining` | `{count} characters remaining` | what an `<a11y-counter>` announces near the limit | — |
+| `characterRemaining` | `{count} character remaining` | the same, with one character left | — |
 
 * An instance attribute wins over `setStrings()`, which wins over the default. Keys you leave out keep their current value.
 * Elements already on the page update right away, so calling it again on a language switch is enough.
@@ -79,7 +82,7 @@ setStrings({
 
 Each section shows an example, the element's own attributes/properties/methods, and its CSS variables (collapsed). Behavior shared by a family of elements is described once, in [Common to all overlays](#common-to-all-overlays).
 
-**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
+**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
 
 **Overlays:** [`<a11y-blocking-loader>`](#a11y-blocking-loader) · [`<a11y-context-menu>`](#a11y-context-menu) · [`<a11y-drawer>`](#a11y-drawer) · [`<a11y-dropdown>`](#a11y-dropdown) · [`<a11y-emergency-dialog>`](#a11y-emergency-dialog) · [`<a11y-modal>`](#a11y-modal) · [`<a11y-notification-banner>`](#a11y-notification-banner) · [`<a11y-popover>`](#a11y-popover) · [`<a11y-snackbar>`](#a11y-snackbar) · [`<a11y-tooltip>`](#a11y-tooltip)
 
@@ -209,6 +212,164 @@ Makes a non-button element behave like a button: `role="button"`, `tabindex="0"`
 | `aria-label` | attribute | — | Accessible name. Without it (or visible text), a console warning is logged. |
 
 No CSS variables.
+
+#### `a11y-input`
+
+A text field built from a real `<input>` and optional parts, wired together for you:
+
+* `<a11y-label>`: the visible label, linked with `for`. See [`a11y-label`](#a11y-label).
+* `<a11y-hint>`: help text, any number of them, added to the input's `aria-describedby`.
+* `<a11y-error>`: where the validation message is shown. It's hidden, and left out of `aria-describedby`, until there's an error to show.
+* `<a11y-counter>`: a length counter, see [`a11y-textarea`](#a11y-textarea).
+
+```html
+<form>
+  <a11y-input type-mismatch-message="Enter an email like name@example.com">
+    <a11y-label>Email</a11y-label>
+    <input type="email" name="email" required>
+    <a11y-hint>We never share it.</a11y-hint>
+    <a11y-error></a11y-error>
+  </a11y-input>
+</form>
+```
+
+The input stays yours and is never regenerated. It keeps its `name` and submits its own value, so the form works before the script loads, and native constraints (`required`, `type`, `pattern`, `minlength`, `min`, …) do the validating. Ids you set are kept; missing ones are generated.
+
+**When errors show.** Like `:user-invalid`, a field isn't flagged while it's first being filled in. Its error shows when it's left after an edit, or when a submit attempt finds it invalid. From then on it updates as the user types, and a form reset hides it again. While shown, the input has `aria-invalid="true"` and the message is in its `aria-describedby`.
+
+**Submitting.** With an `<a11y-error>`, the message is shown there instead of in the browser's bubble, and the form's first invalid field is focused. Without one, the browser's bubble is left alone.
+
+**Custom rules.** `validators` run in order once the native constraints pass; the first message returned is the error. It goes through `setCustomValidity()`, so it blocks submission like a native one. Set `validators` instead of calling `setCustomValidity()` yourself, which the next validation would clear.
+
+```ts
+import 'a11y-elements/components/input';
+import type { InputElement } from 'a11y-elements/components/input/element';
+
+const username = document.getElementById('username') as InputElement;
+username.validators = [(value) => (takenNames.has(value) ? 'That name is taken' : null)];
+```
+
+**The host is form-associated.** It mirrors the input through `ElementInternals`: its validity follows the input's (anchored to it), and it exposes custom states for styling:
+
+```css
+a11y-input:state(user-invalid) { background: #fef2f2; } /* the error is shown */
+a11y-input:state(touched) { … }                        /* left at least once */
+a11y-input:state(dirty) { … }                          /* edited at least once */
+```
+
+Where `:state()` isn't supported, style `input[aria-invalid="true"]` instead.
+
+Checkbox, radio, range, color, file, hidden and button inputs are left alone: use `<a11y-checkbox>`, `<a11y-radio-group>`, … for those.
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `value-missing-message` | attribute | browser's | Message when `required` isn't met. |
+| `type-mismatch-message` | attribute | browser's | Message when the value doesn't match `type` (`email`, `url`). |
+| `pattern-mismatch-message` | attribute | browser's | Message when the value doesn't match `pattern`. |
+| `too-short-message` / `too-long-message` | attribute | browser's | Messages for `minlength` / `maxlength`. |
+| `range-underflow-message` / `range-overflow-message` | attribute | browser's | Messages for `min` / `max`. |
+| `step-mismatch-message` / `bad-input-message` | attribute | browser's | Messages for `step`, and for input the browser can't parse (e.g. text in a number field). |
+| `validators` | property | `[]` | `((value, control) => string \| null)[]`, run after the native constraints. |
+| `onInput` / `onChange` | callback | — | `(value: string) => void`, called on every `input` / `change`. |
+| `getValue()` / `setValue(value)` | method | — | Reads / sets the value. `setValue` re-validates without marking the field as edited. |
+| `checkValidity()` | method | — | Returns whether the field is valid, without showing anything. |
+| `reportValidity()` | method | — | Shows the error and focuses the input when it's invalid. |
+| `validity` / `validationMessage` / `willValidate` / `form` | property | — | Same as on the input; `validationMessage` includes your overrides. |
+
+Message attributes can use `{min}`, `{max}`, `{minlength}` and `{maxlength}`, filled from the input's attributes: `too-short-message="At least {minlength} characters"`.
+
+<details>
+<summary>CSS variables</summary>
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-input-color-background` | `#ffffff` |
+| `--a11y-input-color-border` | `#d1d5db` |
+| `--a11y-input-color-border-strong` | `#9ca3af` |
+| `--a11y-input-color-disabled-bg` | `#e5e7eb` |
+| `--a11y-input-color-disabled-text` | `#9ca3af` |
+| `--a11y-input-color-error` | `#b91c1c` |
+| `--a11y-input-color-primary` | `#2563eb` |
+| `--a11y-input-color-text` | `#111827` |
+| `--a11y-input-control-border-radius` | `4px` |
+| `--a11y-input-control-border-width` | `1px` |
+| `--a11y-input-control-font-family` | `inherit` |
+| `--a11y-input-control-font-size` | `1rem` |
+| `--a11y-input-control-line-height` | `1.4` |
+| `--a11y-input-control-padding-x` | `0.75rem` |
+| `--a11y-input-control-padding-y` | `0.5rem` |
+| `--a11y-input-focus-outline-offset` | `2px` |
+| `--a11y-input-focus-outline-width` | `2px` |
+| `--a11y-input-gap` | `0.25rem` |
+| `--a11y-input-transition-duration` | `0.2s` |
+
+Shared by the parts of every field:
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-field-color-error` | `#b91c1c` |
+| `--a11y-field-color-text-muted` | `#6b7280` |
+| `--a11y-field-error-font-weight` | `600` |
+| `--a11y-field-part-font-size` | `0.875rem` |
+| `--a11y-field-part-line-height` | `1.4` |
+
+</details>
+
+##### Building your own field: `bindField()`
+
+The same wiring, without the custom elements: `bindField()` takes the control and its parts as any elements you like, for example from a framework component. It's exported from `a11y-elements/core`, and from the input and textarea `define.js` bundles.
+
+```ts
+import { bindField } from 'a11y-elements/core';
+
+const field = bindField(
+  { control: input, label: labelEl, hints: [hintEl], error: errorEl, counter: counterEl },
+  {
+    validators: [(value) => (value.includes(' ') ? 'No spaces' : null)],
+    messages: { valueMissing: 'Required', tooShort: 'At least {minlength} characters' },
+    onStateChange: ({ valid, message, touched, dirty, showError }) => { /* mirror it in your state */ },
+  },
+);
+
+field.sync({ control: input, label: labelEl, hints: [], error: errorEl }); // after parts change
+field.show();    // show the error now, as a submit attempt would
+field.reset();   // back to pristine (also happens on its own on form reset)
+field.destroy(); // on unmount: removes its listeners and the ARIA it added
+```
+
+A real `<label>` is linked with `for`; any other element with `aria-labelledby`. Tokens you put in `aria-describedby` / `aria-labelledby` yourself are kept.
+
+#### `a11y-label`
+
+Renders a real `<label class="a11y-label">` around its content. A custom element can't itself be a `<label>`, and only a real one gives click-to-focus and native naming. Inside `<a11y-input>` / `<a11y-textarea>` it's linked automatically; on its own, `for` is forwarded:
+
+```html
+<a11y-label for="search">Search</a11y-label>
+<input id="search" type="search">
+```
+
+A `*` marks a required field. It's CSS only and hidden from screen readers, which already announce the control's `required`.
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `for` | attribute | — | Id of the control to label, when used outside a field. |
+| `required` | attribute | absent | Shows the required marker outside a field (inside one, it follows the control's `required`). |
+| `label` | property | — | The rendered `<label>` element. |
+
+<details>
+<summary>CSS variables</summary>
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-label-color-required` | `#b91c1c` |
+| `--a11y-label-color-text` | `#111827` |
+| `--a11y-label-font-size` | `0.875rem` |
+| `--a11y-label-font-weight` | `600` |
+| `--a11y-label-line-height` | `1.4` |
+| `--a11y-label-required-gap` | `0.25em` |
+| `--a11y-label-required-marker` | `"*"` |
+
+</details>
 
 #### `a11y-picture`
 
@@ -485,6 +646,35 @@ Like `<a11y-checkbox>`, but the input gets `role="switch"`.
 | `--a11y-switch-track-height` | `1.5rem` |
 | `--a11y-switch-track-width` | `2.75rem` |
 | `--a11y-switch-transition-duration` | `0.2s` |
+
+</details>
+
+#### `a11y-textarea`
+
+`<a11y-input>` for a real `<textarea>`: same parts, attributes, properties, validation and states.
+
+An `<a11y-counter>` shows the length against `maxlength` (`12 / 200`; hidden without `maxlength`). Screen readers don't hear it on every keystroke: once 20 characters or fewer are left, "5 characters remaining" is announced when typing pauses, and read with the field's description.
+
+```html
+<a11y-textarea value-missing-message="Tell us a bit more">
+  <a11y-label>Bio</a11y-label>
+  <textarea name="bio" required maxlength="200"></textarea>
+  <a11y-counter></a11y-counter>
+  <a11y-error></a11y-error>
+</a11y-textarea>
+```
+
+The counter's strings can be [translated](#translating-built-in-strings).
+
+<details>
+<summary>CSS variables</summary>
+
+The same as [`a11y-input`](#a11y-input), prefixed `--a11y-textarea-` instead of `--a11y-input-`, plus:
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-textarea-min-height` | `6rem` |
+| `--a11y-textarea-resize` | `vertical` |
 
 </details>
 

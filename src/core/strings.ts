@@ -20,6 +20,12 @@ export interface A11yStrings {
   progress: string;
   /** Last-resort accessible name of `<a11y-avatar>`. */
   avatar: string;
+  /** Visible text of an `<a11y-counter>`; `{count}` is the current length, `{max}` the `maxlength`. */
+  characterCount: string;
+  /** What an `<a11y-counter>` announces near the limit; `{count}` is the number of characters left. */
+  charactersRemaining: string;
+  /** `charactersRemaining` when exactly one character is left. */
+  characterRemaining: string;
 }
 
 export const DEFAULT_STRINGS: Readonly<A11yStrings> = Object.freeze({
@@ -30,6 +36,9 @@ export const DEFAULT_STRINGS: Readonly<A11yStrings> = Object.freeze({
   loading: 'Loading',
   progress: 'Progress',
   avatar: 'Avatar',
+  characterCount: '{count} / {max}',
+  charactersRemaining: '{count} characters remaining',
+  characterRemaining: '{count} character remaining',
 });
 
 /** Dispatched on `document` whenever `setStrings()`/`resetStrings()` runs, so mounted elements can relabel themselves. */
@@ -44,6 +53,8 @@ export const STRINGS_CHANGE_EVENT = 'a11y-strings-change';
 const STRINGS_KEY = Symbol.for('a11y-elements/strings');
 const store = globalThis as unknown as Record<symbol, A11yStrings | undefined>;
 const strings: A11yStrings = (store[STRINGS_KEY] ??= { ...DEFAULT_STRINGS });
+// A store created by an older bundle on the same page predates newer keys.
+for (const [key, value] of Object.entries(DEFAULT_STRINGS) as [keyof A11yStrings, string][]) strings[key] ??= value;
 
 /** Overrides some or all built-in strings, page-wide. Elements already on the page update right away. */
 export function setStrings(partial: Partial<A11yStrings>): void {

@@ -1,0 +1,46 @@
+a11y-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--a11y-input-gap, 0.25rem);
+}
+
+a11y-input > input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--a11y-input-control-padding-y, 0.5rem) var(--a11y-input-control-padding-x, 0.75rem);
+  background-color: var(--a11y-input-color-background, #ffffff);
+  color: var(--a11y-input-color-text, #111827);
+  border: var(--a11y-input-control-border-width, 1px) solid var(--a11y-input-color-border, #d1d5db);
+  border-radius: var(--a11y-input-control-border-radius, 4px);
+  font-family: var(--a11y-input-control-font-family, inherit);
+  font-size: var(--a11y-input-control-font-size, 1rem);
+  line-height: var(--a11y-input-control-line-height, 1.4);
+  transition:
+    border-color var(--a11y-input-transition-duration, 0.2s) ease,
+    box-shadow   var(--a11y-input-transition-duration, 0.2s) ease;
+}
+
+a11y-input > input:hover:not(:disabled) {
+  border-color: var(--a11y-input-color-border-strong, #9ca3af);
+}
+
+a11y-input > input:focus-visible {
+  outline: var(--a11y-input-focus-outline-width, 2px) solid var(--a11y-input-color-primary, #2563eb);
+  outline-offset: var(--a11y-input-focus-outline-offset, 2px);
+  border-color: var(--a11y-input-color-primary, #2563eb);
+}
+
+/* Set by bindField() only once the error is shown (after blur or a submit attempt). */
+a11y-input > input[aria-invalid="true"] {
+  border-color: var(--a11y-input-color-error, #b91c1c);
+}
+
+a11y-input > input[aria-invalid="true"]:focus-visible {
+  outline-color: var(--a11y-input-color-error, #b91c1c);
+}
+
+a11y-input > input:disabled {
+  background-color: var(--a11y-input-color-disabled-bg, #e5e7eb);
+  color: var(--a11y-input-color-disabled-text, #9ca3af);
+  cursor: not-allowed;
+}

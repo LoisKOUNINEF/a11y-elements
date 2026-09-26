@@ -26,3 +26,16 @@ export function syncAttr(el: Element, name: string, value: string | null | undef
 export function syncClass(el: Element, name: string, present: boolean): void {
   if (el.classList.contains(name) !== present) el.classList.toggle(name, present);
 }
+
+/**
+ * Adds or removes one id in an id-reference list attribute (`aria-describedby`,
+ * `aria-labelledby`, …), keeping every other token — typically ids the
+ * consumer set — in place. Removes the attribute once the list is empty.
+ */
+export function syncIdRef(el: Element, name: string, id: string, present: boolean): void {
+  const ids = (el.getAttribute(name) ?? '').split(/\s+/).filter(Boolean);
+  const has = ids.includes(id);
+  if (has === present) return;
+  const next = present ? [...ids, id] : ids.filter((token) => token !== id);
+  syncAttr(el, name, next.length ? next.join(' ') : null);
+}

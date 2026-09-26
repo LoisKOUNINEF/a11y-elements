@@ -10,6 +10,18 @@ Update imports from `a11y-elements/accessibility-components/<name>` (and `/eleme
 
 ### Changes
 
+- New `<a11y-input>`, `<a11y-textarea>` and `<a11y-label>`.
+
+A field wraps a real `<input>` or `<textarea>` with optional `<a11y-label>`, `<a11y-hint>`, `<a11y-error>` and `<a11y-counter>` parts, and links them: the label with `for`, hints and the error with `aria-describedby`, and `aria-invalid` while an error is shown.
+
+Errors show once a field is left after an edit, or when a submit attempt finds it invalid, then update as the user types. With an `<a11y-error>`, the message replaces the browser's bubble and the first invalid field is focused.
+
+Native constraints do the validating. Custom `validators` and per-constraint messages (`value-missing-message`, `too-short-message`, …) come on top. The native control still submits the value; the host is form-associated and mirrors its validity, with `:state(user-invalid)`, `:state(touched)` and `:state(dirty)` for styling.
+
+`<a11y-counter>` shows the length against `maxlength` and announces the characters left near the limit. Its strings can be translated with `setStrings()` (`characterCount`, `charactersRemaining`, `characterRemaining`).
+
+- New `bindField()`, exported from `a11y-elements/core`: the same wiring and validation on your own markup, e.g. from a framework component.
+
 - New `removeOverlaysWithin(host)`, exported from `a11y-elements/core` and from every overlay's `define.js`. 
 
 Overlays move themselves to `<body>`, so they outlived the subtree they were authored in when a framework removed it. Call it on unmount to remove the overlays authored inside `host`.

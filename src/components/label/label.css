@@ -1,0 +1,22 @@
+/* The host is a transparent wrapper — the real <label class="a11y-label"> carries the layout. */
+a11y-label {
+  display: contents;
+}
+
+.a11y-label {
+  display: block;
+  font-size: var(--a11y-label-font-size, 0.875rem);
+  font-weight: var(--a11y-label-font-weight, 600);
+  color: var(--a11y-label-color-text, #111827);
+  line-height: var(--a11y-label-line-height, 1.4);
+}
+
+/* Hidden from assistive tech (`/ ""`): the control's native `required` is already announced. */
+a11y-input:has(:required) .a11y-label::after,
+a11y-textarea:has(:required) .a11y-label::after,
+a11y-label[required] .a11y-label::after {
+  content: var(--a11y-label-required-marker, "*");
+  content: var(--a11y-label-required-marker, "*") / "";
+  margin-inline-start: var(--a11y-label-required-gap, 0.25em);
+  color: var(--a11y-label-color-required, #b91c1c);
+}

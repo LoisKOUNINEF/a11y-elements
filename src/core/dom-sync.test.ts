@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { syncAttr, syncClass, syncText } from './dom-sync.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { syncAttr, syncClass, syncIdRef, syncText } from './dom-sync.js';
 
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
@@ -72,5 +72,20 @@ describe('dom-sync guarded writes', () => {
       syncClass(el, 'x', false);
       expect(el.classList.contains('x')).toBe(false);
     });
+  });
+
+  it('syncIdRef adds and removes one id, keeping the other tokens, and never rewrites an unchanged list', () => {
+    const el = document.createElement('input');
+    el.setAttribute('aria-describedby', 'mine');
+    syncIdRef(el, 'aria-describedby', 'a', true);
+    expect(el.getAttribute('aria-describedby')).toBe('mine a');
+
+    const setAttribute = vi.spyOn(el, 'setAttribute');
+    syncIdRef(el, 'aria-describedby', 'a', true);
+    expect(setAttribute).not.toHaveBeenCalled();
+
+    syncIdRef(el, 'aria-describedby', 'mine', false);
+    syncIdRef(el, 'aria-describedby', 'a', false);
+    expect(el.hasAttribute('aria-describedby')).toBe(false);
   });
 });

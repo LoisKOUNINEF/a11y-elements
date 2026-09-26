@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FocusTrapHelper } from './focus-trap.js';
+import { FocusTrapHelper, focusReturnTarget } from './focus-trap.js';
 
 let container: HTMLElement;
 let outside: HTMLButtonElement;
@@ -256,3 +256,63 @@ describe('FocusTrapHelper — dynamic content', () => {
     trap.deactivate();
   });
 });
+
+describe('FocusTrapHelper — which elements are Tab stops', () => {
+  it('skips native controls with a negative tabindex and includes <summary>, contenteditable and tabindex=0', () => {
+    container.innerHTML = `
+      <button id="a">A</button>
+      <button id="neg" tabindex="-1">Negative</button>
+      <a id="neg-link" href="#x" tabindex="-2">Negative link</a>
+      <details><summary id="sum">More</summary><p>Body</p></details>
+      <div id="edit" contenteditable>Editable</div>
+      <div id="off" contenteditable="false">Not editable</div>
+      <input id="hidden-input" type="hidden">
+      <div id="zero" tabindex="0">Zero</div>
+    `;
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    const order = [document.activeElement!.id];
+    for (let i = 0; i < 4; i++) {
+      tab(document.activeElement as HTMLElement);
+      order.push(document.activeElement!.id);
+    }
+    expect(order).toEqual(['a', 'sum', 'edit', 'zero', 'a']);
+    trap.deactivate();
+  });
+});
+
+describe('focusReturnTarget — triggers the browser did not focus (Safari)', () => {
+  const press = (el: Element): void => void el.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+
+  it('returns the focused element when there is one', () => {
+    outside.focus();
+    press(container.querySelector('#first')!);
+    expect(focusReturnTarget()).toBe(outside);
+  });
+
+  it('falls back to the last pressed focusable element (or its focusable ancestor) when focus is on <body>', () => {
+    const icon = document.createElement('span');
+    outside.appendChild(icon);
+    (document.activeElement as HTMLElement | null)?.blur();
+    press(icon); // a click on an icon inside the button, which Safari leaves unfocused
+    expect(document.activeElement).toBe(document.body);
+    expect(focusReturnTarget()).toBe(outside);
+  });
+
+  it('ignores a pressed element that has since been removed', () => {
+    (document.activeElement as HTMLElement | null)?.blur();
+    press(outside);
+    outside.remove();
+    expect(focusReturnTarget()).toBe(document.body);
+  });
+
+  it('a trap returns focus to a trigger that was pressed but never focused', () => {
+    (document.activeElement as HTMLElement | null)?.blur();
+    press(outside);
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    trap.deactivate();
+    expect(document.activeElement).toBe(outside);
+  });
+});
+

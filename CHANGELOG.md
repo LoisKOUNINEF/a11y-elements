@@ -24,6 +24,14 @@ The limit is set with the new `max-stack` attribute or `maxStack` property, or w
 
 ### Fixes
 
+- Overlays opened by clicking their trigger now return focus to it when they close in Safari (and Firefox on macOS). 
+
+Those browsers don't focus a clicked button, so focus used to fall back to `<body>`. 
+
+This affects `<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`, `<a11y-popover>` when it traps focus, `<a11y-dropdown>`, `<a11y-context-menu>` and `<a11y-blocking-loader>`.
+
+- Focus traps no longer stop on a button, link or other control with a negative `tabindex`, and now include `<summary>`, `contenteditable` elements, `iframe` and media elements with controls.
+
 - Properties set on an element before its bundle defines it are no longer lost. `open` and other accessors used to be shadowed, and `onClose` / `onChange` callbacks were reset to `undefined` on upgrade.
 
 - `<a11y-avatar>` no longer shows the initials next to the image when both `src` and `initials` are set. The image renders alone, and the initials appear only if it fails to load.

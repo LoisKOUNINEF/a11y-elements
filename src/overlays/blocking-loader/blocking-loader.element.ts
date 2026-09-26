@@ -1,4 +1,5 @@
 import { A11yOverlayElement } from '../../core/a11y-overlay-element.js';
+import { focusReturnTarget } from '../../core/focus-trap.js';
 import { lockScroll, unlockScroll } from '../../core/overlay-registry.js';
 import { getString } from '../../core/strings.js';
 import { html } from '../../core/template.js';
@@ -55,7 +56,7 @@ export class BlockingLoaderElement extends A11yOverlayElement {
       child.setAttribute('inert', '');
       this._inerted.push(child);
     }
-    this._returnFocusTo = document.activeElement as HTMLElement | null;
+    this._returnFocusTo = focusReturnTarget();
     this.focus({ preventScroll: true });
 
     this._onShown();

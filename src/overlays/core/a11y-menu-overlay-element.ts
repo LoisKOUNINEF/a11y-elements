@@ -1,3 +1,4 @@
+import { focusReturnTarget } from '../../core/focus-trap.js';
 import { A11yAnchoredOverlayElement } from './a11y-anchored-overlay-element.js';
 
 /**
@@ -44,7 +45,7 @@ export abstract class A11yMenuOverlayElement extends A11yAnchoredOverlayElement 
 
   protected override _show(): void {
     // Captured once per open cycle (a re-show while already open keeps the original).
-    if (!this._returnFocusTo) this._returnFocusTo = document.activeElement as HTMLElement | null;
+    if (!this._returnFocusTo) this._returnFocusTo = focusReturnTarget();
     this._unbindMenuKeyboardHandling(); // re-shown while open: drop the previous wrapper's handlers
     super._show();
     this._initRovingTabindex();

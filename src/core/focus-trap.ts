@@ -1,7 +1,20 @@
 type KeyboardEventHandler = (event: KeyboardEvent) => void;
 
-const FOCUSABLE_SELECTOR =
-  'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+/** Everything that can be a Tab stop; `isTabbable()` then drops what's hidden or has a negative `tabindex`. */
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'area[href]',
+  'button:not(:disabled)',
+  'input:not(:disabled):not([type="hidden"])',
+  'select:not(:disabled)',
+  'textarea:not(:disabled)',
+  'details > summary:first-of-type',
+  'iframe',
+  'audio[controls]',
+  'video[controls]',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]',
+].join(', ');
 
 export interface IFocusTrapOptions {
   escapeDeactivates?: boolean;
@@ -31,9 +44,51 @@ export interface IFocusTrapHelperParams {
  * that silently swallows the key press.
  */
 function isTabbable(el: HTMLElement): boolean {
+  // A negative tabindex takes even a native control out of the Tab order.
+  if (Number(el.getAttribute('tabindex')) < 0) return false;
   if (el.closest('[hidden], [inert]')) return false;
   if (typeof el.checkVisibility === 'function') return el.checkVisibility({ visibilityProperty: true });
   return true;
+}
+
+interface PointerState {
+  /** The focusable element (or its closest focusable ancestor) the pointer last pressed. */
+  lastPressed: HTMLElement | null;
+  listening: boolean;
+}
+
+/**
+ * Safari (and Firefox on macOS) don't focus a button or link on click, so an
+ * overlay opened from a click sees `document.activeElement === <body>` and
+ * would have nowhere to return focus. One capture-phase `pointerdown`
+ * listener, shared page-wide like the trap stack below, remembers the
+ * focusable element that was pressed instead.
+ */
+const POINTER_KEY = Symbol.for('a11y-elements/last-pressed');
+const pointerStore = globalThis as unknown as Record<symbol, PointerState | undefined>;
+const pointerState: PointerState = (pointerStore[POINTER_KEY] ??= { lastPressed: null, listening: false });
+if (!pointerState.listening && typeof document !== 'undefined') {
+  pointerState.listening = true;
+  document.addEventListener(
+    'pointerdown',
+    (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      pointerState.lastPressed = target?.closest<HTMLElement>(FOCUSABLE_SELECTOR) ?? null;
+    },
+    true,
+  );
+}
+
+/**
+ * Where focus should go back to when an overlay that's opening now closes:
+ * the focused element, or — when that's just `<body>` because the browser
+ * didn't focus a clicked trigger — the element that was last pressed.
+ */
+export function focusReturnTarget(): HTMLElement | null {
+  const active = document.activeElement as HTMLElement | null;
+  if (active && active !== document.body && active !== document.documentElement) return active;
+  const pressed = pointerState.lastPressed;
+  return pressed?.isConnected ? pressed : active;
 }
 
 /**
@@ -80,7 +135,7 @@ export class FocusTrapHelper {
   public activate(): void {
     if (this._isActive) return;
 
-    this._previousActiveElement = document.activeElement as HTMLElement;
+    this._previousActiveElement = focusReturnTarget();
     this._focusableElements = this._getFocusableElements();
 
     if (this._focusableElements.length > 0) {

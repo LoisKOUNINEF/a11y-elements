@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '../modal/define.js';
 import '../snackbar/define.js';
+import '../dropdown/define.js';
+import '../blocking-loader/define.js';
 import { ModalElement } from '../modal/define.js';
 import { SpinnerElement } from '../../accessibility-components/spinner/define.js';
 import { CheckboxElement } from '../../accessibility-components/checkbox/define.js';
@@ -128,3 +130,47 @@ describe('removeOverlaysWithin', () => {
     expect(removeOverlaysWithin(second)).toBe(1);
   });
 });
+
+describe('focus returns to a clicked trigger that the browser did not focus (Safari)', () => {
+  /** A click the way Safari delivers it on a button: pointerdown + click, but no focus. */
+  function safariClick(el: HTMLElement): void {
+    (document.activeElement as HTMLElement | null)?.blur();
+    el.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    expect(document.activeElement).toBe(document.body);
+    el.click();
+  }
+
+  it('modal', () => {
+    document.body.innerHTML = '<button id="t">Open</button><a11y-modal id="m"><h2>M</h2><button>In</button></a11y-modal>';
+    const trigger = document.getElementById('t')!;
+    const modal = document.getElementById('m') as any;
+    trigger.addEventListener('click', () => (modal.open = true));
+    safariClick(trigger);
+    expect(modal.contains(document.activeElement) || document.querySelector('.a11y-modal-wrapper')!.contains(document.activeElement)).toBe(true);
+    modal.open = false;
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('dropdown', () => {
+    document.body.innerHTML = '<button id="t">Actions</button><a11y-dropdown id="d" anchor="t"><div role="menuitem">Edit</div></a11y-dropdown>';
+    const trigger = document.getElementById('t')!;
+    safariClick(trigger);
+    const menu = document.getElementById('d') as any;
+    expect(menu.open).toBe(true);
+    document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(menu.open).toBe(false);
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('blocking loader', () => {
+    document.body.innerHTML = '<button id="t">Save</button><a11y-blocking-loader id="l"></a11y-blocking-loader>';
+    const trigger = document.getElementById('t')!;
+    const loader = document.getElementById('l') as any;
+    trigger.addEventListener('click', () => (loader.open = true));
+    safariClick(trigger);
+    expect(document.activeElement).toBe(loader);
+    loader.open = false;
+    expect(document.activeElement).toBe(trigger);
+  });
+});
+

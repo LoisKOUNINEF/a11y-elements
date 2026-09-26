@@ -64,6 +64,7 @@ export abstract class A11yOverlayElement extends A11yElement {
   override connectedCallback(): void {
     if (this._internalMove) return; // reparented by our own _moveSelfTo() — not a real connect event
     this._connected = true;
+    this._watchStrings();
     this._portalToBody();
     this.onConnect?.();
     if (!this.open) return;

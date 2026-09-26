@@ -24,7 +24,6 @@
   display: block;
 }
 
-.a11y-avatar__fallback,
 .a11y-avatar__initials {
   font-size: inherit;
   font-weight: inherit;

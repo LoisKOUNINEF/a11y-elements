@@ -1,3 +1,4 @@
+import { STRINGS_CHANGE_EVENT } from './strings.js';
 import type { Raw } from './template.js';
 
 type Listener = [target: EventTarget, type: string, handler: EventListener, options?: AddEventListenerOptions | boolean];
@@ -14,6 +15,7 @@ type Listener = [target: EventTarget, type: string, handler: EventListener, opti
  *   connectedCallback        -> first update()
  *   attributeChangedCallback -> update() for any observed attribute change
  *   disconnectedCallback     -> remove all tracked listeners, then onDisconnect()
+ *   setStrings()             -> onStringsChange(), for subclasses that define it
  *
  * Subclasses list attributes to watch via `static observedAttributes` and
  * implement `render()` to return the markup for `this.innerHTML`. Attribute/
@@ -27,16 +29,34 @@ export abstract class A11yElement extends HTMLElement {
   private _updating = false;
   /** CSS vars `setCssVar()` currently owns → the consumer's inline value it replaced ('' if none). */
   private _cssVarOwned = new Map<string, string>();
+  /** The `document` listener `_watchStrings()` added, if any — outside `listen()`, whose listeners every render clears. */
+  private _stringsListener: EventListener | null = null;
 
   connectedCallback(): void {
     this._connected = true;
+    this._watchStrings();
     this.update();
   }
 
   disconnectedCallback(): void {
     this._connected = false;
     this._cleanupListeners();
+    if (this._stringsListener) document.removeEventListener(STRINGS_CHANGE_EVENT, this._stringsListener);
+    this._stringsListener = null;
     this.onDisconnect?.();
+  }
+
+  /**
+   * Subscribes `onStringsChange()` (when defined) to `setStrings()` until
+   * disconnect. Every `connectedCallback` override that doesn't call super
+   * must call this itself.
+   */
+  protected _watchStrings(): void {
+    if (!this.onStringsChange || this._stringsListener) return;
+    this._stringsListener = () => {
+      if (this._connected) this.onStringsChange?.();
+    };
+    document.addEventListener(STRINGS_CHANGE_EVENT, this._stringsListener);
   }
 
   attributeChangedCallback(_name: string, oldValue: string | null, newValue: string | null): void {
@@ -70,6 +90,9 @@ export abstract class A11yElement extends HTMLElement {
 
   /** Runs once, after listener cleanup, when the element leaves the DOM. */
   protected onDisconnect?(): void;
+
+  /** Runs after `setStrings()`/`resetStrings()` while connected. Define it to re-apply any built-in string this element shows. */
+  protected onStringsChange?(): void;
 
   /**
    * Adds a listener and tracks it for automatic removal on the next render

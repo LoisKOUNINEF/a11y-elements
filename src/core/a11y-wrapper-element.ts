@@ -32,6 +32,7 @@ export abstract class A11yWrapperElement extends A11yElement {
 
   override connectedCallback(): void {
     this._connected = true;
+    this._watchStrings();
     this._sync();
     this._observer = new MutationObserver(() => this._sync());
     this._observer.observe(this, this.observerInit());

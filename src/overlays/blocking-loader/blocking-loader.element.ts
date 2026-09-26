@@ -1,5 +1,6 @@
 import { A11yOverlayElement } from '../../core/a11y-overlay-element.js';
 import { lockScroll, unlockScroll } from '../../core/overlay-registry.js';
+import { getString } from '../../core/strings.js';
 import { html } from '../../core/template.js';
 
 /**
@@ -34,6 +35,10 @@ export class BlockingLoaderElement extends A11yOverlayElement {
 
   protected override onAttributeChanged(name: string): void {
     if (name === 'message' && this._isShowing) this._renderContent();
+  }
+
+  protected override onStringsChange(): void {
+    if (this._isShowing) this._renderContent();
   }
 
   protected override _show(): void {
@@ -76,7 +81,7 @@ export class BlockingLoaderElement extends A11yOverlayElement {
 
   private _renderContent(): void {
     const message = this.message;
-    this.innerHTML = String(html`<a11y-spinner size="3rem" label="${message ?? 'Loading'}"></a11y-spinner>${
+    this.innerHTML = String(html`<a11y-spinner size="3rem" label="${message ?? getString('loading')}"></a11y-spinner>${
       message ? html`<p class="a11y-blocking-loader-overlay__message">${message}</p>` : ''
     }`);
   }

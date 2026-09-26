@@ -30,6 +30,7 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
 
   override connectedCallback(): void {
     this._connected = true;
+    this._watchStrings();
     if (this.parentNode !== document.body) document.body.appendChild(this);
     this.setAttribute('aria-live', 'polite');
     this.setAttribute('aria-atomic', 'false');

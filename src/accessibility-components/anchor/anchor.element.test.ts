@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import './define.js';
+import { resetStrings, setStrings } from '../../core/strings.js';
 
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
@@ -11,6 +12,7 @@ beforeEach(() => {
 afterEach(() => {
   document.body.innerHTML = '';
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 function mount(innerHtml: string): HTMLElement {
@@ -92,7 +94,7 @@ describe('a11y-anchor — internal same-page anchors', () => {
 
   it('announces navigation via a a11y-visually-hidden live region, then removes it after ~3s', () => {
     vi.useFakeTimers();
-    document.body.insertAdjacentHTML('beforeend', '<div id="section-2">Section 2</div>');
+    document.body.insertAdjacentHTML('beforeend', '<h2 id="section-2">Section 2</h2>');
     const el = mount('<a href="#section-2">Jump</a>');
     el.querySelector('a')!.dispatchEvent(new MouseEvent('click', { cancelable: true, bubbles: true }));
 
@@ -195,5 +197,150 @@ describe('a11y-anchor — targets and reconnects', () => {
     const click = new MouseEvent('click', { bubbles: true, cancelable: true });
     el.querySelector('a')!.dispatchEvent(click);
     expect(click.defaultPrevented).toBe(true);
+  });
+});
+
+describe('a11y-anchor — announcement names the target, not its whole content', () => {
+  function announce(targetHtml: string, id = 'target'): string {
+    vi.useFakeTimers();
+    document.body.insertAdjacentHTML('beforeend', targetHtml);
+    const el = mount(`<a href="#${id}">Jump</a>`);
+    el.querySelector('a')!.dispatchEvent(new MouseEvent('click', { cancelable: true, bubbles: true }));
+    vi.advanceTimersByTime(100);
+    const text = document.querySelector('[role="status"]')!.textContent!;
+    vi.runAllTimers();
+    return text;
+  }
+
+  it('prefers aria-label', () => {
+    expect(announce('<section id="target" aria-label="Pricing"><h2>Plans</h2><p>Body</p></section>')).toBe(
+      'Navigated to Pricing',
+    );
+  });
+
+  it('resolves aria-labelledby', () => {
+    expect(
+      announce('<span id="l1">Team</span><span id="l2">plans</span><section id="target" aria-labelledby="l1 l2"><p>Body</p></section>'),
+    ).toBe('Navigated to Team plans');
+  });
+
+  it('uses the first heading of a section, not its paragraphs or control labels', () => {
+    expect(announce('<section id="target"><h2> Pricing </h2><p>Long text</p><button>Buy</button></section>')).toBe(
+      'Navigated to Pricing',
+    );
+  });
+
+  it('falls back to the id when the target has no label or heading', () => {
+    expect(announce('<div id="target">Some content</div>')).toBe('Navigated to target');
+  });
+});
+
+describe("a11y-anchor — keeps the target's own tabindex", () => {
+  function jump(el: HTMLElement): void {
+    el.querySelector('a')!.dispatchEvent(new MouseEvent('click', { cancelable: true, bubbles: true }));
+    vi.advanceTimersByTime(100);
+  }
+
+  it('keeps a pre-existing tabindex="-1" after blur', () => {
+    vi.useFakeTimers();
+    document.body.insertAdjacentHTML('beforeend', '<section id="s" tabindex="-1"><h2>S</h2></section>');
+    const el = mount('<a href="#s">Jump</a>');
+    jump(el);
+    const target = document.getElementById('s')!;
+    target.dispatchEvent(new FocusEvent('blur'));
+    expect(target.getAttribute('tabindex')).toBe('-1');
+    vi.runAllTimers();
+  });
+
+  it('restores a pre-existing tabindex="0" on blur', () => {
+    vi.useFakeTimers();
+    document.body.insertAdjacentHTML('beforeend', '<section id="s" tabindex="0"><h2>S</h2></section>');
+    const el = mount('<a href="#s">Jump</a>');
+    jump(el);
+    const target = document.getElementById('s')!;
+    expect(target.getAttribute('tabindex')).toBe('-1');
+    target.dispatchEvent(new FocusEvent('blur'));
+    expect(target.getAttribute('tabindex')).toBe('0');
+    vi.runAllTimers();
+  });
+
+  it('restores the original value when jumping twice before a blur', () => {
+    vi.useFakeTimers();
+    document.body.insertAdjacentHTML('beforeend', '<section id="s" tabindex="0"><h2>S</h2></section>');
+    const el = mount('<a href="#s">Jump</a>');
+    jump(el);
+    jump(el);
+    const target = document.getElementById('s')!;
+    target.dispatchEvent(new FocusEvent('blur'));
+    expect(target.getAttribute('tabindex')).toBe('0');
+    target.setAttribute('tabindex', '3');
+    target.dispatchEvent(new FocusEvent('blur')); // the single restore listener is already spent
+    expect(target.getAttribute('tabindex')).toBe('3');
+    vi.runAllTimers();
+  });
+});
+
+describe('a11y-anchor — prefers-reduced-motion', () => {
+  function clickWithMotionPreference(reduce: boolean): void {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: reduce && query.includes('reduce') }));
+    vi.useFakeTimers();
+    document.body.insertAdjacentHTML('beforeend', '<h2 id="s">S</h2>');
+    mount('<a href="#s">Jump</a>')
+      .querySelector('a')!
+      .dispatchEvent(new MouseEvent('click', { cancelable: true, bubbles: true }));
+    vi.runAllTimers();
+  }
+
+  it('scrolls instantly when reduced motion is requested', () => {
+    clickWithMotionPreference(true);
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto' });
+  });
+
+  it('smooth-scrolls when there is no reduced-motion preference', () => {
+    clickWithMotionPreference(false);
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
+  });
+});
+
+describe('a11y-anchor — translated strings', () => {
+  afterEach(() => resetStrings());
+
+  function announce(el: HTMLElement): string {
+    vi.useFakeTimers();
+    el.querySelector('a')!.dispatchEvent(new MouseEvent('click', { cancelable: true, bubbles: true }));
+    vi.advanceTimersByTime(100);
+    const text = document.querySelector('[role="status"]')!.textContent!;
+    vi.runAllTimers();
+    return text;
+  }
+
+  it('uses setStrings({ opensInNewTab }), relabelling mounted links', () => {
+    const a = mount('<a href="https://example.com" target="_blank">Site</a>').querySelector('a')!;
+    setStrings({ opensInNewTab: '(nouvel onglet)' });
+    expect(a.getAttribute('aria-label')).toBe('Site (nouvel onglet)');
+  });
+
+  it('lets new-tab-label win over setStrings, and follows it when it changes', () => {
+    const el = mount('<a href="https://example.com" target="_blank">Site</a>');
+    el.setAttribute('new-tab-label', '(neuer Tab)');
+    setStrings({ opensInNewTab: '(nouvel onglet)' });
+    const a = el.querySelector('a')!;
+    expect(a.getAttribute('aria-label')).toBe('Site (neuer Tab)');
+    el.removeAttribute('new-tab-label');
+    expect(a.getAttribute('aria-label')).toBe('Site (nouvel onglet)');
+  });
+
+  it('formats setStrings({ navigatedTo }) with the target name', () => {
+    document.body.insertAdjacentHTML('beforeend', '<h2 id="s">Tarifs</h2>');
+    setStrings({ navigatedTo: 'Aller à {name}' });
+    expect(announce(mount('<a href="#s">Jump</a>'))).toBe('Aller à Tarifs');
+  });
+
+  it('lets navigated-label win over setStrings', () => {
+    document.body.insertAdjacentHTML('beforeend', '<h2 id="s">Preise</h2>');
+    setStrings({ navigatedTo: 'Aller à {name}' });
+    const el = mount('<a href="#s">Jump</a>');
+    el.setAttribute('navigated-label', 'Gehe zu {name}');
+    expect(announce(el)).toBe('Gehe zu Preise');
   });
 });

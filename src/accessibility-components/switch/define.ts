@@ -11,3 +11,5 @@ declare global {
 }
 
 export { SwitchElement };
+// Re-exported so zero-build `<script type="module">` users can reach them too.
+export { resetStrings, setStrings } from '../../core/strings.js';

@@ -33,3 +33,6 @@ function getRegion(): SnackbarElement {
 export function notify(message: string, options: NotifyOptions = {}): void {
   getRegion().notify(message, options);
 }
+
+// Re-exported so zero-build `<script type="module">` users can reach them too.
+export { resetStrings, setStrings } from '../../core/strings.js';

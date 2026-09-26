@@ -1,4 +1,5 @@
 import { A11yElement } from '../../core/a11y-element.js';
+import { getString } from '../../core/strings.js';
 import { html, type Raw } from '../../core/template.js';
 
 const CSS_VARS = {
@@ -18,7 +19,7 @@ export class SpinnerElement extends A11yElement {
   }
 
   get label(): string {
-    return this.stringAttr('label', 'Loading');
+    return this.stringAttr('label', getString('loading'));
   }
   set label(value: string) {
     this.setAttribute('label', value);
@@ -61,6 +62,10 @@ export class SpinnerElement extends A11yElement {
     this.setCssVar(CSS_VARS.color, this.color);
     this.setCssVar(CSS_VARS.duration, this.duration);
     this.setCssVar(CSS_VARS.thickness, this.thickness);
+  }
+
+  protected override onStringsChange(): void {
+    this.update();
   }
 
   protected override render(): Raw {

@@ -1,4 +1,5 @@
 import { A11yElement } from '../../core/a11y-element.js';
+import { getString } from '../../core/strings.js';
 import { html, type Raw } from '../../core/template.js';
 
 export type AvatarShape = 'circle' | 'square';
@@ -51,20 +52,23 @@ export class AvatarElement extends A11yElement {
       this.removeAttribute('aria-label');
     } else {
       this.setAttribute('role', 'img');
-      this.setAttribute('aria-label', this.alt || this.optionalStringAttr('initials') || 'Avatar');
+      this.setAttribute('aria-label', this.alt || this.optionalStringAttr('initials') || getString('avatar'));
     }
   }
 
-  protected override render(): Raw {
-    const initials = this.optionalStringAttr('initials');
+  /** The built-in name is only used without an image, and re-rendering would reload the <img>. */
+  protected override onStringsChange(): void {
+    if (!this._showsImg()) this.update();
+  }
 
+  protected override render(): Raw {
     if (this._showsImg()) {
       const src = this.optionalStringAttr('src')!;
-      return html`<img class="a11y-avatar__img" src="${src}" alt="${this.alt}" loading="lazy" decoding="async">${
-        initials ? html`<span class="a11y-avatar__fallback" aria-hidden="true">${initials}</span>` : ''
-      }`;
+      // No initials alongside the image: if it fails, onAfterRender re-renders to the initials branch.
+      return html`<img class="a11y-avatar__img" src="${src}" alt="${this.alt}" loading="lazy" decoding="async">`;
     }
 
+    const initials = this.optionalStringAttr('initials');
     return html`<span class="a11y-avatar__initials" aria-hidden="true">${initials}</span>`;
   }
 

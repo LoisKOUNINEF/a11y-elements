@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './define.js';
+import { resetStrings, setStrings } from '../../core/strings.js';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -124,5 +125,35 @@ describe('a11y-blocking-loader — blocking for keyboard/AT too', () => {
     el.open = true;
     el.setAttribute('message', 'Almost done');
     expect(el.querySelector('.a11y-blocking-loader-overlay__message')!.textContent).toBe('Almost done');
+  });
+});
+
+describe('a11y-blocking-loader — translated default label', () => {
+  afterEach(() => resetStrings());
+
+  const label = (el: HTMLElement): string | null => el.querySelector('a11y-spinner')!.getAttribute('label');
+
+  it('defaults to "Loading" without a message', () => {
+    const el = mount();
+    document.body.appendChild(el);
+    el.open = true;
+    expect(label(el)).toBe('Loading');
+  });
+
+  it('relabels a showing loader after setStrings({ loading })', () => {
+    const el = mount();
+    document.body.appendChild(el);
+    el.open = true;
+    setStrings({ loading: 'Chargement' });
+    expect(label(el)).toBe('Chargement');
+  });
+
+  it('lets message win over setStrings', () => {
+    const el = mount();
+    el.setAttribute('message', 'Saving');
+    document.body.appendChild(el);
+    el.open = true;
+    setStrings({ loading: 'Chargement' });
+    expect(label(el)).toBe('Saving');
   });
 });

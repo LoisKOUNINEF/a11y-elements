@@ -7,3 +7,4 @@ export * from './focus-trap.js';
 export * from './overlay-registry.js';
 export * from './dom-sync.js';
 export * from './transition.js';
+export * from './strings.js';

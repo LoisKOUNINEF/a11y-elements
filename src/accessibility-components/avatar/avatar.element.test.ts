@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './define.js';
+import { resetStrings, setStrings } from '../../core/strings.js';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -42,11 +43,12 @@ describe('a11y-avatar', () => {
     expect(el.style.getPropertyValue('--a11y-avatar-size')).toBe('4rem');
   });
 
-  it('renders a hidden fallback span alongside the img when both src and initials are given', () => {
+  it('renders only the img (no initials next to it) when both src and initials are given', () => {
     const el = mount({ alt: 'Jane Doe', src: 'jane.jpg', initials: 'JD' });
-    const fallback = el.querySelector<HTMLElement>('.a11y-avatar__fallback');
-    expect(fallback?.textContent).toBe('JD');
-    expect(fallback?.getAttribute('aria-hidden')).toBe('true');
+    expect(el.children).toHaveLength(1);
+    expect(el.querySelector('.a11y-avatar__img')).not.toBeNull();
+    expect(el.querySelector('.a11y-avatar__fallback')).toBeNull();
+    expect(el.querySelector('.a11y-avatar__initials')).toBeNull();
   });
 
   it('falls back to initials and takes over role/aria-label when the image fails to load', () => {
@@ -83,5 +85,32 @@ describe('a11y-avatar', () => {
 
     const withNeither = mount();
     expect(withNeither.getAttribute('aria-label')).toBe('Avatar');
+  });
+});
+
+describe('a11y-avatar — translated fallback name', () => {
+  afterEach(() => resetStrings());
+
+  it('defaults to "Avatar"', () => {
+    expect(mount().getAttribute('aria-label')).toBe('Avatar');
+  });
+
+  it('uses setStrings({ avatar }) for new and already-mounted avatars', () => {
+    const mounted = mount();
+    setStrings({ avatar: 'Photo de profil' });
+    expect(mounted.getAttribute('aria-label')).toBe('Photo de profil');
+    expect(mount().getAttribute('aria-label')).toBe('Photo de profil');
+  });
+
+  it('lets alt/initials win over setStrings', () => {
+    setStrings({ avatar: 'Photo de profil' });
+    expect(mount({ initials: 'JD' }).getAttribute('aria-label')).toBe('JD');
+  });
+
+  it('does not re-render (and reload) a showing image', () => {
+    const el = mount({ alt: 'Jane', src: 'jane.jpg' });
+    const img = el.querySelector('img');
+    setStrings({ avatar: 'Photo de profil' });
+    expect(el.querySelector('img')).toBe(img);
   });
 });

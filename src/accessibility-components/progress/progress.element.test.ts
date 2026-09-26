@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './define.js';
+import { resetStrings, setStrings } from '../../core/strings.js';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -58,5 +59,28 @@ describe('a11y-progress', () => {
     const bar = mount().querySelector('progress')!;
     expect(bar.hasAttribute('aria-labelledby')).toBe(false);
     expect(bar.getAttribute('aria-label')).toBe('Progress');
+  });
+});
+
+describe('a11y-progress — translated fallback name', () => {
+  afterEach(() => resetStrings());
+
+  const name = (el: HTMLElement): string | null => el.querySelector('progress')!.getAttribute('aria-label');
+
+  it('defaults to "Progress"', () => {
+    expect(name(mount())).toBe('Progress');
+  });
+
+  it('uses setStrings({ progress }) for new and already-mounted bars', () => {
+    const mounted = mount({ value: '10' });
+    setStrings({ progress: 'Avancement' });
+    expect(name(mounted)).toBe('Avancement');
+    expect(mounted.querySelector('progress')!.getAttribute('value')).toBe('10');
+    expect(name(mount())).toBe('Avancement');
+  });
+
+  it('lets aria-label win over setStrings', () => {
+    setStrings({ progress: 'Avancement' });
+    expect(name(mount({ 'aria-label': 'Upload' }))).toBe('Upload');
   });
 });

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import './define.js';
+import { resetStrings, setStrings } from '../../core/strings.js';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -93,5 +94,33 @@ describe('a11y-spinner', () => {
     el.setAttribute('size', '2rem');
     expect(el.classList.contains('my-spinner')).toBe(true);
     expect(el.classList.contains('a11y-spinner')).toBe(true);
+  });
+});
+
+describe('a11y-spinner — translated label', () => {
+  afterEach(() => resetStrings());
+
+  it('defaults to "Loading"', () => {
+    expect(mount().getAttribute('aria-label')).toBe('Loading');
+  });
+
+  it('uses setStrings({ loading }) for new and already-mounted spinners', () => {
+    const mounted = mount();
+    setStrings({ loading: 'Chargement' });
+    expect(mounted.getAttribute('aria-label')).toBe('Chargement');
+    expect(mount().getAttribute('aria-label')).toBe('Chargement');
+  });
+
+  it('lets the label attribute win over setStrings', () => {
+    const el = mount({ label: 'Saving' });
+    setStrings({ loading: 'Chargement' });
+    expect(el.getAttribute('aria-label')).toBe('Saving');
+  });
+
+  it('stops reacting once disconnected', () => {
+    const el = mount();
+    el.remove();
+    setStrings({ loading: 'Chargement' });
+    expect(el.getAttribute('aria-label')).toBe('Loading');
   });
 });

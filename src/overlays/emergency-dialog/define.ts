@@ -11,5 +11,6 @@ declare global {
 }
 
 export { EmergencyDialogElement };
-// Re-exported so zero-build `<script type="module">` users can reach it too.
+// Re-exported so zero-build `<script type="module">` users can reach them too.
+export { resetStrings, setStrings } from '../../core/strings.js';
 export { dismissAllOverlays } from '../../core/overlay-registry.js';

@@ -33,3 +33,6 @@ function getRegion(): NotificationBannerElement {
 export function showNotificationBanner(message: string, options: NotificationBannerOptions = {}): void {
   getRegion().show(message, options);
 }
+
+// Re-exported so zero-build `<script type="module">` users can reach them too.
+export { resetStrings, setStrings } from '../../core/strings.js';

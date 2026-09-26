@@ -1,6 +1,7 @@
 import { A11yOverlayElement } from '../../core/a11y-overlay-element.js';
 import { FocusTrapHelper, type IFocusTrapOptions } from '../../core/focus-trap.js';
 import { lockScroll, unlockScroll } from '../../core/overlay-registry.js';
+import { getString } from '../../core/strings.js';
 import { whenTransitionDone } from '../../core/transition.js';
 
 let titleIdCounter = 0;
@@ -22,10 +23,12 @@ let titleIdCounter = 0;
  * Accessible name: `dialog-label="…"` (plain text, becomes `aria-label`)
  * when given; otherwise the first heading in the content, referenced via
  * `aria-labelledby` (its own `id` is kept, or a unique one is generated).
+ *
+ * The close button's name: `close-label="…"`, else `setStrings({ closeDialog })`.
  */
 export abstract class A11yModalOverlayElement extends A11yOverlayElement {
   static override get observedAttributes(): string[] {
-    return ['open', 'non-dismissible', 'dialog-label'];
+    return ['open', 'non-dismissible', 'dialog-label', 'close-label'];
   }
 
   protected _backdrop: HTMLElement | null = null;
@@ -42,6 +45,19 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
 
   get dialogLabel(): string {
     return this.stringAttr('dialog-label');
+  }
+
+  /** The close button's accessible name. */
+  get closeLabel(): string {
+    return this.stringAttr('close-label', getString('closeDialog'));
+  }
+
+  protected override onAttributeChanged(name: string): void {
+    if (name === 'close-label') this._relabelCloseButton();
+  }
+
+  protected override onStringsChange(): void {
+    this._relabelCloseButton();
   }
 
   protected createBackdrop(): HTMLElement {
@@ -151,10 +167,14 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
     btn.type = 'button';
     btn.className = 'a11y-modal-close-button';
     btn.innerHTML = '&times;';
-    btn.setAttribute('aria-label', 'Close dialog');
+    btn.setAttribute('aria-label', this.closeLabel);
     btn.addEventListener('click', () => this.close());
     this.prepend(btn);
     this._closeButton = btn;
+  }
+
+  private _relabelCloseButton(): void {
+    this._closeButton?.setAttribute('aria-label', this.closeLabel);
   }
 
   private _buildDom(): { backdrop: HTMLElement; wrapper: HTMLElement } {

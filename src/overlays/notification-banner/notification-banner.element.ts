@@ -1,4 +1,5 @@
 import { A11yPassiveOverlayElement, type PassiveOverlayItem } from '../core/a11y-passive-overlay-element.js';
+import { getString } from '../../core/strings.js';
 import { html } from '../../core/template.js';
 
 export type NotificationBannerType = 'info' | 'success' | 'error';
@@ -32,11 +33,38 @@ interface NotificationBannerItem extends PassiveOverlayItem {
  * deliberately finishes its own timer regardless of navigation), this
  * asymmetry is intentional, not an oversight — a banner is scoped to the
  * page that raised it, a toast isn't.
+ *
+ * Each item's close button is named by `dismiss-label="…"`, else
+ * `setStrings({ dismiss })`.
  */
 export class NotificationBannerElement extends A11yPassiveOverlayElement<NotificationBannerItem> {
   private _topContainer!: HTMLElement;
   private _bottomContainer!: HTMLElement;
   private _active: Array<{ el: HTMLElement; onClose?: () => void }> = [];
+
+  static override get observedAttributes(): string[] {
+    return [...super.observedAttributes, 'dismiss-label'];
+  }
+
+  /** The accessible name of each item's close button. */
+  get dismissLabel(): string {
+    return this.stringAttr('dismiss-label', getString('dismiss'));
+  }
+
+  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+    super.attributeChangedCallback(name, oldValue, newValue);
+    if (name === 'dismiss-label' && oldValue !== newValue) this._relabelDismissButtons();
+  }
+
+  protected override onStringsChange(): void {
+    this._relabelDismissButtons();
+  }
+
+  private _relabelDismissButtons(): void {
+    for (const { el } of this._active) {
+      el.querySelector('.a11y-notification-banner__close')?.setAttribute('aria-label', this.dismissLabel);
+    }
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -87,7 +115,7 @@ export class NotificationBannerElement extends A11yPassiveOverlayElement<Notific
       <span class="a11y-notification-banner__message">${item.message}</span>
       <span class="a11y-notification-banner__actions">
         ${item.actionText ? html`<button type="button" class="a11y-notification-banner__action">${item.actionText}</button>` : ''}
-        <button type="button" class="a11y-notification-banner__close" aria-label="Dismiss">&times;</button>
+        <button type="button" class="a11y-notification-banner__close" aria-label="${this.dismissLabel}">&times;</button>
       </span>
     `);
 

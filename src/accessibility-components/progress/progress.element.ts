@@ -1,4 +1,5 @@
 import { A11yElement } from '../../core/a11y-element.js';
+import { getString } from '../../core/strings.js';
 import { html } from '../../core/template.js';
 
 let uidCounter = 0;
@@ -39,6 +40,10 @@ export class ProgressElement extends A11yElement {
     this.classList.add('a11y-progress');
   }
 
+  protected override onStringsChange(): void {
+    this.update();
+  }
+
   protected override render(): string {
     const { value, max } = this;
     const label = this.optionalStringAttr('label');
@@ -46,7 +51,7 @@ export class ProgressElement extends A11yElement {
 
     const labelMarkup = label ? html`<span class="a11y-progress__label" id="${this._labelId}">${label}</span>` : '';
     const progressAttrs = html`class="a11y-progress__bar"${value !== undefined ? html` value="${value}"` : ''} max="${max}"${
-      label ? html` aria-labelledby="${this._labelId}"` : ariaLabel ? html` aria-label="${ariaLabel}"` : html` aria-label="Progress"`
+      label ? html` aria-labelledby="${this._labelId}"` : ariaLabel ? html` aria-label="${ariaLabel}"` : html` aria-label="${getString('progress')}"`
     }`;
 
     return `${labelMarkup}<progress ${progressAttrs}></progress>`;

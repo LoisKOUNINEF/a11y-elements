@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import './define.js';
+import { resetStrings, setStrings } from '../../core/strings.js';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -57,5 +58,34 @@ describe('a11y-modal', () => {
 
     document.removeEventListener('a11y-overlay-open', openSpy);
     document.removeEventListener('a11y-overlay-close', closeSpy);
+  });
+});
+
+describe('a11y-modal — translated close button', () => {
+  afterEach(() => resetStrings());
+
+  const closeLabel = (): string | null => document.querySelector('.a11y-modal-close-button')!.getAttribute('aria-label');
+
+  it('defaults to "Close dialog"', () => {
+    (mount() as any).open = true;
+    expect(closeLabel()).toBe('Close dialog');
+  });
+
+  it('uses setStrings({ closeDialog }), relabelling an open modal', () => {
+    (mount() as any).open = true;
+    setStrings({ closeDialog: 'Fermer' });
+    expect(closeLabel()).toBe('Fermer');
+  });
+
+  it('lets close-label win over setStrings, and follows it when it changes', () => {
+    const el = mount();
+    el.setAttribute('close-label', 'Schließen');
+    (el as any).open = true;
+    setStrings({ closeDialog: 'Fermer' });
+    expect(closeLabel()).toBe('Schließen');
+    el.setAttribute('close-label', 'Chiudi');
+    expect(closeLabel()).toBe('Chiudi');
+    el.removeAttribute('close-label');
+    expect(closeLabel()).toBe('Fermer');
   });
 });

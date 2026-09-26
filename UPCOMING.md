@@ -2,38 +2,6 @@
 
 Issues found while building the Nutin website's a11y-elements demo pages (`apps/website`, `/a11y`), against `a11y-elements@0.1.0` loaded through the zero-build CDN bundles.
 
-## Bugs
-
-### `<a11y-avatar>`: initials show next to the image
-
-With both `src` and `initials` set, `render()` outputs the `<img>` **and** a `.a11y-avatar__fallback` span. `avatar.css` has no rule that hides or overlays that span, so inside the `inline-flex` host the image and the initials render side by side, each squeezed into half the circle.
-
-```html
-<a11y-avatar alt="Jane Doe" src="jane.jpg" initials="JD"></a11y-avatar>
-```
-
-The fallback only needs to be visible after the image fails, and on failure the element already re-renders to `.a11y-avatar__initials`. So either drop the span from the image branch, or hide it (`.a11y-avatar__img + .a11y-avatar__fallback { display: none }`, or position it under the image).
-
-### `<a11y-anchor>`: the announcement reads the target's entire content
-
-`_activateInternalAnchor()` announces `` `Navigated to ${target?.textContent || id}` ``. When the target is a section (the usual case for a jump link), the live region reads out the whole section, including every paragraph and control label, instead of its name. Prefer the target's accessible name: `aria-label`, then `aria-labelledby`, then its first heading's text, then `id`.
-
-### `<a11y-anchor>`: removes the consumer's own `tabindex` from the target
-
-The target gets `tabindex="-1"` so it can take focus, and a one-time `blur` listener then calls `removeAttribute('tabindex')` unconditionally. If the consumer had already set a `tabindex` on the target (e.g. `<section id="x" tabindex="-1">`), it's removed after the first jump. Record whether the attribute was present (and its value) before setting it, and restore that on blur.
-
-### `<a11y-anchor>`: the smooth scroll ignores `prefers-reduced-motion`
-
-`scrollIntoView({ behavior: 'smooth' })` is hard-coded. The README says the shipped styles respect `prefers-reduced-motion`, but that only covers the CSS; this JS scroll animates regardless. Use `behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'`.
-
-## Hard-coded English strings
-
-These strings end up in accessible names or announcements, and there's no attribute or option to translate them:
-
-- `anchor.element.ts`: `NEW_TAB_SUFFIX = '(opens in new tab)'` and `` `Navigated to ${…}` ``
-- `a11y-modal-overlay-element.ts`: the close button's `aria-label="Close dialog"`
-- `spinner.element.ts` / `blocking-loader.element.ts`: the default `label` / `message` `'Loading'` (these can be overridden per instance, so they're less urgent)
-
 ## Integration pitfalls (worth documenting, or fixing)
 
 ### Portaled overlays outlive their host

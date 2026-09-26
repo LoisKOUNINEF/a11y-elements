@@ -46,6 +46,35 @@ import { A11yElement } from 'a11y-elements/core';
 
 Importing a component's subpath also adds its tag to TypeScript's `HTMLElementTagNameMap`, so exact-tag lookups such as `document.createElement('a11y-checkbox')` or `document.querySelector('a11y-checkbox')` come back typed as `CheckboxElement` without a cast.
 
+### Translating built-in strings
+
+A few English strings end up in accessible names and announcements. Replace them page-wide with `setStrings()`, exported from `a11y-elements/core` and from every zero-build `define.js`:
+
+```js
+import { setStrings } from 'a11y-elements/core';
+// or: import { setStrings } from './node_modules/a11y-elements/dist/browser/overlays/modal/define.js';
+
+setStrings({
+  closeDialog: 'Fermer la boîte de dialogue',
+  opensInNewTab: '(nouvel onglet)',
+  navigatedTo: 'Aller à {name}',
+});
+```
+
+| Key | Default | Used by | Per-instance override |
+| --- | --- | --- | --- |
+| `opensInNewTab` | `(opens in new tab)` | `<a11y-anchor>` new-tab links | `new-tab-label` |
+| `navigatedTo` | `Navigated to {name}` | `<a11y-anchor>` jump announcement (`{name}` is the target's name) | `navigated-label` |
+| `closeDialog` | `Close dialog` | the × button of `<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>` | `close-label` |
+| `dismiss` | `Dismiss` | the × button of each `<a11y-notification-banner>` item | `dismiss-label` |
+| `loading` | `Loading` | `<a11y-spinner>`, `<a11y-blocking-loader>` | `label` / `message` |
+| `progress` | `Progress` | `<a11y-progress>` without a label | `label` / `aria-label` |
+| `avatar` | `Avatar` | `<a11y-avatar>` with no `alt` or `initials` | `alt` / `initials` |
+
+* An instance attribute wins over `setStrings()`, which wins over the default. Keys you leave out keep their current value.
+* Elements already on the page update right away, so calling it again on a language switch is enough.
+* `resetStrings()` restores the English defaults.
+
 ## Elements
 
 Each section shows an example, the element's own attributes/properties/methods, and its CSS variables (collapsed). Behavior shared by a family of elements is described once, in [Common to all overlays](#common-to-all-overlays).
@@ -64,15 +93,22 @@ Attributes that set a CSS variable (spinner `size`/`color`/…, avatar `size`, s
 
 Enhances a real `<a href>`:
 
-* **Same-page links** (`href="#id"`) smooth-scroll to the target, move focus to it, and announce the navigation to screen readers. Space activates too.
+* **Same-page links** (`href="#id"`) smooth-scroll to the target (instantly under `prefers-reduced-motion: reduce`), move focus to it, and announce the navigation to screen readers by the target's `aria-label`, `aria-labelledby` or heading, falling back to its `id`. The target is made focusable with `tabindex="-1"` while focused; a `tabindex` it already had is restored on blur. Space activates too.
 * **New-tab links** (`target="_blank"` or a named target) get `rel="noopener noreferrer"` and "(opens in new tab)" appended to their accessible name.
+
+Both strings can be [translated](#translating-built-in-strings).
 
 ```html
 <a11y-anchor><a href="#section-2">Jump to section 2</a></a11y-anchor>
 <a11y-anchor><a href="https://example.com" target="_blank">External site</a></a11y-anchor>
 ```
 
-No attributes or CSS variables of its own: style the `<a>` directly.
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `new-tab-label` | attribute | `(opens in new tab)` | Suffix added to new-tab links' accessible name. |
+| `navigated-label` | attribute | `Navigated to {name}` | Jump announcement; `{name}` is replaced by the target's name. |
+
+No CSS variables of its own: style the `<a>` directly.
 
 #### `a11y-avatar`
 
@@ -86,7 +122,7 @@ An avatar image with an initials fallback. When the image is missing or fails to
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
 | `src` | attribute | — | Image URL. |
-| `alt` | attribute / property | `''` | Image alt text; also the accessible name of the initials fallback. |
+| `alt` | attribute / property | `''` | Image alt text; also the accessible name of the initials fallback (then `initials`, then `Avatar`). |
 | `initials` | attribute | — | Text shown when there's no image, or it fails to load. |
 | `size` | attribute | — | Sets `--a11y-avatar-size`. |
 | `shape` | attribute / property | `circle` | `circle` or `square`. |
@@ -215,7 +251,7 @@ A labelled progress bar around a native `<progress>`. Without `value`, it shows 
 | `value` | attribute / property | — | Current value; absent means indeterminate. |
 | `max` | attribute / property | `100` | Maximum value. |
 | `label` | attribute | — | Visible label, used as the accessible name. |
-| `aria-label` | attribute | `Progress` | Accessible name when there's no visible `label`. |
+| `aria-label` | attribute | `Progress` | Accessible name when there's no visible `label`. The default can be [translated](#translating-built-in-strings). |
 
 <details>
 <summary>CSS variables</summary>
@@ -380,7 +416,7 @@ A loading spinner with `role="status"`. No JS needed beyond the define.
 
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
-| `label` | attribute / property | `Loading` | Accessible name. |
+| `label` | attribute / property | `Loading` | Accessible name. The default can be [translated](#translating-built-in-strings). |
 | `size` | attribute / property | — | Sets `--a11y-spinner-size`. |
 | `color` | attribute / property | — | Sets `--a11y-spinner-color`. |
 | `duration` | attribute / property | — | Sets `--a11y-spinner-duration`. |
@@ -485,6 +521,7 @@ No attributes or CSS variables. The class `a11y-visually-hidden` is also usable 
 | --- | --- | --- | --- |
 | `non-dismissible` | attribute | absent | No close button, no Escape, no backdrop click: close it from code. |
 | `dialog-label` | attribute | — | Accessible name (`aria-label`) when there's no heading. |
+| `close-label` | attribute | `Close dialog` | Accessible name of the × close button. See [Translating built-in strings](#translating-built-in-strings). |
 | `dismissible` | property (read-only) | `true` | Inverse of `non-dismissible`. |
 | `onClose` | callback | — | Called once the close transition has finished. |
 
@@ -532,7 +569,7 @@ loader.close();
 
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
-| `message` | attribute | — | Visible message, also the spinner's label (`Loading` without it). |
+| `message` | attribute | — | Visible message, also the spinner's label (`Loading` without it, [translatable](#translating-built-in-strings)). |
 
 <details>
 <summary>CSS variables</summary>
@@ -756,6 +793,7 @@ window.addEventListener('popstate', () => document.getElementById('banners').dis
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
 | `max-stack` | attribute | `3` | How many banners show at once; the rest wait in a queue and show as earlier ones are dismissed. |
+| `dismiss-label` | attribute | `Dismiss` | Accessible name of each banner's × button. See [Translating built-in strings](#translating-built-in-strings). |
 | `maxStack` | property | `3` | Same as `max-stack`. `setMaxStack(n)` is an alias. |
 | `show(message, options)` | method | — | Shows a banner (or queues it). |
 | `dismissAll()` | method | — | Closes every banner (calling their `onClose`) and drops the queued ones silently. |

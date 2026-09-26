@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import './define.js';
+import { resetStrings, setStrings } from '../../core/strings.js';
 import { showNotificationBanner } from './define.js';
 
 afterEach(() => {
@@ -110,5 +111,41 @@ describe('showNotificationBanner() convenience function', () => {
     expect(document.querySelector('a11y-notification-banner')).toBeNull();
     showNotificationBanner('Zero-config banner');
     expect(document.querySelector('a11y-notification-banner')).not.toBeNull();
+  });
+});
+
+describe('a11y-notification-banner — translated dismiss button', () => {
+  afterEach(() => resetStrings());
+
+  function region(): any {
+    const el = document.createElement('a11y-notification-banner') as any;
+    document.body.appendChild(el);
+    return el;
+  }
+  const dismissLabels = (el: HTMLElement): (string | null)[] =>
+    Array.from(el.querySelectorAll('.a11y-notification-banner__close'), (b) => b.getAttribute('aria-label'));
+
+  it('defaults to "Dismiss"', () => {
+    const el = region();
+    el.show('Hi');
+    expect(dismissLabels(el)).toEqual(['Dismiss']);
+  });
+
+  it('uses setStrings({ dismiss }) for new and already-showing items', () => {
+    const el = region();
+    el.show('One');
+    setStrings({ dismiss: 'Fermer' });
+    el.show('Two');
+    expect(dismissLabels(el)).toEqual(['Fermer', 'Fermer']);
+  });
+
+  it('lets dismiss-label win over setStrings, and follows it when it changes', () => {
+    const el = region();
+    el.setAttribute('dismiss-label', 'Schließen');
+    el.show('One');
+    setStrings({ dismiss: 'Fermer' });
+    expect(dismissLabels(el)).toEqual(['Schließen']);
+    el.removeAttribute('dismiss-label');
+    expect(dismissLabels(el)).toEqual(['Fermer']);
   });
 });

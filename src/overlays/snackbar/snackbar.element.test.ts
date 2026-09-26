@@ -54,9 +54,25 @@ describe('a11y-snackbar element', () => {
     expect(el.querySelector('.a11y-snackbar')).toBeNull();
   });
 
-  it('queues a second toast beyond the default maxStack=1 until the first is dismissed', () => {
+  it('stacks up to 3 toasts by default and queues the 4th until one is dismissed', () => {
     vi.useFakeTimers();
     const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    el.notify('First');
+    el.notify('Second');
+    el.notify('Third');
+    el.notify('Fourth', { duration: 5000 });
+
+    expect(el.querySelectorAll('.a11y-snackbar')).toHaveLength(3);
+    vi.advanceTimersByTime(3000);
+    expect(el.querySelectorAll('.a11y-snackbar')).toHaveLength(1);
+    expect(el.querySelector('.a11y-snackbar')!.textContent).toContain('Fourth');
+  });
+
+  it('max-stack="1" shows one toast at a time', () => {
+    vi.useFakeTimers();
+    const el = document.createElement('a11y-snackbar') as any;
+    el.setAttribute('max-stack', '1');
     document.body.appendChild(el);
     el.notify('First');
     el.notify('Second');

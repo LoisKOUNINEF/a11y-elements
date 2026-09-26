@@ -46,21 +46,42 @@ describe('A11yPassiveOverlayElement', () => {
     expect(el.classList.contains('a11y-passive-overlay-region')).toBe(true);
   });
 
-  it('shows an item immediately when under the max stack (default 1)', () => {
+  it('shows up to 3 items at once by default, queueing the rest', () => {
     const el = mount();
-    el.push({ message: 'a' });
-    expect(el.shown).toEqual([{ message: 'a' }]);
+    expect(el.maxStack).toBe(3);
+    ['a', 'b', 'c', 'd'].forEach((message) => el.push({ message }));
+    expect(el.shown.map((i) => i.message)).toEqual(['a', 'b', 'c']);
   });
 
   it('queues items beyond maxStack instead of showing them immediately', () => {
     const el = mount();
+    el.setAttribute('max-stack', '1');
     el.push({ message: 'a' });
     el.push({ message: 'b' });
     expect(el.shown).toEqual([{ message: 'a' }]); // only the first shown
   });
 
+  it('shows queued items as soon as max-stack is raised', () => {
+    const el = mount();
+    el.maxStack = 1;
+    el.push({ message: 'a' });
+    el.push({ message: 'b' });
+    el.push({ message: 'c' });
+    el.setAttribute('max-stack', '3');
+    expect(el.shown.map((i) => i.message)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('changing max-stack never re-renders the region, so its children survive', () => {
+    const el = mount();
+    const child = document.createElement('div');
+    el.appendChild(child);
+    el.setAttribute('max-stack', '5');
+    expect(child.parentNode).toBe(el);
+  });
+
   it('promotes the next queued item when one is dismissed', () => {
     const el = mount();
+    el.setMaxStack(1);
     el.push({ message: 'a' });
     el.push({ message: 'b' });
     el.dismissOne();

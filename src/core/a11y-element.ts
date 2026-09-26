@@ -25,6 +25,8 @@ export abstract class A11yElement extends HTMLElement {
   protected _connected = false;
   private _listeners: Listener[] = [];
   private _updating = false;
+  /** CSS vars `setCssVar()` currently owns → the consumer's inline value it replaced ('' if none). */
+  private _cssVarOwned = new Map<string, string>();
 
   connectedCallback(): void {
     this._connected = true;
@@ -122,9 +124,23 @@ export abstract class A11yElement extends HTMLElement {
     else this.removeAttribute(name);
   }
 
-  /** Sets or removes a CSS custom property on this element depending on truthiness of `value`. */
+  /**
+   * Sets a CSS custom property on this element while `value` is truthy. When
+   * it isn't, only a property this method set itself is undone — restored to
+   * the consumer's own inline value from before (or removed if there was
+   * none) — so a consumer's `style="--a11y-…: …"` survives when the matching
+   * attribute is absent.
+   */
   protected setCssVar(name: string, value: string | null | undefined): void {
-    if (value) this.style.setProperty(name, value);
+    if (value) {
+      if (!this._cssVarOwned.has(name)) this._cssVarOwned.set(name, this.style.getPropertyValue(name));
+      this.style.setProperty(name, value);
+      return;
+    }
+    if (!this._cssVarOwned.has(name)) return;
+    const previous = this._cssVarOwned.get(name)!;
+    this._cssVarOwned.delete(name);
+    if (previous) this.style.setProperty(name, previous);
     else this.style.removeProperty(name);
   }
 }

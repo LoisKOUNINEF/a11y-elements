@@ -36,6 +36,16 @@ function isTabbable(el: HTMLElement): boolean {
   return true;
 }
 
+/**
+ * Page-wide stack of active traps, on `globalThis` for the same reason as
+ * `overlay-registry.ts`' state: each standalone browser bundle inlines its
+ * own copy of this module. Only the top trap handles keys, so stacked
+ * overlays (a modal opened from a modal) don't both react to one Escape.
+ */
+const STACK_KEY = Symbol.for('a11y-elements/focus-trap-stack');
+const stackStore = globalThis as unknown as Record<symbol, FocusTrapHelper[] | undefined>;
+const activeTraps: FocusTrapHelper[] = (stackStore[STACK_KEY] ??= []);
+
 export class FocusTrapHelper {
   private _container: HTMLElement;
   private _previousActiveElement: HTMLElement | null = null;
@@ -82,7 +92,11 @@ export class FocusTrapHelper {
       this._firstFocusableElement = this._container;
     }
 
-    this._container.addEventListener('keydown', this._boundKeyDown);
+    // On `document`, not the container: clicking non-focusable content inside
+    // the trap (text, padding) moves focus to <body>, and a container
+    // listener would then never see Escape/Tab again.
+    document.addEventListener('keydown', this._boundKeyDown);
+    activeTraps.push(this);
 
     this._inertTarget = this._resolveInertTarget();
     if (this._inertTarget) this._inertTarget.inert = true;
@@ -93,7 +107,9 @@ export class FocusTrapHelper {
   public deactivate(): void {
     if (!this._isActive) return;
 
-    this._container.removeEventListener('keydown', this._boundKeyDown);
+    document.removeEventListener('keydown', this._boundKeyDown);
+    const index = activeTraps.indexOf(this);
+    if (index !== -1) activeTraps.splice(index, 1);
 
     if (this._inertTarget) this._inertTarget.inert = false;
     this._inertTarget = null;
@@ -127,7 +143,27 @@ export class FocusTrapHelper {
     }
   }
 
+  /**
+   * Whether this trap should handle `event`: it must be the topmost trap, and
+   * the key press must come from inside it — or from <body>/<html>, where
+   * focus lands after a click on non-focusable content inside the trap. A key
+   * press from elsewhere (e.g. a non-trapping dropdown opened above a modal)
+   * is left alone.
+   */
+  private _ownsEvent(event: KeyboardEvent): boolean {
+    if (activeTraps[activeTraps.length - 1] !== this) return false;
+    const target = event.target as Node | null;
+    return (
+      !target ||
+      target === document ||
+      target === document.body ||
+      target === document.documentElement ||
+      this._container.contains(target)
+    );
+  }
+
   private _handleKeyDown(event: KeyboardEvent): void {
+    if (!this._ownsEvent(event)) return;
     switch (event.key) {
       case 'Tab':
         this._handleTabKey(event);

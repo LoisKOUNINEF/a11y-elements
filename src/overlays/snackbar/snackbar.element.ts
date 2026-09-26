@@ -9,7 +9,7 @@ export interface NotifyOptions {
   duration?: number;
   actionText?: string;
   onAction?: () => void;
-  /** Raises the concurrency limit for this and all future items — sticky on the shared region, matching the old singleton's behavior. */
+  /** Sets the concurrency limit for this and all future items — sticky on the shared region, same as the `max-stack` attribute. */
   maxStack?: number;
 }
 

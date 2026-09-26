@@ -66,4 +66,32 @@ describe('a11y-spinner', () => {
     el.size = undefined;
     expect(el.hasAttribute('size')).toBe(false);
   });
+
+  it('keeps a consumer inline CSS var when the matching attribute is absent', () => {
+    const el = mount({ style: '--a11y-spinner-color: red;', size: '3rem' });
+    expect(el.style.getPropertyValue('--a11y-spinner-color')).toBe('red');
+    el.setAttribute('label', 'Re-render');
+    expect(el.style.getPropertyValue('--a11y-spinner-color')).toBe('red');
+  });
+
+  it('an attribute overrides the consumer inline var while set, and restores it once removed', () => {
+    const el = mount({ style: '--a11y-spinner-color: red;' });
+    el.setAttribute('color', 'blue');
+    expect(el.style.getPropertyValue('--a11y-spinner-color')).toBe('blue');
+    el.removeAttribute('color');
+    expect(el.style.getPropertyValue('--a11y-spinner-color')).toBe('red');
+  });
+
+  it('removes a var it set itself once the attribute is removed', () => {
+    const el = mount({ color: 'blue' });
+    el.removeAttribute('color');
+    expect(el.style.getPropertyValue('--a11y-spinner-color')).toBe('');
+  });
+
+  it('keeps consumer classes across renders', () => {
+    const el = mount({ class: 'my-spinner' });
+    el.setAttribute('size', '2rem');
+    expect(el.classList.contains('my-spinner')).toBe(true);
+    expect(el.classList.contains('a11y-spinner')).toBe(true);
+  });
 });

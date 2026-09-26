@@ -9,6 +9,8 @@ export interface NotificationBannerOptions {
   actionText?: string;
   onAction?: () => void;
   onClose?: () => void;
+  /** Sets the concurrency limit for this and all future items — sticky on the shared region, same as the `max-stack` attribute. */
+  maxStack?: number;
 }
 
 interface NotificationBannerItem extends PassiveOverlayItem {
@@ -49,6 +51,7 @@ export class NotificationBannerElement extends A11yPassiveOverlayElement<Notific
   }
 
   show(message: string, options: NotificationBannerOptions = {}): void {
+    if (options.maxStack) this.setMaxStack(options.maxStack);
     this.enqueue({
       message,
       type: options.type,

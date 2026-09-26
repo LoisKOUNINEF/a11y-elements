@@ -17,6 +17,14 @@ function mount(innerHtml = '<h2>Title</h2><p>Body</p>'): TestModal {
 }
 
 describe('A11yModalOverlayElement', () => {
+  it('closes on Escape after a click inside moved focus to <body>', () => {
+    const el = mount();
+    el.open = true;
+    (document.activeElement as HTMLElement).blur();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(el.open).toBe(false);
+  });
+
   it('builds a backdrop > wrapper[role=dialog][aria-modal] > content chrome around itself on open', () => {
     const el = mount();
     el.open = true;

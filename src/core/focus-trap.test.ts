@@ -23,15 +23,65 @@ afterEach(() => {
 });
 
 function tab(target: HTMLElement, shiftKey = false): void {
-  const evt = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, cancelable: true });
+  const evt = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
   target.dispatchEvent(evt);
 }
 
 function escape(target: HTMLElement): void {
-  target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }));
+  target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
 }
 
 describe('FocusTrapHelper', () => {
+  it('still handles Escape after focus falls back to <body> (click on non-focusable content inside)', () => {
+    const onDeactivate = vi.fn();
+    const trap = new FocusTrapHelper({ container, options: { onDeactivate } });
+    trap.activate();
+    (document.activeElement as HTMLElement).blur();
+    expect(document.activeElement).toBe(document.body);
+    escape(document.body);
+    expect(onDeactivate).toHaveBeenCalledTimes(1);
+    trap.deactivate();
+  });
+
+  it('keeps Tab inside the trap after focus falls back to <body>', () => {
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    (document.activeElement as HTMLElement).blur();
+    tab(document.body);
+    expect(document.activeElement).toBe(container.querySelector('#first'));
+    trap.deactivate();
+  });
+
+  it('ignores key presses from elements outside its container', () => {
+    const onDeactivate = vi.fn();
+    const trap = new FocusTrapHelper({ container, options: { onDeactivate } });
+    trap.activate();
+    escape(outside);
+    expect(onDeactivate).not.toHaveBeenCalled();
+    trap.deactivate();
+  });
+
+  it('only the topmost of stacked traps handles a key press', () => {
+    const onLower = vi.fn();
+    const onUpper = vi.fn();
+    const upperContainer = document.createElement('div');
+    upperContainer.innerHTML = '<button>Upper</button>';
+    document.body.appendChild(upperContainer);
+    const lower = new FocusTrapHelper({ container, options: { onDeactivate: onLower } });
+    const upper = new FocusTrapHelper({ container: upperContainer, options: { onDeactivate: onUpper } });
+    lower.activate();
+    upper.activate();
+
+    escape(document.body);
+    expect(onUpper).toHaveBeenCalledTimes(1);
+    expect(onLower).not.toHaveBeenCalled();
+
+    upper.deactivate();
+    escape(document.body);
+    expect(onLower).toHaveBeenCalledTimes(1);
+    lower.deactivate();
+  });
+
   it('focuses the first focusable element on activate', () => {
     const trap = new FocusTrapHelper({ container });
     trap.activate();
@@ -68,7 +118,7 @@ describe('FocusTrapHelper', () => {
     trap.activate();
     const middle = container.querySelector<HTMLElement>('#middle')!;
     middle.focus();
-    const evt = new KeyboardEvent('keydown', { key: 'Tab', cancelable: true });
+    const evt = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
     container.dispatchEvent(evt);
     expect(evt.defaultPrevented).toBe(true);
     expect(document.activeElement).toBe(container.querySelector('#last'));

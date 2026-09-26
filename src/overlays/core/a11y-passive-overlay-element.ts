@@ -1,5 +1,7 @@
 import { A11yElement } from '../../core/a11y-element.js';
 
+const DEFAULT_MAX_STACK = 3;
+
 export type PassiveOverlayPosition = 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export interface PassiveOverlayItem {
@@ -15,13 +17,16 @@ export interface PassiveOverlayItem {
  * the single open/close model `A11yOverlayElement` covers — a passive region
  * is a persistent live-region container the consumer places once in their
  * HTML, and items are shown/dismissed inside it continuously via `enqueue()`
- * (bounded-concurrency FIFO: at most `maxStack` items shown at once, the
- * rest queued), not toggled as a whole.
+ * (bounded-concurrency FIFO: at most `max-stack` items — default 3 — shown
+ * at once, the rest queued), not toggled as a whole.
  */
 export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem = PassiveOverlayItem> extends A11yElement {
+  static get observedAttributes(): string[] {
+    return ['max-stack'];
+  }
+
   protected _queue: TItem[] = [];
   protected _activeCount = 0;
-  private _maxStack = 1;
 
   override connectedCallback(): void {
     this._connected = true;
@@ -32,22 +37,38 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
     this.classList.add('a11y-passive-overlay-region');
   }
 
+  /** Never re-renders (that would wipe the item containers) — a raised `max-stack` just shows queued items. */
+  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+    if (oldValue === newValue) return;
+    if (name === 'max-stack') this._drainQueue();
+  }
+
+  /** How many items may show at once (`max-stack` attribute, default 3); the rest wait in a FIFO queue. */
+  get maxStack(): number {
+    return Math.max(1, Math.floor(this.numberAttr('max-stack', DEFAULT_MAX_STACK)));
+  }
+
+  set maxStack(n: number) {
+    this.setAttribute('max-stack', String(Math.max(1, n)));
+  }
+
+  /** Alias for `el.maxStack = n`. */
   setMaxStack(n: number): void {
-    this._maxStack = Math.max(1, n);
+    this.maxStack = n;
   }
 
   protected enqueue(item: TItem): void {
-    if (this._activeCount < this._maxStack) {
-      this._activeCount++;
-      this._showItem(item);
-    } else {
-      this._queue.push(item);
-    }
+    this._queue.push(item);
+    this._drainQueue();
   }
 
   protected _onItemDismissed(): void {
     this._activeCount--;
-    if (this._queue.length > 0 && this._activeCount < this._maxStack) {
+    this._drainQueue();
+  }
+
+  private _drainQueue(): void {
+    while (this._queue.length > 0 && this._activeCount < this.maxStack) {
       const next = this._queue.shift()!;
       this._activeCount++;
       this._showItem(next);

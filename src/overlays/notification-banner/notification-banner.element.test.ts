@@ -60,8 +60,24 @@ describe('a11y-notification-banner element', () => {
     expect(el.querySelector('.a11y-notification-banner')).toBeNull();
   });
 
-  it('promotes a queued banner once the active one is dismissed (default maxStack=1)', () => {
+  it('stacks up to 3 banners by default, queueing the rest', () => {
     const el = document.createElement('a11y-notification-banner') as any;
+    document.body.appendChild(el);
+    ['1', '2', '3', '4'].forEach((m) => el.show(m));
+    expect(el.querySelectorAll('.a11y-notification-banner')).toHaveLength(3);
+  });
+
+  it('show({ maxStack }) sets the limit on the region', () => {
+    const el = document.createElement('a11y-notification-banner') as any;
+    document.body.appendChild(el);
+    ['1', '2', '3', '4'].forEach((m) => el.show(m, { maxStack: 4 }));
+    expect(el.querySelectorAll('.a11y-notification-banner')).toHaveLength(4);
+    expect(el.getAttribute('max-stack')).toBe('4');
+  });
+
+  it('promotes a queued banner once the active one is dismissed (max-stack="1")', () => {
+    const el = document.createElement('a11y-notification-banner') as any;
+    el.setAttribute('max-stack', '1');
     document.body.appendChild(el);
     el.show('First');
     el.show('Second');
@@ -74,6 +90,7 @@ describe('a11y-notification-banner element', () => {
 
   it('dismissAll() clears the queue silently and force-closes active banners with onClose', () => {
     const el = document.createElement('a11y-notification-banner') as any;
+    el.setAttribute('max-stack', '1');
     document.body.appendChild(el);
     const onCloseActive = vi.fn();
     const onCloseQueued = vi.fn();

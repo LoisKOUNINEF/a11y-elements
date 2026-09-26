@@ -1,67 +1,63 @@
-#########################################
-## TODO: Uncomment after first release ##
-#########################################
+name: Publish a11y-elements Package To NPM
 
-# name: Publish a11y-elements Package To NPM
+on:
+  push:
+    tags:
+      - "v*"
 
-# on:
-#   push:
-#     tags:
-#       - "v*"
+concurrency:
+  group: release
+  cancel-in-progress: false
 
-# concurrency:
-#   group: release
-#   cancel-in-progress: false
+jobs:
+  publish:
+    name: Build & Publish a11y-elements Package
+    runs-on: ubuntu-latest
 
-# jobs:
-#   publish:
-#     name: Build & Publish a11y-elements Package
-#     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing (OIDC) + provenance
 
-#     permissions:
-#       contents: read
-#       id-token: write # npm trusted publishing (OIDC) + provenance
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+        fetch-depth: 0
 
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v6
-#         with:
-#           fetch-depth: 0
+      - name: Ensure tag is on main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "❌ Tag $GITHUB_REF_NAME is not on main. Aborting publish to npm workflow."
+            exit 1
+          fi
 
-#       - name: Ensure tag is on main
-#         run: |
-#           if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-#             echo "❌ Tag $GITHUB_REF_NAME is not on main. Aborting publish to npm workflow."
-#             exit 1
-#           fi
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+          registry-url: "https://registry.npmjs.org/"
 
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v6
-#         with:
-#           node-version: "24"
-#           cache: "npm"
-#           cache-dependency-path: "package-lock.json"
-#           registry-url: "https://registry.npmjs.org/"
+      - name: Ensure tag matches package.json version
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME#v}" != "$PKG_VERSION" ]; then
+            echo "❌ Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION."
+            exit 1
+          fi
 
-#       - name: Ensure tag matches package.json version
-#         run: |
-#           PKG_VERSION="$(node -p "require('./package.json').version")"
-#           if [ "${GITHUB_REF_NAME#v}" != "$PKG_VERSION" ]; then
-#             echo "❌ Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION."
-#             exit 1
-#           fi
+      - name: Install dependencies
+        run: npm ci
 
-#       - name: Install dependencies
-#         run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
 
-#       - name: Typecheck
-#         run: npm run typecheck
+      - name: Test
+        run: npm test
 
-#       - name: Test
-#         run: npm test
+      - name: Build & validate package
+        run: npm run validate:pack
 
-#       - name: Build & validate package
-#         run: npm run validate:pack
-
-#       - name: Publish to npm
-#         run: npm publish
+      - name: Publish to npm
+        run: npm publish

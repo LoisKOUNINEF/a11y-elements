@@ -80,7 +80,9 @@ setStrings({
 
 ## Elements
 
-Each section shows an example, the element's own attributes/properties/methods, and its CSS variables (collapsed). Behavior shared by a family of elements is described once, in [Common to all overlays](#common-to-all-overlays).
+Each section shows an example, the element's own attributes/properties/methods, and its CSS variables (collapsed). 
+
+Behavior shared by overlays is described once, in [Common to all overlays](#common-to-all-overlays).
 
 **Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
 
@@ -233,11 +235,42 @@ A text field built from a real `<input>` and optional parts, wired together for 
 </form>
 ```
 
-The input stays yours and is never regenerated. It keeps its `name` and submits its own value, so the form works before the script loads, and native constraints (`required`, `type`, `pattern`, `minlength`, `min`, …) do the validating. Ids you set are kept; missing ones are generated.
+The input stays yours and is never regenerated. 
 
-**When errors show.** Like `:user-invalid`, a field isn't flagged while it's first being filled in. Its error shows when it's left after an edit, or when a submit attempt finds it invalid. From then on it updates as the user types, and a form reset hides it again. While shown, the input has `aria-invalid="true"` and the message is in its `aria-describedby`.
+It keeps its `name` and submits its own value, so the form works before the script loads, and native constraints (`required`, `type`, `pattern`, `minlength`, `min`, …) do the validating. 
 
-**Submitting.** With an `<a11y-error>`, the message is shown there instead of in the browser's bubble, and the form's first invalid field is focused. Without one, the browser's bubble is left alone.
+Ids you set are kept; missing ones are generated.
+
+- **When errors show.** 
+
+Like `:user-invalid`, a field isn't flagged while it's first being filled in. 
+
+Its error shows when it's left after an edit, or when a submit attempt finds it invalid. 
+
+From then on it updates as the user types, and a form reset hides it again. 
+
+While shown, the input has `aria-invalid="true"` and the message is in its `aria-describedby`.
+
+- **Submitting.** 
+
+With an `<a11y-error>`, the message is shown there instead of in the browser's bubble, and the form's first invalid field is focused. Without one, the browser's bubble is left alone.
+
+- **Why the submit button stays enabled.** 
+
+Nothing here disables your submit button while fields are invalid, and doing it yourself is best avoided. 
+
+A disabled button doesn't say what's wrong, leaves the Tab order (screen reader and keyboard users may not find it at all), is often too faint to read, and makes a form look invalid before anything has been typed. 
+
+Instead, let the submit happen: it's blocked, each error shows next to its field, and focus moves to the first invalid one. 
+
+Disabling the button *while a submission is in flight*, to prevent double submits, is a different matter and is fine as long as the busy state is announced.
+
+**Empty fields.** Validation follows the browser's rules, which have two consequences:
+
+* Every constraint except `required` skips an empty value. `minlength`, `pattern`, `type="email"`, `min`, … all pass on `""`, so a field without `required` is valid when empty: the form submits and no error shows. Add `required` (and `value-missing-message`) when the field must be filled.
+* `minlength` / `maxlength` only flag a value the user typed. A value set from code (`control.value`, `setValue()`) passes them until it's edited.
+
+`validators` do run on an empty value. To keep an optional field optional, return `null` for `""`.
 
 **Custom rules.** `validators` run in order once the native constraints pass; the first message returned is the error. It goes through `setCustomValidity()`, so it blocks submission like a native one. Set `validators` instead of calling `setCustomValidity()` yourself, which the next validation would clear.
 

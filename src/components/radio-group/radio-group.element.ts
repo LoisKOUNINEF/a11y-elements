@@ -45,6 +45,9 @@ export class RadioGroupElement extends A11yWrapperElement {
     const fieldset = this._ensureFieldset();
     for (const input of fieldset.querySelectorAll<HTMLInputElement>('input[type="radio"]')) {
       syncClass(input, 'a11y-radio__input', true);
+      // The option wrapper carries the pointer cursor and the disabled muting.
+      const label = input.closest('label');
+      if (label && fieldset.contains(label)) syncClass(label, 'a11y-radio-group__option', true);
     }
 
     syncAttr(fieldset, 'disabled', this.boolAttr('disabled') ? '' : null);

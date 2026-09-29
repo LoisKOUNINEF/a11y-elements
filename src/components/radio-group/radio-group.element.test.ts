@@ -36,6 +36,17 @@ describe('a11y-radio-group', () => {
     expect(inputs.every((i) => (i as HTMLInputElement).name === 'plan')).toBe(true);
   });
 
+  it('marks each wrapping <label> as an option (pointer cursor, disabled muting)', () => {
+    const el = mount();
+    const labels = [...el.querySelectorAll('label')];
+    expect(labels.every((l) => l.classList.contains('a11y-radio-group__option'))).toBe(true);
+  });
+
+  it('leaves radios that are not inside a label alone', () => {
+    const el = mount('<input type="radio" name="plan" value="basic"><span>Basic</span>');
+    expect(el.querySelector('.a11y-radio-group__option')).toBeNull();
+  });
+
   it('renders a legend and removes any aria-label (legend already names the fieldset natively)', () => {
     const el = mount();
     el.setAttribute('aria-label', 'ignored once legend is set');

@@ -92,6 +92,17 @@ export function focusReturnTarget(): HTMLElement | null {
 }
 
 /**
+ * Moves focus in response to a key press, asking for a visible focus ring.
+ * WebKit copies `:focus-visible` from the previously focused element for
+ * script-driven focus, and a `preventDefault()`ed key press doesn't turn it
+ * on — so in an overlay opened by a mouse click, every Tab/Arrow press would
+ * move focus without ever showing where it went.
+ */
+export function focusFromKeyboard(el: HTMLElement): void {
+  el.focus({ focusVisible: true } as FocusOptions); // TS 5.9's lib.dom lacks `focusVisible`
+}
+
+/**
  * Page-wide stack of active traps, on `globalThis` for the same reason as
  * `overlay-registry.ts`' state: each standalone browser bundle inlines its
  * own copy of this module. Only the top trap handles keys, so stacked
@@ -265,6 +276,7 @@ export class FocusTrapHelper {
         ? 0
         : currentIndex + 1;
 
-    elements[nextIndex]?.focus();
+    const next = elements[nextIndex];
+    if (next) focusFromKeyboard(next);
   }
 }

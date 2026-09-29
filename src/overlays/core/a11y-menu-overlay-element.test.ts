@@ -66,6 +66,15 @@ describe('A11yMenuOverlayElement', () => {
     expect(document.activeElement).toBe(edit); // wraps back to the first enabled item
   });
 
+  it('asks for a visible focus ring when arrow keys move focus', () => {
+    const el = mount();
+    el.open = true;
+    const wrapper = document.querySelector('.a11y-anchored-overlay-wrapper')!;
+    const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+    wrapper.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    expect(focusSpy).toHaveBeenCalledWith({ focusVisible: true });
+  });
+
   it('Home/End jump to the first/last enabled item', () => {
     const el = mount();
     el.open = true;

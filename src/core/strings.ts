@@ -28,6 +28,28 @@ export interface A11yStrings {
   characterRemaining: string;
   /** The generated "Select all" checkbox of `<a11y-checkbox-group select-all>`. */
   selectAll: string;
+  /** The browse button of `<a11y-file-input>`. */
+  browseFiles: string;
+  /** The drag & drop prompt next to `<a11y-file-input>`'s browse button. */
+  dropFiles: string;
+  /** Accessible name of `<a11y-file-input>`'s list of selected files. */
+  selectedFiles: string;
+  /** Visible text of each remove button of `<a11y-file-input>`. */
+  remove: string;
+  /** Accessible name of each remove button of `<a11y-file-input>`; `{name}` is the file name. */
+  removeFile: string;
+  /** Announced when `<a11y-file-input>` adds one file; `{name}` is its name. */
+  fileAdded: string;
+  /** Announced when `<a11y-file-input>` adds several files; `{count}` is how many. */
+  filesAdded: string;
+  /** Announced when `<a11y-file-input>` removes a file; `{name}` is its name. */
+  fileRemoved: string;
+  /** Shown and announced for a file `accept` rules out; `{name}` is its name. */
+  fileTypeRejected: string;
+  /** Shown and announced for a file over `max-size`; `{name}`, `{maxSize}`. */
+  fileSizeRejected: string;
+  /** Shown and announced for a file past `max-files`; `{name}`, `{max}`. */
+  fileCountRejected: string;
 }
 
 export const DEFAULT_STRINGS: Readonly<A11yStrings> = Object.freeze({
@@ -42,6 +64,17 @@ export const DEFAULT_STRINGS: Readonly<A11yStrings> = Object.freeze({
   charactersRemaining: '{count} characters remaining',
   characterRemaining: '{count} character remaining',
   selectAll: 'Select all',
+  browseFiles: 'Browse files',
+  dropFiles: 'or drop files here',
+  selectedFiles: 'Selected files',
+  remove: 'Remove',
+  removeFile: 'Remove {name}',
+  fileAdded: '{name} added',
+  filesAdded: '{count} files added',
+  fileRemoved: '{name} removed',
+  fileTypeRejected: '{name} wasn’t added: this type of file isn’t allowed',
+  fileSizeRejected: '{name} wasn’t added: it’s larger than {maxSize}',
+  fileCountRejected: '{name} wasn’t added: too many files (maximum {max})',
 });
 
 /** Dispatched on `document` whenever `setStrings()`/`resetStrings()` runs, so mounted elements can relabel themselves. */

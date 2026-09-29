@@ -25,6 +25,9 @@ const MESSAGE_ATTRIBUTES: Record<string, FieldConstraint> = {
 
 const STATES = ['touched', 'dirty', 'user-invalid'] as const;
 
+/** Every field element: a part belongs to the closest one of these. */
+const FIELD_TAGS = 'a11y-input, a11y-textarea, a11y-file-input';
+
 /**
  * Base for text fields (`<a11y-input>`, `<a11y-textarea>`): wraps a real,
  * consumer-authored control plus optional part children, and hands them to
@@ -52,8 +55,12 @@ const STATES = ['touched', 'dirty', 'user-invalid'] as const;
  *
  * Both are feature-detected; where unsupported, style `[aria-invalid="true"]`
  * on the control instead.
+ *
+ * `V` is the value type of `getValue()`/`setValue()`/`onChange`/`onInput` —
+ * the control's `value` string by default; a subclass with another value
+ * (e.g. `File[]`) overrides `readValue()`/`writeValue()`.
  */
-export abstract class A11yFieldElement extends A11yWrapperElement {
+export abstract class A11yFieldElement<V = string> extends A11yWrapperElement {
   static formAssociated = true;
 
   static get observedAttributes(): string[] {
@@ -68,10 +75,10 @@ export abstract class A11yFieldElement extends A11yWrapperElement {
   protected abstract readonly controlSelector: string;
 
   /** Called with the control's value on every native `change` event. */
-  declare onChange?: (value: string) => void;
+  declare onChange?: (value: V) => void;
 
   /** Called with the control's value on every native `input` event. */
-  declare onInput?: (value: string) => void;
+  declare onInput?: (value: V) => void;
 
   /** Custom rules, run in order after the native constraints pass; the first message returned is the error. */
   get validators(): FieldValidator[] {
@@ -83,16 +90,31 @@ export abstract class A11yFieldElement extends A11yWrapperElement {
     this._binding?.setOptions({ validators });
   }
 
-  getValue(): string {
-    return this._control()?.value ?? '';
+  getValue(): V {
+    return this.readValue(this._control());
   }
 
   /** Sets the value and re-validates. Doesn't mark the field dirty: only the user does. */
-  setValue(value: string): void {
+  setValue(value: V): void {
     const control = this._control();
     if (!control) return;
-    control.value = value;
+    this.writeValue(control, value);
     this._binding?.validate();
+  }
+
+  /** Reads the value from the control (`null` before there is one). */
+  protected readValue(control: FieldControl | null): V {
+    return (control?.value ?? '') as V;
+  }
+
+  /** Writes the value into the control. */
+  protected writeValue(control: FieldControl, value: V): void {
+    control.value = value as string;
+  }
+
+  /** The `bindField()` binding of the current control, once there is one. */
+  protected get binding(): FieldBinding | null {
+    return this._binding;
   }
 
   get form(): HTMLFormElement | null {
@@ -138,7 +160,7 @@ export abstract class A11yFieldElement extends A11yWrapperElement {
     this._binding = null;
   }
 
-  private _control(): FieldControl | null {
+  protected _control(): FieldControl | null {
     return this.querySelector<FieldControl>(this.controlSelector);
   }
 
@@ -148,7 +170,10 @@ export abstract class A11yFieldElement extends A11yWrapperElement {
   }
 
   private _parts(tag: string): HTMLElement[] {
-    return [...this.querySelectorAll<HTMLElement>(tag)].filter((el) => el.parentElement?.closest('a11y-input, a11y-textarea') === this);
+    return [...this.querySelectorAll<HTMLElement>(tag)].filter(
+      // Markup a subclass generates (e.g. `<a11y-file-input>`'s browse `<label>`) is never a part.
+      (el) => el.parentElement?.closest(FIELD_TAGS) === this && !el.closest('[data-a11y-generated]'),
+    );
   }
 
   private _fieldParts(control: FieldControl): FieldParts {
@@ -204,8 +229,8 @@ export abstract class A11yFieldElement extends A11yWrapperElement {
     }
 
     this.wireOnce(control, () => {
-      this.listen(control, 'change', () => this.onChange?.(control.value));
-      this.listen(control, 'input', () => this.onInput?.(control.value));
+      this.listen(control, 'change', () => this.onChange?.(this.readValue(control)));
+      this.listen(control, 'input', () => this.onInput?.(this.readValue(control)));
     });
     this.wireOnce(this, () =>
       // The mirrored validity makes the host fire its own `invalid` on submit, which would show a second bubble.

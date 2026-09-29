@@ -74,6 +74,15 @@ setStrings({
 | `charactersRemaining` | `{count} characters remaining` | what an `<a11y-counter>` announces near the limit | — |
 | `characterRemaining` | `{count} character remaining` | the same, with one character left | — |
 | `selectAll` | `Select all` | the generated checkbox of `<a11y-checkbox-group select-all>` | `select-all-label` |
+| `browseFiles` | `Browse files` | the browse button of `<a11y-file-input>` | `browse-label` |
+| `dropFiles` | `or drop files here` | the drag & drop prompt of `<a11y-file-input>` | `drop-label` |
+| `selectedFiles` | `Selected files` | the name of `<a11y-file-input>`'s file list | — |
+| `remove` / `removeFile` | `Remove` / `Remove {name}` | the visible text / accessible name of each remove button of `<a11y-file-input>` | — |
+| `fileAdded` / `filesAdded` | `{name} added` / `{count} files added` | what `<a11y-file-input>` announces after a pick or a drop | — |
+| `fileRemoved` | `{name} removed` | what `<a11y-file-input>` announces after a removal | — |
+| `fileTypeRejected` | `{name} wasn’t added: this type of file isn’t allowed` | a file `accept` rules out | `type-rejected-message` |
+| `fileSizeRejected` | `{name} wasn’t added: it’s larger than {maxSize}` | a file over `max-size` | `size-rejected-message` |
+| `fileCountRejected` | `{name} wasn’t added: too many files (maximum {max})` | a file past `max-files` | `count-rejected-message` |
 
 * An instance attribute wins over `setStrings()`, which wins over the default. Keys you leave out keep their current value.
 * Elements already on the page update right away, so calling it again on a language switch is enough.
@@ -85,7 +94,7 @@ Each section shows an example, the element's own attributes/properties/methods, 
 
 Behavior shared by overlays is described once, in [Common to all overlays](#common-to-all-overlays).
 
-**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-checkbox-group>`](#a11y-checkbox-group) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
+**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-checkbox-group>`](#a11y-checkbox-group) · [`<a11y-file-input>`](#a11y-file-input) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
 
 **Overlays:** [`<a11y-blocking-loader>`](#a11y-blocking-loader) · [`<a11y-context-menu>`](#a11y-context-menu) · [`<a11y-drawer>`](#a11y-drawer) · [`<a11y-dropdown>`](#a11y-dropdown) · [`<a11y-emergency-dialog>`](#a11y-emergency-dialog) · [`<a11y-modal>`](#a11y-modal) · [`<a11y-notification-banner>`](#a11y-notification-banner) · [`<a11y-popover>`](#a11y-popover) · [`<a11y-snackbar>`](#a11y-snackbar) · [`<a11y-tooltip>`](#a11y-tooltip)
 
@@ -246,6 +255,92 @@ Options use the `--a11y-checkbox-*` variables above.
 | `--a11y-checkbox-group-options-gap` | `0.5rem` |
 | `--a11y-checkbox-group-select-all-border` | `1px solid #e5e7eb` |
 | `--a11y-checkbox-group-select-all-padding-bottom` | `0.5rem` |
+
+</details>
+
+#### `a11y-file-input`
+
+A file picker built from a real `<input type="file">`, with the same parts as [`a11y-input`](#a11y-input). Files can be browsed for or dropped onto the element. It only picks files: the input keeps its `name` and submits them with the form, or you read `getValue()` and upload them yourself.
+
+```html
+<a11y-file-input max-size="5MB" max-files="3" previews value-missing-message="Add at least one file">
+  <a11y-label>Attachments</a11y-label>
+  <input type="file" name="attachments" multiple accept=".pdf,image/*" required>
+  <a11y-hint>PDF or images, up to 5 MB each.</a11y-hint>
+  <a11y-error></a11y-error>
+</a11y-file-input>
+```
+
+It adds, after the input, a drop zone with a "Browse files" button, then (after your parts) the list of selected files, the list of files that weren't added, and a status region for announcements.
+
+**Accessibility.**
+
+* The native input is visually hidden, not removed. It's still the control that gets focus, is announced as a file button, carries `required`, and gets the field's `aria-describedby` and `aria-invalid`. The focus ring shows on "Browse files".
+* "Browse files" is a real `<label>` for the input, so it opens the picker without script, and its text is part of the input's accessible name (voice control users can say "click Browse files").
+* Dragging is a shortcut, never the only way: everything works from the keyboard. The drop prompt is hidden from assistive tech.
+* Each file has a "Remove" button named "Remove report.pdf". After a removal, focus moves to the next file's button, else the previous one, else the input.
+* What was added, removed or not added is announced politely. Files that weren't added are also listed on screen with the reason, until the next change.
+* Errors show with the same timing as `<a11y-input>`, plus right after a drop or a removal: removing the last file of a `required` field shows the error at once.
+
+**Rules.** `accept` (checked on drop too, which the browser doesn't do), `max-size` and `max-files` are checked as files come in. A file that fails one is not added, so these rules never make the field invalid. `required` and `validators` still do: validators get the input as their second argument, so they can read `control.files`.
+
+With `multiple`, browsing or dropping again adds to the selection (duplicates are skipped) instead of replacing it. Without it, the new file replaces the current one, unless it's rejected.
+
+Style the drag-over state with `a11y-file-input:state(dragover)` or `.a11y-file-input__dropzone[data-dragover]`. The `:state(touched)`, `:state(dirty)` and `:state(user-invalid)` states work as on `<a11y-input>`.
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `max-size` | attribute | — | Largest file accepted: `500KB`, `5MB`, `1GB` or bytes (1 KB = 1024 bytes). |
+| `max-files` | attribute | — | Most files the selection can hold, with `multiple`. |
+| `previews` | attribute | `false` | Shows a thumbnail next to image files. |
+| `browse-label` / `drop-label` | attribute | see [strings](#translating-built-in-strings) | Text of the browse button / of the drop prompt. |
+| `type-rejected-message` / `size-rejected-message` / `count-rejected-message` | attribute | see [strings](#translating-built-in-strings) | Why a file wasn't added. `{name}`, `{maxSize}` and `{max}` are filled in. |
+| `value-missing-message`, … | attribute | browser's | As on [`a11y-input`](#a11y-input). |
+| `validators` | property | `[]` | As on `a11y-input`; the second argument is the input. |
+| `onChange` / `onInput` | callback | — | `(files: File[]) => void`, called once per pick, drop or removal. |
+| `getValue()` | method | — | The selected files. |
+| `setValue(files)` | method | — | Replaces the selection, silently: no events, no announcement. The rules still apply. |
+| `addFiles(files)` | method | — | Adds files as a drop would: checked, announced, then `input` and `change` fire. Handy for a paste handler. |
+| `removeFile(fileOrIndex)` / `clear()` | method | — | Removes one file / all of them, silently. |
+| `checkValidity()` / `reportValidity()` | method | — | As on `a11y-input`. |
+
+Sizes are formatted with `Intl` in the language of the closest `lang` attribute (`1.5 MB`, `1,5 Mo`, …).
+
+<details>
+<summary>CSS variables</summary>
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-file-input-button-border-radius` | `4px` |
+| `--a11y-file-input-button-font-weight` | `600` |
+| `--a11y-file-input-button-padding-x` | `1rem` |
+| `--a11y-file-input-button-padding-y` | `0.5rem` |
+| `--a11y-file-input-color-background` | `#ffffff` |
+| `--a11y-file-input-color-border` | `#d1d5db` |
+| `--a11y-file-input-color-disabled-bg` | `#e5e7eb` |
+| `--a11y-file-input-color-disabled-text` | `#9ca3af` |
+| `--a11y-file-input-color-dragover-bg` | `#eff6ff` |
+| `--a11y-file-input-color-error` | `#b91c1c` |
+| `--a11y-file-input-color-primary` | `#2563eb` |
+| `--a11y-file-input-color-text` | `#111827` |
+| `--a11y-file-input-color-text-muted` | `#6b7280` |
+| `--a11y-file-input-dropzone-border-radius` | `8px` |
+| `--a11y-file-input-dropzone-border-width` | `2px` |
+| `--a11y-file-input-dropzone-gap` | `0.5rem` |
+| `--a11y-file-input-dropzone-padding` | `1.5rem 1rem` |
+| `--a11y-file-input-focus-outline-offset` | `2px` |
+| `--a11y-file-input-focus-outline-width` | `2px` |
+| `--a11y-file-input-gap` | `0.25rem` |
+| `--a11y-file-input-item-border-radius` | `4px` |
+| `--a11y-file-input-item-gap` | `0.75rem` |
+| `--a11y-file-input-item-padding` | `0.5rem 0.75rem` |
+| `--a11y-file-input-list-gap` | `0.5rem` |
+| `--a11y-file-input-list-margin-top` | `0.25rem` |
+| `--a11y-file-input-preview-border-radius` | `4px` |
+| `--a11y-file-input-preview-size` | `2.5rem` |
+| `--a11y-file-input-transition-duration` | `0.2s` |
+
+The hint and error use the [shared field variables](#a11y-input).
 
 </details>
 

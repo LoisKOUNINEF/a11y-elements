@@ -18,6 +18,7 @@
 @import url('components/label/label.css');
 @import url('components/input/input.css');
 @import url('components/textarea/textarea.css');
+@import url('components/file-input/file-input.css');
 @import url('overlays/core/overlay-variables.css');
 @import url('overlays/core/overlay-runtime.css');
 @import url('overlays/core/modal-overlay-runtime.css');

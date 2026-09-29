@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
 ### Changes
 
@@ -13,6 +13,8 @@ Add `select-all` for a "Select all" checkbox that's checked, partly checked or u
 Files can be browsed for or dropped onto it, and are listed with a "Remove" button each. With `multiple`, picking again adds to the selection. `accept` (also on drop), `max-size` and `max-files` keep files out, and the ones left out are listed and announced. The selection is written back to the input, which submits it with the form. Optional image previews with `previews`.
 
 Its strings can be translated with `setStrings()` (`browseFiles`, `dropFiles`, `remove`, `removeFile`, `fileAdded`, …).
+
+- `<a11y-picture>` can build its `<picture>` for you: give it a `src` (the fallback) and `sources` (`"s.avif image/avif, s.webp image/webp"`) and the browser uses the first format it supports. `alt`, `caption`, `width`, `height`, `loading` and `sizes` are attributes too. From JavaScript, set `image = { sources, fallback, alt }` at once, or `sources` as `{ src, type, media, sizes }` objects for srcset descriptors and art direction. Pictures you write yourself work as before.
 
 - `A11yFieldElement` takes a value type (`A11yFieldElement<V = string>`), with `readValue()` / `writeValue()` for subclasses whose value isn't the control's string.
 

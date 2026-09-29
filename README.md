@@ -551,7 +551,7 @@ A `*` marks a required field. It's CSS only and hidden from screen readers, whic
 
 #### `a11y-picture`
 
-Wraps a real `<picture>`/`<img>` and optional `<figcaption>` as `role="figure"`. An image with `alt=""` and no caption is treated as decorative and hidden from assistive tech (`aria-hidden="true"`).
+Wraps a `<picture>`/`<img>` and optional `<figcaption>`, yours or generated from attributes, as `role="figure"`. An image with `alt=""` and no caption is treated as decorative and hidden from assistive tech (`aria-hidden="true"`).
 
 ```html
 <a11y-picture>
@@ -563,7 +563,48 @@ Wraps a real `<picture>`/`<img>` and optional `<figcaption>` as `role="figure"`.
 </a11y-picture>
 ```
 
-No attributes of its own.
+**Several formats.** Instead of writing the markup, give the element a `src` (the fallback image) and it builds the `<picture>` itself: one `<source>` per format, then the `<img>`, plus a `<figcaption>` for `caption`. The browser uses the first source whose `type` it supports, else the fallback, so list the most efficient format first. A source without a `type` is always used, so give each one its type.
+
+```html
+<a11y-picture
+    src="s.jpg"
+    alt="S illustration"
+    sources="s.avif image/avif, s.webp image/webp"
+    caption="An illustration of S">
+</a11y-picture>
+```
+
+The same from JavaScript, in one object:
+
+```js
+const base = './assets/images/s';
+document.querySelector('a11y-picture').image = {
+  sources: [
+    { src: `${base}.avif`, type: 'image/avif' },
+    { src: `${base}.webp`, type: 'image/webp' },
+  ],
+  fallback: `${base}.jpg`,
+  alt: 'S illustration',
+};
+```
+
+* The `sources` attribute takes `url type` pairs. For srcset descriptors (`s.avif 1x, s@2x.avif 2x`), `media` or `sizes`, set the `sources` property in JavaScript.
+* Use one way or the other: with a `src`, children you wrote are ignored.
+* The same accessibility rule applies: with `alt=""` and no caption, the figure is hidden. Without any `alt`, the image is treated as decorative and a console warning asks for one.
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `src` | attribute / property | — | The fallback image. Setting it switches to a generated picture. |
+| `alt` | attribute / property | — | The image's text alternative; `""` for a decorative image. |
+| `sources` | attribute | — | `url type` pairs, comma-separated: `"s.avif image/avif, s.webp image/webp"`. |
+| `sources` | property | — | `{ src, type?, media?, sizes? }[]`; `src` can be a full srcset. Wins over the attribute until the attribute changes. |
+| `caption` | attribute / property | — | Text of a generated `<figcaption>`. |
+| `width` / `height` | attribute / property | — | The image's intrinsic size, to avoid layout shift. |
+| `loading` | attribute / property | `lazy` | `lazy` or `eager`. The image is always `decoding="async"`. |
+| `sizes` | attribute | — | `sizes` of the `<img>`. |
+| `image` | property | — | Sets it all at once: `{ sources?, fallback, alt, caption?, width?, height?, loading? }`. |
+
+The `PictureSource` and `PictureImage` types are exported with the element.
 
 <details>
 <summary>CSS variables</summary>

@@ -43,6 +43,11 @@ a11y-radio-group {
   opacity: var(--a11y-radio-group-disabled-opacity, 0.6);
 }
 
+/* A disabled fieldset is already muted as a whole — don't compound the opacity per option. */
+.a11y-radio-group:disabled .a11y-radio-group__option {
+  opacity: 1;
+}
+
 .a11y-radio__input {
   appearance: none;
   -webkit-appearance: none;

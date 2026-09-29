@@ -4,6 +4,8 @@ Framework-agnostic accessibility Custom Elements (Web Components). A behavior la
 
 Every element is Light DOM only (no Shadow DOM), so you always style real markup with your own CSS.
 
+See a [demo of the elements](https://nutin.org/a11y-elements/elements) - See a [demo of the overlays](https://nutin.org/a11y-elements/overlays)
+
 ## Usage
 
 ### Zero-build 
@@ -73,6 +75,16 @@ setStrings({
 | `characterCount` | `{count} / {max}` | the visible text of an `<a11y-counter>` | — |
 | `charactersRemaining` | `{count} characters remaining` | what an `<a11y-counter>` announces near the limit | — |
 | `characterRemaining` | `{count} character remaining` | the same, with one character left | — |
+| `selectAll` | `Select all` | the generated checkbox of `<a11y-checkbox-group select-all>` | `select-all-label` |
+| `browseFiles` | `Browse files` | the browse button of `<a11y-file-input>` | `browse-label` |
+| `dropFiles` | `or drop files here` | the drag & drop prompt of `<a11y-file-input>` | `drop-label` |
+| `selectedFiles` | `Selected files` | the name of `<a11y-file-input>`'s file list | — |
+| `remove` / `removeFile` | `Remove` / `Remove {name}` | the visible text / accessible name of each remove button of `<a11y-file-input>` | — |
+| `fileAdded` / `filesAdded` | `{name} added` / `{count} files added` | what `<a11y-file-input>` announces after a pick or a drop | — |
+| `fileRemoved` | `{name} removed` | what `<a11y-file-input>` announces after a removal | — |
+| `fileTypeRejected` | `{name} wasn’t added: this type of file isn’t allowed` | a file `accept` rules out | `type-rejected-message` |
+| `fileSizeRejected` | `{name} wasn’t added: it’s larger than {maxSize}` | a file over `max-size` | `size-rejected-message` |
+| `fileCountRejected` | `{name} wasn’t added: too many files (maximum {max})` | a file past `max-files` | `count-rejected-message` |
 
 * An instance attribute wins over `setStrings()`, which wins over the default. Keys you leave out keep their current value.
 * Elements already on the page update right away, so calling it again on a language switch is enough.
@@ -80,9 +92,11 @@ setStrings({
 
 ## Elements
 
-Each section shows an example, the element's own attributes/properties/methods, and its CSS variables (collapsed). Behavior shared by a family of elements is described once, in [Common to all overlays](#common-to-all-overlays).
+Each section shows an example, the element's own attributes/properties/methods, and its CSS variables (collapsed). 
 
-**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
+Behavior shared by overlays is described once, in [Common to all overlays](#common-to-all-overlays).
+
+**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-checkbox-group>`](#a11y-checkbox-group) · [`<a11y-file-input>`](#a11y-file-input) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
 
 **Overlays:** [`<a11y-blocking-loader>`](#a11y-blocking-loader) · [`<a11y-context-menu>`](#a11y-context-menu) · [`<a11y-drawer>`](#a11y-drawer) · [`<a11y-dropdown>`](#a11y-dropdown) · [`<a11y-emergency-dialog>`](#a11y-emergency-dialog) · [`<a11y-modal>`](#a11y-modal) · [`<a11y-notification-banner>`](#a11y-notification-banner) · [`<a11y-popover>`](#a11y-popover) · [`<a11y-snackbar>`](#a11y-snackbar) · [`<a11y-tooltip>`](#a11y-tooltip)
 
@@ -197,6 +211,141 @@ checkbox.onChange = (checked) => console.log('accepted:', checked);
 
 </details>
 
+#### `a11y-checkbox-group`
+
+Wraps your checkboxes in a `<fieldset>` with a `<legend>`, styled like `<a11y-checkbox>`. Add `select-all` for a "Select all" checkbox: it's checked when every option is, partly checked when some are, and checks or unchecks them all. It has no `name`, so it's never submitted, and disabled options keep their own state.
+
+```html
+<a11y-checkbox-group id="toppings" legend="Toppings" select-all>
+    <label><input type="checkbox" name="toppings" value="cheese"> Cheese</label>
+    <label><input type="checkbox" name="toppings" value="ham"> Ham</label>
+</a11y-checkbox-group>
+```
+
+```ts
+import 'a11y-elements/components/checkbox-group';
+import type { CheckboxGroupElement } from 'a11y-elements/components/checkbox-group/element';
+
+const group = document.getElementById('toppings') as CheckboxGroupElement;
+group.onChange = (values) => console.log('toppings:', values);
+```
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `legend` | attribute | — | Visible group label. |
+| `aria-label` | attribute | — | Group name when there's no `legend`. |
+| `disabled` | attribute | absent | Disables every option (through the fieldset). |
+| `select-all` | attribute | absent | Adds the "Select all" checkbox after the legend. |
+| `select-all-label` | attribute | `Select all` | Its text; also `setStrings({ selectAll })`. |
+| `onChange` | callback | — | `(values: string[]) => void`, called once per user action, a "Select all" click included. |
+| `getValue()` / `setValue(values)` | method | — | Reads the checked values / checks exactly those values. |
+| `selectAll()` / `unselectAll()` | method | — | Checks / unchecks every enabled option. Like `setValue()`, fires no events. |
+
+A "Select all" click fires `input` and `change` on every option it changes.
+
+Options use the `--a11y-checkbox-*` variables above.
+
+<details>
+<summary>CSS variables</summary>
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-checkbox-group-color-text-muted` | `#6b7280` |
+| `--a11y-checkbox-group-disabled-opacity` | `0.6` |
+| `--a11y-checkbox-group-legend-font-size` | `0.875rem` |
+| `--a11y-checkbox-group-legend-margin-bottom` | `0.5rem` |
+| `--a11y-checkbox-group-options-gap` | `0.5rem` |
+| `--a11y-checkbox-group-select-all-border` | `1px solid #e5e7eb` |
+| `--a11y-checkbox-group-select-all-padding-bottom` | `0.5rem` |
+
+</details>
+
+#### `a11y-file-input`
+
+A file picker built from a real `<input type="file">`, with the same parts as [`a11y-input`](#a11y-input). Files can be browsed for or dropped onto the element. It only picks files: the input keeps its `name` and submits them with the form, or you read `getValue()` and upload them yourself.
+
+```html
+<a11y-file-input max-size="5MB" max-files="3" previews value-missing-message="Add at least one file">
+  <a11y-label>Attachments</a11y-label>
+  <input type="file" name="attachments" multiple accept=".pdf,image/*" required>
+  <a11y-hint>PDF or images, up to 5 MB each.</a11y-hint>
+  <a11y-error></a11y-error>
+</a11y-file-input>
+```
+
+It adds, after the input, a drop zone with a "Browse files" button, then (after your parts) the list of selected files, the list of files that weren't added, and a status region for announcements.
+
+**Accessibility.**
+
+* The native input is visually hidden, not removed. It's still the control that gets focus, is announced as a file button, carries `required`, and gets the field's `aria-describedby` and `aria-invalid`. The focus ring shows on "Browse files".
+* "Browse files" is a real `<label>` for the input, so it opens the picker without script, and its text is part of the input's accessible name (voice control users can say "click Browse files").
+* Dragging is a shortcut, never the only way: everything works from the keyboard. The drop prompt is hidden from assistive tech.
+* Each file has a "Remove" button named "Remove report.pdf". After a removal, focus moves to the next file's button, else the previous one, else the input.
+* What was added, removed or not added is announced politely. Files that weren't added are also listed on screen with the reason, until the next change.
+* Errors show with the same timing as `<a11y-input>`, plus right after a drop or a removal: removing the last file of a `required` field shows the error at once.
+
+**Rules.** `accept` (checked on drop too, which the browser doesn't do), `max-size` and `max-files` are checked as files come in. A file that fails one is not added, so these rules never make the field invalid. `required` and `validators` still do: validators get the input as their second argument, so they can read `control.files`.
+
+With `multiple`, browsing or dropping again adds to the selection (duplicates are skipped) instead of replacing it. Without it, the new file replaces the current one, unless it's rejected.
+
+Style the drag-over state with `a11y-file-input:state(dragover)` or `.a11y-file-input__dropzone[data-dragover]`. The `:state(touched)`, `:state(dirty)` and `:state(user-invalid)` states work as on `<a11y-input>`.
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `max-size` | attribute | — | Largest file accepted: `500KB`, `5MB`, `1GB` or bytes (1 KB = 1024 bytes). |
+| `max-files` | attribute | — | Most files the selection can hold, with `multiple`. |
+| `previews` | attribute | `false` | Shows a thumbnail next to image files. |
+| `browse-label` / `drop-label` | attribute | see [strings](#translating-built-in-strings) | Text of the browse button / of the drop prompt. |
+| `type-rejected-message` / `size-rejected-message` / `count-rejected-message` | attribute | see [strings](#translating-built-in-strings) | Why a file wasn't added. `{name}`, `{maxSize}` and `{max}` are filled in. |
+| `value-missing-message`, … | attribute | browser's | As on [`a11y-input`](#a11y-input). |
+| `validators` | property | `[]` | As on `a11y-input`; the second argument is the input. |
+| `onChange` / `onInput` | callback | — | `(files: File[]) => void`, called once per pick, drop or removal. |
+| `getValue()` | method | — | The selected files. |
+| `setValue(files)` | method | — | Replaces the selection, silently: no events, no announcement. The rules still apply. |
+| `addFiles(files)` | method | — | Adds files as a drop would: checked, announced, then `input` and `change` fire. Handy for a paste handler. |
+| `removeFile(fileOrIndex)` / `clear()` | method | — | Removes one file / all of them, silently. |
+| `checkValidity()` / `reportValidity()` | method | — | As on `a11y-input`. |
+
+Sizes are formatted with `Intl` in the language of the closest `lang` attribute (`1.5 MB`, `1,5 Mo`, …).
+
+<details>
+<summary>CSS variables</summary>
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-file-input-button-border-radius` | `4px` |
+| `--a11y-file-input-button-font-weight` | `600` |
+| `--a11y-file-input-button-padding-x` | `1rem` |
+| `--a11y-file-input-button-padding-y` | `0.5rem` |
+| `--a11y-file-input-color-background` | `#ffffff` |
+| `--a11y-file-input-color-border` | `#d1d5db` |
+| `--a11y-file-input-color-disabled-bg` | `#e5e7eb` |
+| `--a11y-file-input-color-disabled-text` | `#9ca3af` |
+| `--a11y-file-input-color-dragover-bg` | `#eff6ff` |
+| `--a11y-file-input-color-error` | `#b91c1c` |
+| `--a11y-file-input-color-primary` | `#2563eb` |
+| `--a11y-file-input-color-text` | `#111827` |
+| `--a11y-file-input-color-text-muted` | `#6b7280` |
+| `--a11y-file-input-dropzone-border-radius` | `8px` |
+| `--a11y-file-input-dropzone-border-width` | `2px` |
+| `--a11y-file-input-dropzone-gap` | `0.5rem` |
+| `--a11y-file-input-dropzone-padding` | `1.5rem 1rem` |
+| `--a11y-file-input-focus-outline-offset` | `2px` |
+| `--a11y-file-input-focus-outline-width` | `2px` |
+| `--a11y-file-input-gap` | `0.25rem` |
+| `--a11y-file-input-item-border-radius` | `4px` |
+| `--a11y-file-input-item-gap` | `0.75rem` |
+| `--a11y-file-input-item-padding` | `0.5rem 0.75rem` |
+| `--a11y-file-input-list-gap` | `0.5rem` |
+| `--a11y-file-input-list-margin-top` | `0.25rem` |
+| `--a11y-file-input-preview-border-radius` | `4px` |
+| `--a11y-file-input-preview-size` | `2.5rem` |
+| `--a11y-file-input-transition-duration` | `0.2s` |
+
+The hint and error use the [shared field variables](#a11y-input).
+
+</details>
+
 #### `a11y-focusable`
 
 Makes a non-button element behave like a button: `role="button"`, `tabindex="0"`, and Enter/Space fire a real `click`, so one `click` listener covers mouse and keyboard. Prefer a real `<button>` whenever you can.
@@ -233,11 +382,42 @@ A text field built from a real `<input>` and optional parts, wired together for 
 </form>
 ```
 
-The input stays yours and is never regenerated. It keeps its `name` and submits its own value, so the form works before the script loads, and native constraints (`required`, `type`, `pattern`, `minlength`, `min`, …) do the validating. Ids you set are kept; missing ones are generated.
+The input stays yours and is never regenerated. 
 
-**When errors show.** Like `:user-invalid`, a field isn't flagged while it's first being filled in. Its error shows when it's left after an edit, or when a submit attempt finds it invalid. From then on it updates as the user types, and a form reset hides it again. While shown, the input has `aria-invalid="true"` and the message is in its `aria-describedby`.
+It keeps its `name` and submits its own value, so the form works before the script loads, and native constraints (`required`, `type`, `pattern`, `minlength`, `min`, …) do the validating. 
 
-**Submitting.** With an `<a11y-error>`, the message is shown there instead of in the browser's bubble, and the form's first invalid field is focused. Without one, the browser's bubble is left alone.
+Ids you set are kept; missing ones are generated.
+
+- **When errors show.** 
+
+Like `:user-invalid`, a field isn't flagged while it's first being filled in. 
+
+Its error shows when it's left after an edit, or when a submit attempt finds it invalid. 
+
+From then on it updates as the user types, and a form reset hides it again. 
+
+While shown, the input has `aria-invalid="true"` and the message is in its `aria-describedby`.
+
+- **Submitting.** 
+
+With an `<a11y-error>`, the message is shown there instead of in the browser's bubble, and the form's first invalid field is focused. Without one, the browser's bubble is left alone.
+
+- **Why the submit button stays enabled.** 
+
+Nothing here disables your submit button while fields are invalid, and doing it yourself is best avoided. 
+
+A disabled button doesn't say what's wrong, leaves the Tab order (screen reader and keyboard users may not find it at all), is often too faint to read, and makes a form look invalid before anything has been typed. 
+
+Instead, let the submit happen: it's blocked, each error shows next to its field, and focus moves to the first invalid one. 
+
+Disabling the button *while a submission is in flight*, to prevent double submits, is a different matter and is fine as long as the busy state is announced.
+
+**Empty fields.** Validation follows the browser's rules, which have two consequences:
+
+* Every constraint except `required` skips an empty value. `minlength`, `pattern`, `type="email"`, `min`, … all pass on `""`, so a field without `required` is valid when empty: the form submits and no error shows. Add `required` (and `value-missing-message`) when the field must be filled.
+* `minlength` / `maxlength` only flag a value the user typed. A value set from code (`control.value`, `setValue()`) passes them until it's edited.
+
+`validators` do run on an empty value. To keep an optional field optional, return `null` for `""`.
 
 **Custom rules.** `validators` run in order once the native constraints pass; the first message returned is the error. It goes through `setCustomValidity()`, so it blocks submission like a native one. Set `validators` instead of calling `setCustomValidity()` yourself, which the next validation would clear.
 
@@ -259,7 +439,7 @@ a11y-input:state(dirty) { … }                          /* edited at least once
 
 Where `:state()` isn't supported, style `input[aria-invalid="true"]` instead.
 
-Checkbox, radio, range, color, file, hidden and button inputs are left alone: use `<a11y-checkbox>`, `<a11y-radio-group>`, … for those.
+Checkbox, radio, range, color, file, hidden and button inputs are left alone: use `<a11y-checkbox>`, `<a11y-checkbox-group>`, `<a11y-radio-group>`, … for those.
 
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
@@ -373,7 +553,7 @@ A `*` marks a required field. It's CSS only and hidden from screen readers, whic
 
 #### `a11y-picture`
 
-Wraps a real `<picture>`/`<img>` and optional `<figcaption>` as `role="figure"`. An image with `alt=""` and no caption is treated as decorative and hidden from assistive tech (`aria-hidden="true"`).
+Wraps a `<picture>`/`<img>` and optional `<figcaption>`, yours or generated from attributes, as `role="figure"`. An image with `alt=""` and no caption is treated as decorative and hidden from assistive tech (`aria-hidden="true"`).
 
 ```html
 <a11y-picture>
@@ -385,7 +565,48 @@ Wraps a real `<picture>`/`<img>` and optional `<figcaption>` as `role="figure"`.
 </a11y-picture>
 ```
 
-No attributes of its own.
+**Several formats.** Instead of writing the markup, give the element a `src` (the fallback image) and it builds the `<picture>` itself: one `<source>` per format, then the `<img>`, plus a `<figcaption>` for `caption`. The browser uses the first source whose `type` it supports, else the fallback, so list the most efficient format first. A source without a `type` is always used, so give each one its type.
+
+```html
+<a11y-picture
+    src="s.jpg"
+    alt="S illustration"
+    sources="s.avif image/avif, s.webp image/webp"
+    caption="An illustration of S">
+</a11y-picture>
+```
+
+The same from JavaScript, in one object:
+
+```js
+const base = './assets/images/s';
+document.querySelector('a11y-picture').image = {
+  sources: [
+    { src: `${base}.avif`, type: 'image/avif' },
+    { src: `${base}.webp`, type: 'image/webp' },
+  ],
+  fallback: `${base}.jpg`,
+  alt: 'S illustration',
+};
+```
+
+* The `sources` attribute takes `url type` pairs. For srcset descriptors (`s.avif 1x, s@2x.avif 2x`), `media` or `sizes`, set the `sources` property in JavaScript.
+* Use one way or the other: with a `src`, children you wrote are ignored.
+* The same accessibility rule applies: with `alt=""` and no caption, the figure is hidden. Without any `alt`, the image is treated as decorative and a console warning asks for one.
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `src` | attribute / property | — | The fallback image. Setting it switches to a generated picture. |
+| `alt` | attribute / property | — | The image's text alternative; `""` for a decorative image. |
+| `sources` | attribute | — | `url type` pairs, comma-separated: `"s.avif image/avif, s.webp image/webp"`. |
+| `sources` | property | — | `{ src, type?, media?, sizes? }[]`; `src` can be a full srcset. Wins over the attribute until the attribute changes. |
+| `caption` | attribute / property | — | Text of a generated `<figcaption>`. |
+| `width` / `height` | attribute / property | — | The image's intrinsic size, to avoid layout shift. |
+| `loading` | attribute / property | `lazy` | `lazy` or `eager`. The image is always `decoding="async"`. |
+| `sizes` | attribute | — | `sizes` of the `<img>`. |
+| `image` | property | — | Sets it all at once: `{ sources?, fallback, alt, caption?, width?, height?, loading? }`. |
+
+The `PictureSource` and `PictureImage` types are exported with the element.
 
 <details>
 <summary>CSS variables</summary>
@@ -728,6 +949,8 @@ If the bundle loads after rendering, the same query does find it, so the result 
 * bind events on the overlay element itself, or delegate from it;
 * put final text into the markup before injecting it, rather than in a pass after rendering.
 
+<a id="dialogs"></a>
+
 ##### Dialogs (`<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`)
 
 They also share:
@@ -744,6 +967,8 @@ They also share:
 | `dismissible` | property (read-only) | `true` | Inverse of `non-dismissible`. |
 | `onClose` | callback | — | Called once the close transition has finished. |
 
+<a id="anchored-overlays"></a>
+
 ##### Anchored overlays (`<a11y-popover>`, `<a11y-tooltip>`, `<a11y-dropdown>`, `<a11y-context-menu>`)
 
 They are positioned next to an anchor. They flip to the opposite side when there isn't room, and close on a click outside or Escape.
@@ -755,6 +980,8 @@ They are positioned next to an anchor. They flip to the opposite side when there
 | `placement` | attribute | `bottom` | `top`, `bottom`, `left` or `right`, optionally with `-start` / `-end` (e.g. `bottom-start`). |
 | `offset` | attribute | `8` | Gap to the anchor, in px. |
 | `updatePosition()` | method | — | Recomputes the position (it already follows scroll, resize and size changes). |
+
+<a id="menus"></a>
 
 ##### Menus (`<a11y-dropdown>`, `<a11y-context-menu>`)
 
@@ -794,6 +1021,8 @@ loader.close();
 | --- | --- | --- | --- |
 | `message` | attribute | — | Visible message, also the spinner's label (`Loading` without it, [translatable](#translating-built-in-strings)). |
 
+See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
+
 <details>
 <summary>CSS variables</summary>
 
@@ -809,7 +1038,7 @@ loader.close();
 
 #### `a11y-context-menu`
 
-A menu that opens at the pointer on right-click of a trigger element, replacing the browser's own menu there. See [Menus](#common-to-all-overlays).
+A menu that opens at the pointer on right-click of a trigger element, replacing the browser's own menu there. See [Menus](#menus) and [Anchored overlays](#anchored-overlays).
 
 ```html
 <div id="canvas">Right-click me</div>
@@ -824,6 +1053,8 @@ A menu that opens at the pointer on right-click of a trigger element, replacing 
 | `trigger` | attribute | — | `id` of the element to right-click. |
 | `triggerElement` | property | — | The trigger element itself (takes precedence over `trigger`). |
 | `dispose()` | method | — | Detaches from the trigger for good (`close()` only hides the current menu). |
+
+Also takes the shared [anchored-overlay](#anchored-overlays) options `placement` and `offset`, measured from the pointer, and `updatePosition()`; not `anchor` / `anchorElement`, since it opens where the `trigger` is right-clicked. Items follow the [menu](#menus) keyboard behavior. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>
@@ -843,7 +1074,7 @@ A menu that opens at the pointer on right-click of a trigger element, replacing 
 
 #### `a11y-drawer`
 
-A panel that slides in from a screen edge. Behaves like `<a11y-modal>` (see [Dialogs](#common-to-all-overlays)).
+A panel that slides in from a screen edge. Behaves like `<a11y-modal>` (see [Dialogs](#dialogs)).
 
 ```html
 <a11y-drawer id="filters" edge="left">
@@ -855,6 +1086,8 @@ A panel that slides in from a screen edge. Behaves like `<a11y-modal>` (see [Dia
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
 | `edge` | attribute / property (read-only) | `right` | `left`, `right`, `top` or `bottom`. Read when the drawer opens. |
+
+Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-label`, `close-label`, `dismissible` and `onClose`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>
@@ -878,7 +1111,7 @@ The close button uses the modal's `--a11y-modal-close-button-size` and `--a11y-m
 
 #### `a11y-dropdown`
 
-A menu attached to a trigger button. The anchor is the trigger: clicking it toggles the menu, and it gets `aria-haspopup`, `aria-controls` and `aria-expanded`. See [Anchored overlays and Menus](#common-to-all-overlays).
+A menu attached to a trigger button. The anchor is the trigger: clicking it toggles the menu, and it gets `aria-haspopup`, `aria-controls` and `aria-expanded`. See [Anchored overlays](#anchored-overlays) and [Menus](#menus).
 
 ```html
 <button id="actions-btn">Actions</button>
@@ -889,7 +1122,7 @@ A menu attached to a trigger button. The anchor is the trigger: clicking it togg
 </a11y-dropdown>
 ```
 
-No attributes of its own beyond the anchored ones.
+No attributes of its own. It takes the shared [anchored-overlay](#anchored-overlays) options: `anchor` / `anchorElement`, `placement`, `offset` and `updatePosition()`, so e.g. `placement="top-end" offset="4"` opens it above the trigger, right-aligned, 4px away. Items follow the [menu](#menus) keyboard behavior. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>
@@ -927,7 +1160,7 @@ document.getElementById('stay').addEventListener('click', () => {
 });
 ```
 
-Only `onClose` from the [Dialogs](#common-to-all-overlays) table applies. It uses the modal's CSS variables, plus:
+From the shared [dialog](#dialogs) options, only `dialog-label` and `onClose` apply. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`. It uses the modal's CSS variables, plus:
 
 <details>
 <summary>CSS variables</summary>
@@ -940,7 +1173,7 @@ Only `onClose` from the [Dialogs](#common-to-all-overlays) table applies. It use
 
 #### `a11y-modal`
 
-A centered dialog. Your content is its children. See [Dialogs](#common-to-all-overlays).
+A centered dialog. Your content is its children. See [Dialogs](#dialogs).
 
 ```html
 <button id="open-settings">Open settings</button>
@@ -964,6 +1197,8 @@ document.getElementById('open-settings').addEventListener('click', () => {
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
 | `fullscreen` | attribute | absent | Fills the viewport, without the backdrop gutter. Read when the modal opens. |
+
+Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-label`, `close-label`, `dismissible` and `onClose`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 `.a11y-modal-buttons` is an optional footer-row class for your own buttons.
 
@@ -1021,6 +1256,8 @@ window.addEventListener('popstate', () => document.getElementById('banners').dis
 | `show(message, options)` | method | — | Shows a banner (or queues it). |
 | `dismissAll()` | method | — | Closes every banner (calling their `onClose`) and drops the queued ones silently. |
 
+It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
+
 `show()` / `showNotificationBanner()` options:
 
 | Option | Default | Description |
@@ -1050,7 +1287,7 @@ Colors come from the shared `--a11y-color-*` tokens (see [Shared tokens](#shared
 
 #### `a11y-popover`
 
-Content attached to an anchor, opened from code. With `interactive` it's a `role="dialog"` that traps focus; without it, a `role="region"`. See [Anchored overlays](#common-to-all-overlays).
+Content attached to an anchor, opened from code. With `interactive` it's a `role="dialog"` that traps focus; without it, a `role="region"`. See [Anchored overlays](#anchored-overlays).
 
 ```html
 <button id="info-btn">Info</button>
@@ -1070,6 +1307,8 @@ document.getElementById('info-btn').addEventListener('click', () => {
 | `interactive` | attribute | absent | `role="dialog"` and a focus trap. |
 | `trap-focus` | attribute | follows `interactive` | Force the focus trap on (`trap-focus`) or off (`trap-focus="false"`). |
 | `onClose` | callback | — | Called once it has closed. |
+
+Also takes the shared [anchored-overlay](#anchored-overlays) options: `anchor` / `anchorElement`, `placement`, `offset` and `updatePosition()`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>
@@ -1109,6 +1348,8 @@ notify('Copied to clipboard', { position: 'top', duration: 1500 });
 | `maxStack` | property | `3` | Same as `max-stack`. `setMaxStack(n)` is an alias. |
 | `notify(message, options)` | method | — | Shows a toast (or queues it). |
 
+It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
+
 `notify()` options (method and convenience export):
 
 | Option | Default | Description |
@@ -1143,7 +1384,7 @@ Colors come from the shared `--a11y-color-*` tokens (see [Shared tokens](#shared
 
 #### `a11y-tooltip`
 
-A short description shown on hover or focus of its anchor, which gets `aria-describedby`. It stays open while the pointer is over it, and Escape hides it. Never traps focus. See [Anchored overlays](#common-to-all-overlays).
+A short description shown on hover or focus of its anchor, which gets `aria-describedby`. It stays open while the pointer is over it, and Escape hides it. Never traps focus. See [Anchored overlays](#anchored-overlays).
 
 ```html
 <button id="save-btn">Save</button>
@@ -1155,6 +1396,8 @@ A short description shown on hover or focus of its anchor, which gets `aria-desc
 | `show-delay` | attribute / property (read-only) | `300` | Delay before showing, in ms. |
 | `hide-delay` | attribute / property (read-only) | `100` | Delay before hiding once pointer/focus leaves, in ms. |
 | `dispose()` | method | — | Detaches from the anchor for good (`close()` only hides it). |
+
+Also takes the shared [anchored-overlay](#anchored-overlays) options: `anchor` / `anchorElement`, `placement`, `offset` and `updatePosition()`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>

@@ -6,7 +6,7 @@ import { syncAttr } from '../../core/dom-sync.js';
  * content — a custom element can't itself *be* a `<label>`, and only a real
  * one gives click-to-focus and native accessible naming.
  *
- * Inside `<a11y-input>`/`<a11y-textarea>` it's linked to the control
+ * Inside `<a11y-input>`/`<a11y-textarea>`/`<a11y-file-input>` it's linked to the control
  * automatically. On its own, `for` is forwarded to the inner `<label>`:
  *
  * ```html

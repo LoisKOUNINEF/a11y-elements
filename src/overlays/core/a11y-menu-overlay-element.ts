@@ -1,4 +1,4 @@
-import { focusReturnTarget } from '../../core/focus-trap.js';
+import { focusFromKeyboard, focusReturnTarget } from '../../core/focus-trap.js';
 import { A11yAnchoredOverlayElement } from './a11y-anchored-overlay-element.js';
 
 /**
@@ -94,7 +94,7 @@ export abstract class A11yMenuOverlayElement extends A11yAnchoredOverlayElement 
     const target = items[index];
     if (!target) return;
     target.setAttribute('tabindex', '0');
-    target.focus();
+    focusFromKeyboard(target);
   }
 
   private _bindMenuKeyboardHandling(): void {

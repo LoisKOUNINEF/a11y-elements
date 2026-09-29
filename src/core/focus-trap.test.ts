@@ -124,6 +124,15 @@ describe('FocusTrapHelper', () => {
     expect(document.activeElement).toBe(container.querySelector('#last'));
   });
 
+  it('asks for a visible focus ring when Tab moves focus (Safari would otherwise inherit none from a mouse-opened overlay)', () => {
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+    tab(container);
+    expect(focusSpy).toHaveBeenCalledWith({ focusVisible: true });
+    focusSpy.mockRestore();
+  });
+
   it('moves focus to the previous element when Shift+Tab is pressed on a middle element', () => {
     const trap = new FocusTrapHelper({ container });
     trap.activate();

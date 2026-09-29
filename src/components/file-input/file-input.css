@@ -1,0 +1,191 @@
+a11y-file-input {
+  position: relative; /* anchors the visually hidden input */
+  display: flex;
+  flex-direction: column;
+  gap: var(--a11y-file-input-gap, 0.25rem);
+}
+
+/* Visually hidden, not display:none: the input stays the focusable, named,
+   validated control. The "Browse files" label below opens it. */
+a11y-file-input > input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.a11y-file-input__dropzone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--a11y-file-input-dropzone-gap, 0.5rem);
+  padding: var(--a11y-file-input-dropzone-padding, 1.5rem 1rem);
+  background-color: var(--a11y-file-input-color-background, #ffffff);
+  color: var(--a11y-file-input-color-text-muted, #6b7280);
+  border: var(--a11y-file-input-dropzone-border-width, 2px) dashed var(--a11y-file-input-color-border, #d1d5db);
+  border-radius: var(--a11y-file-input-dropzone-border-radius, 8px);
+  text-align: center;
+  transition:
+    border-color     var(--a11y-file-input-transition-duration, 0.2s) ease,
+    background-color var(--a11y-file-input-transition-duration, 0.2s) ease;
+}
+
+.a11y-file-input__dropzone[data-dragover] {
+  border-color: var(--a11y-file-input-color-primary, #2563eb);
+  background-color: var(--a11y-file-input-color-dragover-bg, #eff6ff);
+}
+
+.a11y-file-input__button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  box-sizing: border-box;
+  padding: var(--a11y-file-input-button-padding-y, 0.5rem) var(--a11y-file-input-button-padding-x, 1rem);
+  background-color: var(--a11y-file-input-color-background, #ffffff);
+  color: var(--a11y-file-input-color-primary, #2563eb);
+  border: 1px solid var(--a11y-file-input-color-primary, #2563eb);
+  border-radius: var(--a11y-file-input-button-border-radius, 4px);
+  font-weight: var(--a11y-file-input-button-font-weight, 600);
+  cursor: pointer;
+}
+
+.a11y-file-input__button:hover {
+  background-color: var(--a11y-file-input-color-dragover-bg, #eff6ff);
+}
+
+/* The focus lands on the hidden input; show it on the button that stands for it. */
+a11y-file-input > input[type="file"]:focus-visible + .a11y-file-input__dropzone .a11y-file-input__button {
+  outline: var(--a11y-file-input-focus-outline-width, 2px) solid var(--a11y-file-input-color-primary, #2563eb);
+  outline-offset: var(--a11y-file-input-focus-outline-offset, 2px);
+}
+
+/* Set by bindField() only once the error is shown (after blur, a drop or a removal, or a submit attempt). */
+a11y-file-input > input[aria-invalid="true"] + .a11y-file-input__dropzone {
+  border-color: var(--a11y-file-input-color-error, #b91c1c);
+}
+
+a11y-file-input > input:disabled + .a11y-file-input__dropzone {
+  background-color: var(--a11y-file-input-color-disabled-bg, #e5e7eb);
+  color: var(--a11y-file-input-color-disabled-text, #9ca3af);
+  cursor: not-allowed;
+}
+
+a11y-file-input > input:disabled + .a11y-file-input__dropzone .a11y-file-input__button {
+  color: inherit;
+  border-color: currentColor;
+  background-color: transparent;
+  pointer-events: none;
+}
+
+.a11y-file-input__rejected,
+.a11y-file-input__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.a11y-file-input__rejected[hidden],
+.a11y-file-input__list[hidden] {
+  display: none;
+}
+
+.a11y-file-input__rejected {
+  color: var(--a11y-file-input-color-error, #b91c1c);
+  font-size: var(--a11y-field-part-font-size, 0.875rem);
+  line-height: var(--a11y-field-part-line-height, 1.4);
+}
+
+.a11y-file-input__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--a11y-file-input-list-gap, 0.5rem);
+  margin-top: var(--a11y-file-input-list-margin-top, 0.25rem);
+}
+
+.a11y-file-input__item {
+  display: flex;
+  align-items: center;
+  gap: var(--a11y-file-input-item-gap, 0.75rem);
+  padding: var(--a11y-file-input-item-padding, 0.5rem 0.75rem);
+  border: 1px solid var(--a11y-file-input-color-border, #d1d5db);
+  border-radius: var(--a11y-file-input-item-border-radius, 4px);
+  color: var(--a11y-file-input-color-text, #111827);
+}
+
+.a11y-file-input__preview {
+  flex: none;
+  width: var(--a11y-file-input-preview-size, 2.5rem);
+  height: var(--a11y-file-input-preview-size, 2.5rem);
+  object-fit: cover;
+  border-radius: var(--a11y-file-input-preview-border-radius, 4px);
+}
+
+.a11y-file-input__name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.a11y-file-input__size {
+  flex: none;
+  color: var(--a11y-file-input-color-text-muted, #6b7280);
+  font-size: var(--a11y-field-part-font-size, 0.875rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.a11y-file-input__remove {
+  flex: none;
+  min-width: 2rem; /* ≥ 24px target (WCAG 2.5.8) */
+  min-height: 2rem;
+  padding: 0.25rem 0.5rem;
+  background: none;
+  color: var(--a11y-file-input-color-error, #b91c1c);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.a11y-file-input__remove:hover:not(:disabled) {
+  border-color: currentColor;
+}
+
+.a11y-file-input__remove:focus-visible {
+  outline: var(--a11y-file-input-focus-outline-width, 2px) solid var(--a11y-file-input-color-primary, #2563eb);
+  outline-offset: var(--a11y-file-input-focus-outline-offset, 2px);
+}
+
+.a11y-file-input__remove:disabled {
+  color: var(--a11y-file-input-color-disabled-text, #9ca3af);
+  cursor: not-allowed;
+}
+
+/* Announcement only: read through role="status", never shown. */
+.a11y-file-input__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a11y-file-input__dropzone {
+    transition: none;
+  }
+}
+
+/* Colors are overridden in forced colors: show the drag-over state with the border style instead. */
+@media (forced-colors: active) {
+  .a11y-file-input__dropzone[data-dragover] {
+    border-style: solid;
+  }
+}

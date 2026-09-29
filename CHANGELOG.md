@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.0
+
+### Changes
+
+- New `<a11y-checkbox-group>`: a `<fieldset>` and `<legend>` around your checkboxes, the multi-select counterpart of `<a11y-radio-group>`.
+
+Add `select-all` for a "Select all" checkbox that's checked, partly checked or unchecked to match the options, and checks or unchecks every enabled one. Its text can be translated with `select-all-label` or `setStrings({ selectAll })`.
+
+- New `<a11y-file-input>`: a file picker around a real `<input type="file">`, with the same `<a11y-label>`, `<a11y-hint>` and `<a11y-error>` parts as `<a11y-input>`.
+
+Files can be browsed for or dropped onto it, and are listed with a "Remove" button each. With `multiple`, picking again adds to the selection. `accept` (also on drop), `max-size` and `max-files` keep files out, and the ones left out are listed and announced. The selection is written back to the input, which submits it with the form. Optional image previews with `previews`.
+
+Its strings can be translated with `setStrings()` (`browseFiles`, `dropFiles`, `remove`, `removeFile`, `fileAdded`, …).
+
+- `<a11y-picture>` can build its `<picture>` for you: give it a `src` (the fallback) and `sources` (`"s.avif image/avif, s.webp image/webp"`) and the browser uses the first format it supports. `alt`, `caption`, `width`, `height`, `loading` and `sizes` are attributes too. From JavaScript, set `image = { sources, fallback, alt }` at once, or `sources` as `{ src, type, media, sizes }` objects for srcset descriptors and art direction. Pictures you write yourself work as before.
+
+- `A11yFieldElement` takes a value type (`A11yFieldElement<V = string>`), with `readValue()` / `writeValue()` for subclasses whose value isn't the control's string.
+
 ## 0.2.0
 
 ### Breaking changes

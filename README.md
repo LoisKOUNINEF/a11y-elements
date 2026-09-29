@@ -73,6 +73,7 @@ setStrings({
 | `characterCount` | `{count} / {max}` | the visible text of an `<a11y-counter>` | — |
 | `charactersRemaining` | `{count} characters remaining` | what an `<a11y-counter>` announces near the limit | — |
 | `characterRemaining` | `{count} character remaining` | the same, with one character left | — |
+| `selectAll` | `Select all` | the generated checkbox of `<a11y-checkbox-group select-all>` | `select-all-label` |
 
 * An instance attribute wins over `setStrings()`, which wins over the default. Keys you leave out keep their current value.
 * Elements already on the page update right away, so calling it again on a language switch is enough.
@@ -84,7 +85,7 @@ Each section shows an example, the element's own attributes/properties/methods, 
 
 Behavior shared by overlays is described once, in [Common to all overlays](#common-to-all-overlays).
 
-**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
+**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-checkbox-group>`](#a11y-checkbox-group) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
 
 **Overlays:** [`<a11y-blocking-loader>`](#a11y-blocking-loader) · [`<a11y-context-menu>`](#a11y-context-menu) · [`<a11y-drawer>`](#a11y-drawer) · [`<a11y-dropdown>`](#a11y-dropdown) · [`<a11y-emergency-dialog>`](#a11y-emergency-dialog) · [`<a11y-modal>`](#a11y-modal) · [`<a11y-notification-banner>`](#a11y-notification-banner) · [`<a11y-popover>`](#a11y-popover) · [`<a11y-snackbar>`](#a11y-snackbar) · [`<a11y-tooltip>`](#a11y-tooltip)
 
@@ -199,6 +200,55 @@ checkbox.onChange = (checked) => console.log('accepted:', checked);
 
 </details>
 
+#### `a11y-checkbox-group`
+
+Wraps your checkboxes in a `<fieldset>` with a `<legend>`, styled like `<a11y-checkbox>`. Add `select-all` for a "Select all" checkbox: it's checked when every option is, partly checked when some are, and checks or unchecks them all. It has no `name`, so it's never submitted, and disabled options keep their own state.
+
+```html
+<a11y-checkbox-group id="toppings" legend="Toppings" select-all>
+    <label><input type="checkbox" name="toppings" value="cheese"> Cheese</label>
+    <label><input type="checkbox" name="toppings" value="ham"> Ham</label>
+</a11y-checkbox-group>
+```
+
+```ts
+import 'a11y-elements/components/checkbox-group';
+import type { CheckboxGroupElement } from 'a11y-elements/components/checkbox-group/element';
+
+const group = document.getElementById('toppings') as CheckboxGroupElement;
+group.onChange = (values) => console.log('toppings:', values);
+```
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `legend` | attribute | — | Visible group label. |
+| `aria-label` | attribute | — | Group name when there's no `legend`. |
+| `disabled` | attribute | absent | Disables every option (through the fieldset). |
+| `select-all` | attribute | absent | Adds the "Select all" checkbox after the legend. |
+| `select-all-label` | attribute | `Select all` | Its text; also `setStrings({ selectAll })`. |
+| `onChange` | callback | — | `(values: string[]) => void`, called once per user action, a "Select all" click included. |
+| `getValue()` / `setValue(values)` | method | — | Reads the checked values / checks exactly those values. |
+| `selectAll()` / `unselectAll()` | method | — | Checks / unchecks every enabled option. Like `setValue()`, fires no events. |
+
+A "Select all" click fires `input` and `change` on every option it changes.
+
+Options use the `--a11y-checkbox-*` variables above.
+
+<details>
+<summary>CSS variables</summary>
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-checkbox-group-color-text-muted` | `#6b7280` |
+| `--a11y-checkbox-group-disabled-opacity` | `0.6` |
+| `--a11y-checkbox-group-legend-font-size` | `0.875rem` |
+| `--a11y-checkbox-group-legend-margin-bottom` | `0.5rem` |
+| `--a11y-checkbox-group-options-gap` | `0.5rem` |
+| `--a11y-checkbox-group-select-all-border` | `1px solid #e5e7eb` |
+| `--a11y-checkbox-group-select-all-padding-bottom` | `0.5rem` |
+
+</details>
+
 #### `a11y-focusable`
 
 Makes a non-button element behave like a button: `role="button"`, `tabindex="0"`, and Enter/Space fire a real `click`, so one `click` listener covers mouse and keyboard. Prefer a real `<button>` whenever you can.
@@ -292,7 +342,7 @@ a11y-input:state(dirty) { … }                          /* edited at least once
 
 Where `:state()` isn't supported, style `input[aria-invalid="true"]` instead.
 
-Checkbox, radio, range, color, file, hidden and button inputs are left alone: use `<a11y-checkbox>`, `<a11y-radio-group>`, … for those.
+Checkbox, radio, range, color, file, hidden and button inputs are left alone: use `<a11y-checkbox>`, `<a11y-checkbox-group>`, `<a11y-radio-group>`, … for those.
 
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |

@@ -26,6 +26,8 @@ export interface A11yStrings {
   charactersRemaining: string;
   /** `charactersRemaining` when exactly one character is left. */
   characterRemaining: string;
+  /** The generated "Select all" checkbox of `<a11y-checkbox-group select-all>`. */
+  selectAll: string;
 }
 
 export const DEFAULT_STRINGS: Readonly<A11yStrings> = Object.freeze({
@@ -39,6 +41,7 @@ export const DEFAULT_STRINGS: Readonly<A11yStrings> = Object.freeze({
   characterCount: '{count} / {max}',
   charactersRemaining: '{count} characters remaining',
   characterRemaining: '{count} character remaining',
+  selectAll: 'Select all',
 });
 
 /** Dispatched on `document` whenever `setStrings()`/`resetStrings()` runs, so mounted elements can relabel themselves. */

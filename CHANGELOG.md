@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changes
+
+- New `<a11y-checkbox-group>`: a `<fieldset>` and `<legend>` around your checkboxes, the multi-select counterpart of `<a11y-radio-group>`.
+
+Add `select-all` for a "Select all" checkbox that's checked, partly checked or unchecked to match the options, and checks or unchecks every enabled one. Its text can be translated with `select-all-label` or `setStrings({ selectAll })`.
+
 ## 0.2.0
 
 ### Breaking changes

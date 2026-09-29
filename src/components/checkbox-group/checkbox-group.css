@@ -1,0 +1,41 @@
+a11y-checkbox-group {
+  display: contents;
+}
+
+/* The fieldset is itself the flex column laying out legend + options. Each
+   option is styled by checkbox.css (`.a11y-checkbox` / `.a11y-checkbox__input`). */
+.a11y-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--a11y-checkbox-group-options-gap, 0.5rem);
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0; /* fieldset min-width override */
+}
+
+.a11y-checkbox-group:disabled {
+  opacity: var(--a11y-checkbox-group-disabled-opacity, 0.6);
+  cursor: not-allowed;
+}
+
+/* A disabled fieldset is already muted as a whole — don't compound the opacity per option. */
+.a11y-checkbox-group:disabled .a11y-checkbox {
+  opacity: 1;
+}
+
+.a11y-checkbox-group__legend {
+  font-size: var(--a11y-checkbox-group-legend-font-size, 0.875rem);
+  font-weight: 600;
+  color: var(--a11y-checkbox-group-color-text-muted, #6b7280);
+  padding: 0;
+  margin-bottom: var(--a11y-checkbox-group-legend-margin-bottom, 0.5rem);
+}
+
+.a11y-checkbox-group__legend:empty { display: none; }
+
+/* Separates the generated "Select all" checkbox from the options it controls. */
+.a11y-checkbox-group__select-all {
+  padding-bottom: var(--a11y-checkbox-group-select-all-padding-bottom, 0.5rem);
+  border-bottom: var(--a11y-checkbox-group-select-all-border, 1px solid #e5e7eb);
+}

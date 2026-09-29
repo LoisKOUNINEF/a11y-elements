@@ -811,6 +811,8 @@ If the bundle loads after rendering, the same query does find it, so the result 
 * bind events on the overlay element itself, or delegate from it;
 * put final text into the markup before injecting it, rather than in a pass after rendering.
 
+<a id="dialogs"></a>
+
 ##### Dialogs (`<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`)
 
 They also share:
@@ -827,6 +829,8 @@ They also share:
 | `dismissible` | property (read-only) | `true` | Inverse of `non-dismissible`. |
 | `onClose` | callback | — | Called once the close transition has finished. |
 
+<a id="anchored-overlays"></a>
+
 ##### Anchored overlays (`<a11y-popover>`, `<a11y-tooltip>`, `<a11y-dropdown>`, `<a11y-context-menu>`)
 
 They are positioned next to an anchor. They flip to the opposite side when there isn't room, and close on a click outside or Escape.
@@ -838,6 +842,8 @@ They are positioned next to an anchor. They flip to the opposite side when there
 | `placement` | attribute | `bottom` | `top`, `bottom`, `left` or `right`, optionally with `-start` / `-end` (e.g. `bottom-start`). |
 | `offset` | attribute | `8` | Gap to the anchor, in px. |
 | `updatePosition()` | method | — | Recomputes the position (it already follows scroll, resize and size changes). |
+
+<a id="menus"></a>
 
 ##### Menus (`<a11y-dropdown>`, `<a11y-context-menu>`)
 
@@ -877,6 +883,8 @@ loader.close();
 | --- | --- | --- | --- |
 | `message` | attribute | — | Visible message, also the spinner's label (`Loading` without it, [translatable](#translating-built-in-strings)). |
 
+See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
+
 <details>
 <summary>CSS variables</summary>
 
@@ -892,7 +900,7 @@ loader.close();
 
 #### `a11y-context-menu`
 
-A menu that opens at the pointer on right-click of a trigger element, replacing the browser's own menu there. See [Menus](#common-to-all-overlays).
+A menu that opens at the pointer on right-click of a trigger element, replacing the browser's own menu there. See [Menus](#menus) and [Anchored overlays](#anchored-overlays).
 
 ```html
 <div id="canvas">Right-click me</div>
@@ -907,6 +915,8 @@ A menu that opens at the pointer on right-click of a trigger element, replacing 
 | `trigger` | attribute | — | `id` of the element to right-click. |
 | `triggerElement` | property | — | The trigger element itself (takes precedence over `trigger`). |
 | `dispose()` | method | — | Detaches from the trigger for good (`close()` only hides the current menu). |
+
+Also takes the shared [anchored-overlay](#anchored-overlays) options `placement` and `offset`, measured from the pointer, and `updatePosition()`; not `anchor` / `anchorElement`, since it opens where the `trigger` is right-clicked. Items follow the [menu](#menus) keyboard behavior. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>
@@ -926,7 +936,7 @@ A menu that opens at the pointer on right-click of a trigger element, replacing 
 
 #### `a11y-drawer`
 
-A panel that slides in from a screen edge. Behaves like `<a11y-modal>` (see [Dialogs](#common-to-all-overlays)).
+A panel that slides in from a screen edge. Behaves like `<a11y-modal>` (see [Dialogs](#dialogs)).
 
 ```html
 <a11y-drawer id="filters" edge="left">
@@ -938,6 +948,8 @@ A panel that slides in from a screen edge. Behaves like `<a11y-modal>` (see [Dia
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
 | `edge` | attribute / property (read-only) | `right` | `left`, `right`, `top` or `bottom`. Read when the drawer opens. |
+
+Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-label`, `close-label`, `dismissible` and `onClose`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>
@@ -961,7 +973,7 @@ The close button uses the modal's `--a11y-modal-close-button-size` and `--a11y-m
 
 #### `a11y-dropdown`
 
-A menu attached to a trigger button. The anchor is the trigger: clicking it toggles the menu, and it gets `aria-haspopup`, `aria-controls` and `aria-expanded`. See [Anchored overlays and Menus](#common-to-all-overlays).
+A menu attached to a trigger button. The anchor is the trigger: clicking it toggles the menu, and it gets `aria-haspopup`, `aria-controls` and `aria-expanded`. See [Anchored overlays](#anchored-overlays) and [Menus](#menus).
 
 ```html
 <button id="actions-btn">Actions</button>
@@ -972,7 +984,7 @@ A menu attached to a trigger button. The anchor is the trigger: clicking it togg
 </a11y-dropdown>
 ```
 
-No attributes of its own beyond the anchored ones.
+No attributes of its own. It takes the shared [anchored-overlay](#anchored-overlays) options: `anchor` / `anchorElement`, `placement`, `offset` and `updatePosition()`, so e.g. `placement="top-end" offset="4"` opens it above the trigger, right-aligned, 4px away. Items follow the [menu](#menus) keyboard behavior. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>
@@ -1010,7 +1022,7 @@ document.getElementById('stay').addEventListener('click', () => {
 });
 ```
 
-Only `onClose` from the [Dialogs](#common-to-all-overlays) table applies. It uses the modal's CSS variables, plus:
+From the shared [dialog](#dialogs) options, only `dialog-label` and `onClose` apply. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`. It uses the modal's CSS variables, plus:
 
 <details>
 <summary>CSS variables</summary>
@@ -1023,7 +1035,7 @@ Only `onClose` from the [Dialogs](#common-to-all-overlays) table applies. It use
 
 #### `a11y-modal`
 
-A centered dialog. Your content is its children. See [Dialogs](#common-to-all-overlays).
+A centered dialog. Your content is its children. See [Dialogs](#dialogs).
 
 ```html
 <button id="open-settings">Open settings</button>
@@ -1047,6 +1059,8 @@ document.getElementById('open-settings').addEventListener('click', () => {
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
 | `fullscreen` | attribute | absent | Fills the viewport, without the backdrop gutter. Read when the modal opens. |
+
+Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-label`, `close-label`, `dismissible` and `onClose`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 `.a11y-modal-buttons` is an optional footer-row class for your own buttons.
 
@@ -1104,6 +1118,8 @@ window.addEventListener('popstate', () => document.getElementById('banners').dis
 | `show(message, options)` | method | — | Shows a banner (or queues it). |
 | `dismissAll()` | method | — | Closes every banner (calling their `onClose`) and drops the queued ones silently. |
 
+It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
+
 `show()` / `showNotificationBanner()` options:
 
 | Option | Default | Description |
@@ -1133,7 +1149,7 @@ Colors come from the shared `--a11y-color-*` tokens (see [Shared tokens](#shared
 
 #### `a11y-popover`
 
-Content attached to an anchor, opened from code. With `interactive` it's a `role="dialog"` that traps focus; without it, a `role="region"`. See [Anchored overlays](#common-to-all-overlays).
+Content attached to an anchor, opened from code. With `interactive` it's a `role="dialog"` that traps focus; without it, a `role="region"`. See [Anchored overlays](#anchored-overlays).
 
 ```html
 <button id="info-btn">Info</button>
@@ -1153,6 +1169,8 @@ document.getElementById('info-btn').addEventListener('click', () => {
 | `interactive` | attribute | absent | `role="dialog"` and a focus trap. |
 | `trap-focus` | attribute | follows `interactive` | Force the focus trap on (`trap-focus`) or off (`trap-focus="false"`). |
 | `onClose` | callback | — | Called once it has closed. |
+
+Also takes the shared [anchored-overlay](#anchored-overlays) options: `anchor` / `anchorElement`, `placement`, `offset` and `updatePosition()`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>
@@ -1192,6 +1210,8 @@ notify('Copied to clipboard', { position: 'top', duration: 1500 });
 | `maxStack` | property | `3` | Same as `max-stack`. `setMaxStack(n)` is an alias. |
 | `notify(message, options)` | method | — | Shows a toast (or queues it). |
 
+It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
+
 `notify()` options (method and convenience export):
 
 | Option | Default | Description |
@@ -1226,7 +1246,7 @@ Colors come from the shared `--a11y-color-*` tokens (see [Shared tokens](#shared
 
 #### `a11y-tooltip`
 
-A short description shown on hover or focus of its anchor, which gets `aria-describedby`. It stays open while the pointer is over it, and Escape hides it. Never traps focus. See [Anchored overlays](#common-to-all-overlays).
+A short description shown on hover or focus of its anchor, which gets `aria-describedby`. It stays open while the pointer is over it, and Escape hides it. Never traps focus. See [Anchored overlays](#anchored-overlays).
 
 ```html
 <button id="save-btn">Save</button>
@@ -1238,6 +1258,8 @@ A short description shown on hover or focus of its anchor, which gets `aria-desc
 | `show-delay` | attribute / property (read-only) | `300` | Delay before showing, in ms. |
 | `hide-delay` | attribute / property (read-only) | `100` | Delay before hiding once pointer/focus leaves, in ms. |
 | `dispose()` | method | — | Detaches from the anchor for good (`close()` only hides it). |
+
+Also takes the shared [anchored-overlay](#anchored-overlays) options: `anchor` / `anchorElement`, `placement`, `offset` and `updatePosition()`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>

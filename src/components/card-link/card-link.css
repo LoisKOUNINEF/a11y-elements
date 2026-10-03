@@ -1,0 +1,12 @@
+/* The card itself is the consumer's markup; this only gives the wrapper a box
+   to draw the focus ring on while its link has keyboard focus, and the
+   pointer cursor its forwarded clicks deserve. */
+a11y-card-link {
+  display: block;
+  cursor: pointer;
+}
+
+a11y-card-link:has(a[href]:focus-visible) {
+  outline: var(--a11y-card-link-focus-outline-width, 2px) solid var(--a11y-card-link-focus-outline-color, #2563eb);
+  outline-offset: var(--a11y-card-link-focus-outline-offset, 2px);
+}

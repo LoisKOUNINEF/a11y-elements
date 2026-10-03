@@ -96,7 +96,7 @@ Each section shows an example, the element's own attributes/properties/methods, 
 
 Behavior shared by overlays is described once, in [Common to all overlays](#common-to-all-overlays).
 
-**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-checkbox-group>`](#a11y-checkbox-group) · [`<a11y-file-input>`](#a11y-file-input) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
+**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-card-link>`](#a11y-card-link) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-checkbox-group>`](#a11y-checkbox-group) · [`<a11y-file-input>`](#a11y-file-input) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
 
 **Overlays:** [`<a11y-blocking-loader>`](#a11y-blocking-loader) · [`<a11y-context-menu>`](#a11y-context-menu) · [`<a11y-drawer>`](#a11y-drawer) · [`<a11y-dropdown>`](#a11y-dropdown) · [`<a11y-emergency-dialog>`](#a11y-emergency-dialog) · [`<a11y-modal>`](#a11y-modal) · [`<a11y-notification-banner>`](#a11y-notification-banner) · [`<a11y-popover>`](#a11y-popover) · [`<a11y-snackbar>`](#a11y-snackbar) · [`<a11y-tooltip>`](#a11y-tooltip)
 
@@ -158,6 +158,44 @@ An avatar image with an initials fallback. When the image is missing or fails to
 | `--a11y-avatar-font-weight` | `600` |
 | `--a11y-avatar-initials-letter-spacing` | `0.05em` |
 | `--a11y-avatar-size` | `2.5rem` |
+
+</details>
+
+#### `a11y-card-link`
+
+Makes a whole card go to one page through a real `<a href>` inside it (usually around the title). The link stays the card's only tab stop and its accessible name, so screen readers announce a link named by the title, Enter follows it, Space scrolls the page, and middle-click, "Open in new tab" and "Copy link address" work on it.
+
+A click anywhere else on the card is forwarded to the link with a real `click()`, so your own click handlers on the link (an SPA router's) run for it too. Clicks aren't forwarded when they land on another control in the card (a button, a second link, an input…), when the user was selecting text, or when something already called `preventDefault()`. Cmd/Ctrl/Shift-click and middle-click on the card open the link in a new tab.
+
+The card gets no `role` or `tabindex`. Use it for cards that navigate; for cards that perform an action, use a `<button>` or [`<a11y-focusable>`](#a11y-focusable).
+
+```html
+<a11y-card-link describe>
+  <div class="card">
+    <svg aria-hidden="true">…</svg>
+    <h3><a href="/articles/why-nutin">Why Nutin?</a></h3>
+    <p data-card-description>The idea behind the framework…</p>
+  </div>
+</a11y-card-link>
+```
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `describe` | attribute (boolean) | — | Adds the `data-card-description` element to the link's `aria-describedby` (giving it an id if it has none), so it's read after the title. |
+| `data-card-link` | attribute, on an `<a href>` inside | — | The link to use when the card has several. Otherwise the first `<a href>` is used. Without one, a console warning is logged. |
+| `data-card-description` | attribute, on an element inside | — | The description `describe` points to. |
+| `link` | property (read-only) | — | The link the card navigates through. |
+
+The whole card is outlined while its link has keyboard focus (`:has(:focus-visible)`). In browsers without `:has()`, the link keeps its own focus ring.
+
+<details>
+<summary>CSS variables</summary>
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-card-link-focus-outline-color` | `#2563eb` |
+| `--a11y-card-link-focus-outline-offset` | `2px` |
+| `--a11y-card-link-focus-outline-width` | `2px` |
 
 </details>
 
@@ -349,6 +387,8 @@ The hint and error use the [shared field variables](#a11y-input).
 #### `a11y-focusable`
 
 Makes a non-button element behave like a button: `role="button"`, `tabindex="0"`, and Enter/Space fire a real `click`, so one `click` listener covers mouse and keyboard. Prefer a real `<button>` whenever you can.
+
+It's for **actions**. Cards that go to another page should use [`<a11y-card-link>`](#a11y-card-link) or a plain `<a href>`: a button role, Space activation and no `href` mislead screen-reader users and break "Open in new tab".
 
 ```html
 <a11y-focusable aria-label="Expand menu">

@@ -8,6 +8,8 @@
 
 ### Changes
 
+- New `<a11y-card-link>` for cards that go to another page: one real `<a href>` inside stays the only tab stop and gives the card its name, and clicks on the rest of the card are forwarded to it. Cmd/Ctrl/Shift-click and middle-click open it in a new tab; clicks on other controls and text selection are left alone. Add `describe` to read a `data-card-description` element after the title. Use it instead of `<a11y-focusable>` for navigation cards, which announced them as buttons.
+
 - `html` quotes unquoted attribute values: `` html`<div title=${x}>` `` renders `title="…"`, and inside a value already started (`class=a${x}`) whitespace, quotes and `=<>` are encoded, so a value can't add attributes.
 
 - `<a11y-focusable>` and `<a11y-visually-hidden>` leave your content in place when they update, instead of setting it back through `innerHTML`. That second parse could turn sanitized markup live again (mutation XSS), and it dropped listeners and state on your children. `A11yElement.render()` can return `null` for the same behavior in subclasses.

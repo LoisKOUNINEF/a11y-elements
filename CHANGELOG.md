@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0
+
+### Breaking changes
+
+- `html` only trusts values made by `raw()`, `html`, `attr()` and `flag()`. A plain object with an `__html` key (e.g. parsed JSON passed as a snackbar or banner `message`) used to be inserted unescaped; it is now escaped like any other value. Wrap markup you built yourself in `raw()` instead of a hand-made `{ __html }` object.
+
+### Changes
+
+- `html` quotes unquoted attribute values: `` html`<div title=${x}>` `` renders `title="…"`, and inside a value already started (`class=a${x}`) whitespace, quotes and `=<>` are encoded, so a value can't add attributes.
+
+- `<a11y-focusable>` and `<a11y-visually-hidden>` leave your content in place when they update, instead of setting it back through `innerHTML`. That second parse could turn sanitized markup live again (mutation XSS), and it dropped listeners and state on your children. `A11yElement.render()` can return `null` for the same behavior in subclasses.
+
+- `formatString()` placeholders and `setStrings()` keys only match own keys: `{constructor}` stays as is, and `setStrings({ constructor: … })` is ignored.
+
 ## 0.3.0
 
 ### Changes

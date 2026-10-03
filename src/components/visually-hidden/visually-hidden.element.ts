@@ -16,10 +16,9 @@ export class VisuallyHiddenElement extends A11yElement {
     this.classList.add('a11y-visually-hidden');
   }
 
-  // Preserves whatever the consumer authored inside the tag; there's nothing
-  // generated here, so this is a same-content round-trip rather than a real
-  // template render.
-  protected override render(): string {
-    return this.innerHTML;
+  // Content is whatever the consumer already put inside the tag: left as is,
+  // never re-serialized and re-parsed.
+  protected override render(): null {
+    return null;
   }
 }

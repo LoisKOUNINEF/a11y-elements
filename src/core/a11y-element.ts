@@ -18,7 +18,8 @@ type Listener = [target: EventTarget, type: string, handler: EventListener, opti
  *   setStrings()             -> onStringsChange(), for subclasses that define it
  *
  * Subclasses list attributes to watch via `static observedAttributes` and
- * implement `render()` to return the markup for `this.innerHTML`. Attribute/
+ * implement `render()` to return the markup for `this.innerHTML` (or `null`
+ * to keep the consumer's own children as they are). Attribute/
  * property setters that need to reflect into the DOM should just mutate the
  * attribute — `attributeChangedCallback` re-renders synchronously while
  * connected, so state and DOM never drift out of sync across a render.
@@ -96,15 +97,22 @@ export abstract class A11yElement extends HTMLElement {
     try {
       this._cleanupListeners();
       this.onBeforeRender?.();
-      this.innerHTML = String(this.render());
+      const markup = this.render();
+      if (markup !== null) this.innerHTML = String(markup);
       this.onAfterRender?.();
     } finally {
       this._updating = false;
     }
   }
 
-  /** Returns the markup to set as `this.innerHTML` on every render — a plain string, or an `html\`...\`` result. */
-  protected abstract render(): string | Raw;
+  /**
+   * Returns the markup to set as `this.innerHTML` on every render — a plain
+   * string, or an `html\`...\`` result — or `null` to leave the children
+   * untouched. Never return `this.innerHTML`: assigning it back re-parses the
+   * consumer's markup (which can turn sanitized markup live again — mutation
+   * XSS) and drops listeners and state on their children.
+   */
+  protected abstract render(): string | Raw | null;
 
   /** Runs before `render()`. Typical use: set root-level classes/ARIA/CSS custom properties. */
   protected onBeforeRender?(): void;

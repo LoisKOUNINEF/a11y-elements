@@ -39,10 +39,10 @@ export class FocusableElement extends A11yElement {
     }
   }
 
-  // Content is whatever the consumer already put inside the tag — this is a
-  // same-content round-trip, not a generated template (see VisuallyHiddenElement).
-  protected override render(): string {
-    return this.innerHTML;
+  // Content is whatever the consumer already put inside the tag: left as is,
+  // never re-serialized and re-parsed.
+  protected override render(): null {
+    return null;
   }
 
   protected override onAfterRender(): void {

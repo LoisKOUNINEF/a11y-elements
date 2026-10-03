@@ -25,6 +25,17 @@ describe('a11y-focusable', () => {
     expect(el.textContent?.trim()).toBe('Menu');
   });
 
+  it('keeps its children (identity and listeners) when it re-renders', () => {
+    const el = mount('<span>Menu</span>');
+    const child = el.querySelector('span')!;
+    const spy = vi.fn();
+    child.addEventListener('click', spy);
+    el.setAttribute('aria-label', 'Expand menu');
+    expect(el.querySelector('span')).toBe(child);
+    child.click();
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
   it('reflects an aria-label attribute (read natively, not managed by the element)', () => {
     const el = mount();
     el.setAttribute('aria-label', 'Expand menu');

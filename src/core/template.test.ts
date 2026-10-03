@@ -52,6 +52,27 @@ describe('html tagged template', () => {
     const items = ['<a>', '<b>'];
     expect(String(html`<ul>${items}</ul>`)).toBe('<ul>&lt;a&gt;&lt;b&gt;</ul>');
   });
+
+  it('escapes a plain object that only looks like raw() output, e.g. parsed JSON', () => {
+    const forged = JSON.parse('{"__html":"<img src=x onerror=alert(1)>"}');
+    expect(String(html`<p>${forged}</p>`)).toBe('<p>[object Object]</p>');
+    expect(String(html`<p>${[forged]}</p>`)).toBe('<p>[object Object]</p>');
+  });
+
+  it('quotes an unquoted attribute value, so it cannot add attributes', () => {
+    expect(String(html`<div title=${'a onmouseover=x'}></div>`)).toBe('<div title="a onmouseover=x"></div>');
+    expect(String(html`<div title=${'a" b'}>`)).toBe('<div title="a&quot; b">');
+  });
+
+  it('encodes value-ending characters inside an unquoted attribute value already started', () => {
+    expect(String(html`<div class=a${' onclick=x'}></div>`)).toBe('<div class=a&#32;onclick&#61;x></div>');
+  });
+
+  it('leaves quoted attribute values and text content as they were', () => {
+    expect(String(html`<div title='${'a b'}' data-x="${'c=d'}">${'e=f g'}</div>`)).toBe(
+      `<div title='a b' data-x="c=d">e=f g</div>`,
+    );
+  });
 });
 
 describe('attr()', () => {

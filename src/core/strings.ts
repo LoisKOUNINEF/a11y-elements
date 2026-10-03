@@ -95,7 +95,7 @@ for (const [key, value] of Object.entries(DEFAULT_STRINGS) as [keyof A11yStrings
 /** Overrides some or all built-in strings, page-wide. Elements already on the page update right away. */
 export function setStrings(partial: Partial<A11yStrings>): void {
   for (const [key, value] of Object.entries(partial) as [keyof A11yStrings, string | undefined][]) {
-    if (key in DEFAULT_STRINGS && typeof value === 'string') strings[key] = value;
+    if (Object.hasOwn(DEFAULT_STRINGS, key) && typeof value === 'string') strings[key] = value;
   }
   document.dispatchEvent(new Event(STRINGS_CHANGE_EVENT));
 }
@@ -110,7 +110,7 @@ export function getString(key: keyof A11yStrings): string {
   return strings[key];
 }
 
-/** Replaces each `{key}` placeholder with `values[key]`; placeholders without a value are left as is. */
+/** Replaces each `{key}` placeholder with `values[key]`; placeholders without a value (own keys only, so `{constructor}` stays as is) are left as is. */
 export function formatString(template: string, values: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (match, key: string) => (key in values ? values[key]! : match));
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => (Object.hasOwn(values, key) ? values[key]! : match));
 }

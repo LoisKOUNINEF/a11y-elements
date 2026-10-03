@@ -47,4 +47,15 @@ describe('strings', () => {
     expect(formatString('Aller à {name}', { name: 'Tarifs' })).toBe('Aller à Tarifs');
     expect(formatString('{name} / {other}', { name: 'A' })).toBe('A / {other}');
   });
+
+  it('formatString only fills own keys, never inherited ones like {constructor}', () => {
+    expect(formatString('{constructor} {toString}', {})).toBe('{constructor} {toString}');
+  });
+
+  it('setStrings ignores inherited keys like constructor', () => {
+    setStrings(JSON.parse('{"constructor":"x","toString":"y"}'));
+    const store = (globalThis as any)[Symbol.for('a11y-elements/strings')];
+    expect(Object.hasOwn(store, 'constructor')).toBe(false);
+    expect(Object.hasOwn(store, 'toString')).toBe(false);
+  });
 });

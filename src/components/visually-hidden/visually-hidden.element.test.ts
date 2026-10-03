@@ -23,6 +23,14 @@ describe('a11y-visually-hidden', () => {
     expect(el.querySelector('strong')?.textContent).toBe('4 out of 5');
   });
 
+  it('leaves its children in place instead of re-parsing them', () => {
+    const el = document.createElement('a11y-visually-hidden');
+    el.innerHTML = '<strong>4 out of 5</strong>';
+    const child = el.firstElementChild;
+    document.body.appendChild(el);
+    expect(el.firstElementChild).toBe(child);
+  });
+
   it('works with no content at all', () => {
     const el = document.createElement('a11y-visually-hidden');
     expect(() => document.body.appendChild(el)).not.toThrow();

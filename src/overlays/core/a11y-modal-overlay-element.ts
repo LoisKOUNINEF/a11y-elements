@@ -166,7 +166,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'a11y-modal-close-button';
-    btn.innerHTML = '&times;';
+    btn.textContent = '×';
     btn.setAttribute('aria-label', this.closeLabel);
     btn.addEventListener('click', () => this.close());
     this.prepend(btn);

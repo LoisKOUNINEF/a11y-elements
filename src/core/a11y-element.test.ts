@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { A11yElement } from './a11y-element.js';
+import { html, raw, type Raw } from './template.js';
 
 class TestElement extends A11yElement {
   static get observedAttributes(): string[] {
@@ -60,7 +61,7 @@ afterEach(() => {
 });
 
 describe('A11yElement', () => {
-  it('renders on connect: onBeforeRender -> render() -> innerHTML -> onAfterRender', () => {
+  it('renders on connect: onBeforeRender -> render() -> children -> onAfterRender', () => {
     const el = mount();
     expect(el.beforeCount).toBe(1);
     expect(el.afterCount).toBe(1);
@@ -150,5 +151,38 @@ describe('A11yElement', () => {
     expect(el.style.getPropertyValue('--x')).toBe('10px');
     el.testSetCssVar('--x', undefined);
     expect(el.style.getPropertyValue('--x')).toBe('');
+  });
+});
+
+class MarkupElement extends A11yElement {
+  static get observedAttributes(): string[] {
+    return ['content', 'keep'];
+  }
+
+  protected render(): Raw | null {
+    if (this.hasAttribute('keep')) return null;
+    return html`<p>${raw(this.getAttribute('content') ?? '')}</p>`;
+  }
+}
+
+customElements.define('test-a11y-markup-element', MarkupElement);
+
+describe('A11yElement rendering html', () => {
+  it('replaces the children with the markup, sanitizing raw() parts as nodes', () => {
+    const el = document.createElement('test-a11y-markup-element');
+    el.setAttribute('content', '<b onclick="x">hi</b><script>x()</script>');
+    document.body.appendChild(el);
+    expect(el.innerHTML).toBe('<p><b>hi</b></p>');
+  });
+
+  it('leaves the children alone when render() returns null', () => {
+    const el = document.createElement('test-a11y-markup-element');
+    el.setAttribute('content', 'a');
+    document.body.appendChild(el);
+    const p = el.querySelector('p');
+    el.setAttribute('keep', '');
+    el.setAttribute('content', 'b');
+    expect(el.querySelector('p')).toBe(p);
+    expect(el.textContent).toBe('a');
   });
 });

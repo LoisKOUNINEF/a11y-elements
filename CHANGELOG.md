@@ -4,7 +4,13 @@
 
 ### Breaking changes
 
-- `html` only trusts values made by `raw()`, `html`, `attr()` and `flag()`. A plain object with an `__html` key (e.g. parsed JSON passed as a snackbar or banner `message`) used to be inserted unescaped; it is now escaped like any other value. Wrap markup you built yourself in `raw()` instead of a hand-made `{ __html }` object.
+- `html` only trusts values made by `html`, `raw()`, `trustedRaw()`, `attr()` and `flag()`. A plain object with an `__html` key (e.g. parsed JSON passed as a snackbar or banner `message`) used to be inserted unescaped; it is now escaped like any other value. Wrap markup in `raw()` instead of a hand-made `{ __html }` object.
+
+- `raw()` is sanitized. `<script>`, `<style>`, `<link>`, `<base>` and `<meta>`, event handler attributes (`onclick`, …), `srcdoc`, `javascript:` URLs (also written `java&#9;script:`), `data:` URLs in frames and SVG `<animate>`/`<set>` targeting a URL attribute are removed. Markup is parsed once and inserted as nodes, so the cleaned result is never parsed again (mutation XSS). Use the new `trustedRaw()` for the old, unsanitized behavior, and only for markup you wrote yourself.
+
+- A value in tag position (`` html`<input ${x}>` ``) keeps only its safe attributes. Escaping left `onfocus=alert(1) autofocus` intact, so it added attributes. Use `attr()`/`flag()` there as before.
+
+- `raw()` in an attribute value (`title="${raw(x)}"`) is escaped, so it can't close the quote.
 
 ### Changes
 
@@ -13,6 +19,12 @@
 - `html` quotes unquoted attribute values: `` html`<div title=${x}>` `` renders `title="…"`, and inside a value already started (`class=a${x}`) whitespace, quotes and `=<>` are encoded, so a value can't add attributes.
 
 - `<a11y-focusable>` and `<a11y-visually-hidden>` leave your content in place when they update, instead of setting it back through `innerHTML`. That second parse could turn sanitized markup live again (mutation XSS), and it dropped listeners and state on your children. `A11yElement.render()` can return `null` for the same behavior in subclasses.
+
+- `A11yElement` and the snackbar, banner and blocking loader render through the new `renderInto(el, markup)` (`el.replaceChildren(toFragment(markup))`) instead of `innerHTML = String(markup)`. A `render()` returning a plain string still renders it as trusted markup. `String()`/`__html` of an `html` result still work, with `raw()` parts sanitized as strings; prefer `renderInto()`, which doesn't parse them twice.
+
+- `notify()`, `showNotificationBanner()` and the elements' `notify()`/`show()` accept an `html`/`raw()` value as `message` in their types (they already rendered it).
+
+- `html` caches where each `${}` lands per call site, and escapes in a single pass, so re-renders do less work.
 
 - `formatString()` placeholders and `setStrings()` keys only match own keys: `{constructor}` stays as is, and `setStrings({ constructor: … })` is ignored.
 

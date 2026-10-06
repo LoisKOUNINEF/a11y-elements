@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import './define.js';
 import { notify } from './define.js';
+import { raw } from '../../core/template.js';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -8,6 +9,17 @@ afterEach(() => {
 });
 
 describe('a11y-snackbar element', () => {
+  it('escapes a plain-string message and sanitizes a raw() one', () => {
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    el.notify('<b>text</b>');
+    el.notify(raw('<b onclick="x">bold</b><img src=x onerror=alert(1)>'));
+
+    const [plain, rich] = el.querySelectorAll('.a11y-snackbar span');
+    expect(plain.innerHTML).toBe('&lt;b&gt;text&lt;/b&gt;');
+    expect(rich.innerHTML).toBe('<b>bold</b><img src="x">');
+  });
+
   it('portals itself to document.body and sets aria-live/region attributes', () => {
     const host = document.createElement('div');
     document.body.appendChild(host);

@@ -1,12 +1,14 @@
 import { A11yElement } from '../../core/a11y-element.js';
 import { forgetPortalOrigin, recordPortalOrigin } from '../../core/overlay-registry.js';
+import type { Raw } from '../../core/template.js';
 
 const DEFAULT_MAX_STACK = 3;
 
 export type PassiveOverlayPosition = 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export interface PassiveOverlayItem {
-  message: string;
+  /** Text, or markup from `html`/`raw()`/`trustedRaw()`. */
+  message: string | Raw;
   position?: PassiveOverlayPosition;
   duration?: number;
   actionText?: string;

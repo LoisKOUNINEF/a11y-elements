@@ -1,3 +1,4 @@
+import type { Raw } from '../../core/template.js';
 import { SnackbarElement, type NotifyOptions } from './snackbar.element.js';
 
 if (!customElements.get('a11y-snackbar')) {
@@ -30,7 +31,7 @@ function getRegion(): SnackbarElement {
  * `<a11y-snackbar>` element directly if you want explicit control over
  * where it lives in the DOM.
  */
-export function notify(message: string, options: NotifyOptions = {}): void {
+export function notify(message: string | Raw, options: NotifyOptions = {}): void {
   getRegion().notify(message, options);
 }
 

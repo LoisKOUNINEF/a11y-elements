@@ -1376,10 +1376,12 @@ Toast notifications that dismiss themselves: after 3 s by default, or 10 s when 
 
 ```js
 import { notify } from 'a11y-elements/overlays/snackbar';
+import { raw } from 'a11y-elements/core';
 
 notify('Saved');
 notify('Upload failed', { type: 'error', actionText: 'Retry', onAction: retryUpload });
 notify('Copied to clipboard', { position: 'top', duration: 1500 });
+notify(raw('Saved. <a href="/files">View files</a>')); // markup: sanitized, see below
 ```
 
 | Name | Kind | Default | Description |
@@ -1389,6 +1391,8 @@ notify('Copied to clipboard', { position: 'top', duration: 1500 });
 | `notify(message, options)` | method | — | Shows a toast (or queues it). |
 
 It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
+
+A `message` is text: a string is escaped. For markup, pass `raw(markup)` from `a11y-elements/core`. It's sanitized (no scripts, styles, event handlers or `javascript:` URLs), so it's safe with user data in it. `trustedRaw(markup)` skips that, for markup you wrote yourself. The same goes for `<a11y-notification-banner>`.
 
 `notify()` options (method and convenience export):
 

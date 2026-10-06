@@ -2,7 +2,7 @@ import { A11yOverlayElement } from '../../core/a11y-overlay-element.js';
 import { focusReturnTarget } from '../../core/focus-trap.js';
 import { lockScroll, unlockScroll } from '../../core/overlay-registry.js';
 import { getString } from '../../core/strings.js';
-import { html } from '../../core/template.js';
+import { html, renderInto } from '../../core/template.js';
 
 /**
  * A full-screen, non-dismissible loading overlay — for blocking operations
@@ -82,7 +82,7 @@ export class BlockingLoaderElement extends A11yOverlayElement {
 
   private _renderContent(): void {
     const message = this.message;
-    this.innerHTML = String(html`<a11y-spinner size="3rem" label="${message ?? getString('loading')}"></a11y-spinner>${
+    renderInto(this, html`<a11y-spinner size="3rem" label="${message ?? getString('loading')}"></a11y-spinner>${
       message ? html`<p class="a11y-blocking-loader-overlay__message">${message}</p>` : ''
     }`);
   }

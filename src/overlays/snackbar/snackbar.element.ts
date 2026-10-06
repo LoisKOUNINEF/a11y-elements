@@ -1,5 +1,5 @@
 import { A11yPassiveOverlayElement, type PassiveOverlayItem } from '../core/a11y-passive-overlay-element.js';
-import { html } from '../../core/template.js';
+import { html, renderInto, type Raw } from '../../core/template.js';
 
 export type SnackbarType = 'info' | 'success' | 'error' | 'warning';
 
@@ -41,7 +41,7 @@ export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
     }
   }
 
-  notify(message: string, options: NotifyOptions = {}): void {
+  notify(message: string | Raw, options: NotifyOptions = {}): void {
     if (options.maxStack) this.setMaxStack(options.maxStack);
     this.enqueue({
       message,
@@ -64,7 +64,7 @@ export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
     el.setAttribute('role', type === 'error' ? 'alert' : 'status');
     el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
     el.setAttribute('aria-atomic', 'true');
-    el.innerHTML = String(html`
+    renderInto(el, html`
       <span>${item.message}</span>
       ${item.actionText ? html`<button type="button">${item.actionText}</button>` : ''}
     `);

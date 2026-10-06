@@ -1,5 +1,5 @@
 import { STRINGS_CHANGE_EVENT } from './strings.js';
-import type { Raw } from './template.js';
+import { renderInto, type Raw } from './template.js';
 
 type Listener = [target: EventTarget, type: string, handler: EventListener, options?: AddEventListenerOptions | boolean];
 
@@ -8,7 +8,7 @@ type Listener = [target: EventTarget, type: string, handler: EventListener, opti
  * render real child markup styled by the consumer's own CSS, not a shadow
  * root.
  *
- * Lifecycle mirrors the old `onBeforeRender -> innerHTML = template ->
+ * Lifecycle mirrors the old `onBeforeRender -> render template ->
  * onAfterRender` pipeline this library used to run through a proprietary
  * framework, just mapped onto native custom-element callbacks:
  *
@@ -18,7 +18,7 @@ type Listener = [target: EventTarget, type: string, handler: EventListener, opti
  *   setStrings()             -> onStringsChange(), for subclasses that define it
  *
  * Subclasses list attributes to watch via `static observedAttributes` and
- * implement `render()` to return the markup for `this.innerHTML` (or `null`
+ * implement `render()` to return the markup for the element's children (or `null`
  * to keep the consumer's own children as they are). Attribute/
  * property setters that need to reflect into the DOM should just mutate the
  * attribute — `attributeChangedCallback` re-renders synchronously while
@@ -98,7 +98,7 @@ export abstract class A11yElement extends HTMLElement {
       this._cleanupListeners();
       this.onBeforeRender?.();
       const markup = this.render();
-      if (markup !== null) this.innerHTML = String(markup);
+      if (markup !== null) renderInto(this, markup);
       this.onAfterRender?.();
     } finally {
       this._updating = false;
@@ -106,8 +106,9 @@ export abstract class A11yElement extends HTMLElement {
   }
 
   /**
-   * Returns the markup to set as `this.innerHTML` on every render — a plain
-   * string, or an `html\`...\`` result — or `null` to leave the children
+   * Returns the markup that replaces the children on every render — a plain
+   * (trusted) string, or an `html\`...\`` result, whose `raw()` parts are
+   * sanitized as nodes (see `renderInto()`) — or `null` to leave the children
    * untouched. Never return `this.innerHTML`: assigning it back re-parses the
    * consumer's markup (which can turn sanitized markup live again — mutation
    * XSS) and drops listeners and state on their children.
@@ -117,7 +118,7 @@ export abstract class A11yElement extends HTMLElement {
   /** Runs before `render()`. Typical use: set root-level classes/ARIA/CSS custom properties. */
   protected onBeforeRender?(): void;
 
-  /** Runs after `render()` replaces `innerHTML`. Typical use: query into fresh markup, wire listeners, set DOM-only properties. */
+  /** Runs after `render()` replaces the children. Typical use: query into fresh markup, wire listeners, set DOM-only properties. */
   protected onAfterRender?(): void;
 
   /** Runs once, after listener cleanup, when the element leaves the DOM. */

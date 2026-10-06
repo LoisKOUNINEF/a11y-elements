@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import './define.js';
 import { resetStrings, setStrings } from '../../core/strings.js';
 import { showNotificationBanner } from './define.js';
+import { raw } from '../../core/template.js';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -9,6 +10,14 @@ afterEach(() => {
 });
 
 describe('a11y-notification-banner element', () => {
+  it('sanitizes a raw() message as nodes', () => {
+    const el = document.createElement('a11y-notification-banner') as any;
+    document.body.appendChild(el);
+    el.show(raw('<a href="javascript:x" onclick="x">link</a><script>x()</script>'));
+
+    expect(el.querySelector('.a11y-notification-banner__message').innerHTML).toBe('<a>link</a>');
+  });
+
   it('shows a banner with role=status in the top container by default', () => {
     const el = document.createElement('a11y-notification-banner') as any;
     document.body.appendChild(el);

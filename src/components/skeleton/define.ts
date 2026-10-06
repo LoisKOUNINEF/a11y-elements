@@ -1,8 +1,7 @@
+import { defineElement } from '../../core/define-element.js';
 import { SkeletonElement } from './skeleton.element.js';
 
-if (!customElements.get('a11y-skeleton')) {
-  customElements.define('a11y-skeleton', SkeletonElement);
-}
+defineElement('a11y-skeleton', SkeletonElement);
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -11,5 +10,4 @@ declare global {
 }
 
 export { SkeletonElement };
-// Re-exported so zero-build `<script type="module">` users can reach them too.
-export { resetStrings, setStrings } from '../../core/strings.js';
+export * from '../../core/zero-build-exports.js';

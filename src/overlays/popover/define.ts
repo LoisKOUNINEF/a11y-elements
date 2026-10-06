@@ -1,8 +1,7 @@
+import { defineElement } from '../../core/define-element.js';
 import { PopoverElement } from './popover.element.js';
 
-if (!customElements.get('a11y-popover')) {
-  customElements.define('a11y-popover', PopoverElement);
-}
+defineElement('a11y-popover', PopoverElement);
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -11,6 +10,4 @@ declare global {
 }
 
 export { PopoverElement };
-// Re-exported so zero-build `<script type="module">` users can reach them too.
-export { resetStrings, setStrings } from '../../core/strings.js';
-export { dismissAllOverlays, removeOverlaysWithin } from '../../core/overlay-registry.js';
+export * from '../core/zero-build-exports.js';

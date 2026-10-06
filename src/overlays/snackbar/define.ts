@@ -1,9 +1,8 @@
+import { defineElement } from '../../core/define-element.js';
 import type { Raw } from '../../core/template.js';
 import { SnackbarElement, type NotifyOptions } from './snackbar.element.js';
 
-if (!customElements.get('a11y-snackbar')) {
-  customElements.define('a11y-snackbar', SnackbarElement);
-}
+defineElement('a11y-snackbar', SnackbarElement);
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -35,6 +34,4 @@ export function notify(message: string | Raw, options: NotifyOptions = {}): void
   getRegion().notify(message, options);
 }
 
-// Re-exported so zero-build `<script type="module">` users can reach them too.
-export { resetStrings, setStrings } from '../../core/strings.js';
-export { removeOverlaysWithin } from '../../core/overlay-registry.js';
+export * from '../core/zero-build-exports.js';

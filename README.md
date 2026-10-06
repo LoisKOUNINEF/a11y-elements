@@ -10,7 +10,7 @@ See a [demo of the elements](https://nutin.org/a11y-elements/elements) - See a [
 
 ### Zero-build 
 
-Load a component's standalone browser bundle directly, no bundler required:
+Load a component's browser bundle directly, no bundler required:
 
 ```html
 <link rel="stylesheet" href="node_modules/a11y-elements/dist/a11y.css" />
@@ -19,8 +19,9 @@ Load a component's standalone browser bundle directly, no bundler required:
 <a11y-spinner></a11y-spinner>
 ```
 
-* Each component has its own `define.js` under `dist/browser/**`. 
-* Every bundle is self-contained, so load only the ones you use.
+* Each component has its own `define.js` under `dist/browser/**`. Load only the ones you use.
+* They share their common code through `chunk-*.js` files in `dist/browser/`, so the browser fetches it once however many you load. Serve them from the package's `dist/browser/` folder as is: a `define.js` copied on its own won't load.
+* `dist/browser/all.js` registers every element at once and exports everything the individual bundles do.
 * Page-wide state is shared between bundles, so mixing several on one page is safe. 
 * Overlay bundles also export `dismissAllOverlays()`:
 
@@ -44,6 +45,7 @@ import { A11yElement } from 'a11y-elements/core';
 
 * There's no default export: `import 'a11y-elements'` alone will fail. 
 * Import the component you want: `/element` gets you the class itself when you need it
+* `import 'a11y-elements/all'` registers every element at once, and exports every element class plus `setStrings()`, `dismissAllOverlays()`, `notify()` and the other helpers the individual entries export.
 * See [Elements](#elements) for every component.
 
 Importing a component's subpath also adds its tag to TypeScript's `HTMLElementTagNameMap`, so exact-tag lookups such as `document.createElement('a11y-checkbox')` or `document.querySelector('a11y-checkbox')` come back typed as `CheckboxElement` without a cast.
@@ -67,8 +69,8 @@ setStrings({
 | --- | --- | --- | --- |
 | `opensInNewTab` | `(opens in new tab)` | `<a11y-anchor>` new-tab links | `new-tab-label` |
 | `navigatedTo` | `Navigated to {name}` | `<a11y-anchor>` jump announcement (`{name}` is the target's name) | `navigated-label` |
-| `closeDialog` | `Close dialog` | the × button of `<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>` | `close-label` |
-| `dismiss` | `Dismiss` | the × button of each `<a11y-notification-banner>` item | `dismiss-label` |
+| `closeDialog` | `Close dialog` | the × button of `<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`, an expandable `<a11y-floating>`'s panel | `close-label` |
+| `dismiss` | `Dismiss` | the × button of each `<a11y-notification-banner>` item and of a `dismissible` `<a11y-floating>` | `dismiss-label` |
 | `loading` | `Loading` | `<a11y-spinner>`, `<a11y-blocking-loader>` | `label` / `message` |
 | `progress` | `Progress` | `<a11y-progress>` without a label | `label` / `aria-label` |
 | `avatar` | `Avatar` | `<a11y-avatar>` with no `alt` or `initials` | `alt` / `initials` |
@@ -98,7 +100,7 @@ Behavior shared by overlays is described once, in [Common to all overlays](#comm
 
 **Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-card-link>`](#a11y-card-link) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-checkbox-group>`](#a11y-checkbox-group) · [`<a11y-file-input>`](#a11y-file-input) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
 
-**Overlays:** [`<a11y-blocking-loader>`](#a11y-blocking-loader) · [`<a11y-context-menu>`](#a11y-context-menu) · [`<a11y-drawer>`](#a11y-drawer) · [`<a11y-dropdown>`](#a11y-dropdown) · [`<a11y-emergency-dialog>`](#a11y-emergency-dialog) · [`<a11y-modal>`](#a11y-modal) · [`<a11y-notification-banner>`](#a11y-notification-banner) · [`<a11y-popover>`](#a11y-popover) · [`<a11y-snackbar>`](#a11y-snackbar) · [`<a11y-tooltip>`](#a11y-tooltip)
+**Overlays:** [`<a11y-blocking-loader>`](#a11y-blocking-loader) · [`<a11y-context-menu>`](#a11y-context-menu) · [`<a11y-drawer>`](#a11y-drawer) · [`<a11y-dropdown>`](#a11y-dropdown) · [`<a11y-emergency-dialog>`](#a11y-emergency-dialog) · [`<a11y-floating>`](#a11y-floating) · [`<a11y-modal>`](#a11y-modal) · [`<a11y-notification-banner>`](#a11y-notification-banner) · [`<a11y-popover>`](#a11y-popover) · [`<a11y-snackbar>`](#a11y-snackbar) · [`<a11y-tooltip>`](#a11y-tooltip)
 
 Import paths follow the folder names: `a11y-elements/components/<name>` or `a11y-elements/overlays/<name>` (add `/element` for the class), and `dist/browser/<group>/<name>/define.js` for zero-build.
 
@@ -960,6 +962,7 @@ No attributes or CSS variables. The class `a11y-visually-hidden` is also usable 
 * **Before the element is defined** (lazy-loaded bundles), setting `.open = true`, `onClose` or any other property works: it's applied once the element upgrades. `setAttribute('open', '')` works too.
 * **Events:** `a11y-overlay-open` and `a11y-overlay-close` fire on `document`, with `event.detail.name` set to the tag name.
 * **`dismissAllOverlays()`** closes every open overlay (e.g. on navigation). It's exported from `a11y-elements/core` and from every overlay's `define.js`.
+* **Except `<a11y-floating>`**, which is visible by default and has no `open`: `dismissAllOverlays()` only collapses its expanded panel. See [`a11y-floating`](#a11y-floating).
 * **Body mounting:** every overlay (including the snackbar and notification-banner regions) moves itself to `<body>` when connected, so a `position: fixed` layer isn't clipped by an ancestor. See [Overlays in a framework](#overlays-in-a-framework) below.
 
 ##### Overlays in a framework
@@ -1208,6 +1211,89 @@ From the shared [dialog](#dialogs) options, only `dialog-label` and `onClose` ap
 | Variable | Default |
 | --- | --- |
 | `--a11y-emergency-dialog-accent-width` | `4px` |
+
+</details>
+
+#### `a11y-floating`
+
+Content pinned to a corner or edge of the viewport: a floating button that opens a drawer, an info bubble, a help launcher. It's visible by default: there's no `open` attribute. Hide it with `hidden` or `dismiss()`. Several in the same position stack instead of overlapping.
+
+It works in one of two modes:
+
+* **Controls mode:** with `controls="<id>"`, its trigger opens and closes that overlay. The trigger is a `[data-floating-trigger]` child, else the first button. It gets `aria-controls`, an `aria-expanded` kept in sync with the overlay however it closes, and `aria-haspopup` (`dialog` for a modal, drawer, emergency dialog or `interactive` popover; `menu` for a dropdown or context menu). A popover or dropdown with no anchor is anchored to the trigger.
+* **Expandable mode:** with `expandable`, its content goes into a panel (`role="dialog"`, not modal) that a launcher button expands. The launcher is a `[data-floating-trigger]` child, else a generated button showing `label`. Expanding moves focus to the panel's first control. Escape, a click outside, the panel's × or the launcher collapse it, and focus returns to the launcher. The panel is named by `panel-label`, else its first heading, else `label`.
+
+```html
+<!-- Opens a drawer -->
+<a11y-floating controls="nav-drawer"><button>Menu</button></a11y-floating>
+<a11y-drawer id="nav-drawer"><h2>Navigation</h2>…</a11y-drawer>
+
+<!-- Info bubble -->
+<a11y-floating position="bottom-left" label="What's new" dismissible hide-on-scroll>
+    <p>Dark mode is here.</p>
+</a11y-floating>
+
+<!-- Help panel -->
+<a11y-floating expandable label="Help">
+    <h2>Need help?</h2>
+    <a href="/faq">Read the FAQ</a>
+</a11y-floating>
+```
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `position` | attribute / property | `bottom-right` | `top`, `bottom`, `top-left`, `top-right`, `bottom-left` or `bottom-right`. |
+| `controls` | attribute | — | Id of the overlay its trigger toggles. |
+| `controlsElement` | property | — | The same, as an element. |
+| `expandable` | attribute | absent | Expandable mode. Ignored with `controls`. |
+| `expanded` | attribute / property | absent | Whether the panel is expanded. `expand()`, `collapse()` and `toggle()` set it. |
+| `label` | attribute | — | Text of the generated launcher. Outside expandable mode, makes the element a `role="region"` landmark with this name. |
+| `panel-label` | attribute | first heading | Accessible name of the panel. |
+| `close-label` | attribute | `Close dialog` | Accessible name of the panel's × button. See [Translating built-in strings](#translating-built-in-strings). |
+| `trap-focus` | attribute | absent | Traps focus in the expanded panel. |
+| `dismissible` | attribute | absent | Adds a × button that calls `dismiss()`. |
+| `dismiss-label` | attribute | `Dismiss` | Accessible name of that button. See [Translating built-in strings](#translating-built-in-strings). |
+| `announce` | attribute | absent | Makes the element a polite `role="status"` live region, so content shown with `show()` is announced. |
+| `hide-on-scroll` | attribute | absent | Slides it out of view while the page scrolls down and back on scroll up. It stays in the Tab order and comes back when focused. |
+| `scroll-threshold` | attribute | `16` | Pixels of scrolling before `hide-on-scroll` reacts. |
+| `dismiss()` | method | — | Fires a cancelable `a11y-floating-dismiss` event, then animates out and sets `hidden`. Focus goes back to where it was before it entered. |
+| `show()` | method | — | Shows it again (`hidden = false`). |
+| `onClose` | callback | — | Called when the panel collapses or the element is dismissed. |
+
+Events on the element: `a11y-floating-expand`, `a11y-floating-collapse`, `a11y-floating-dismiss` (cancelable). The panel also fires `a11y-overlay-open` / `a11y-overlay-close` on `document`, and `dismissAllOverlays()` collapses it but leaves the element showing. Like every overlay it moves itself out of where it was authored (into `.a11y-floating-stack[data-position]` on `<body>`); see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`. Being last in `<body>`, it comes last in the Tab order.
+
+Classes: `.a11y-floating-launcher`, `.a11y-floating-panel`, `.a11y-floating-panel-close`, `.a11y-floating-dismiss`. The element itself has no background, so style your bubble's content directly.
+
+<details>
+<summary>CSS variables</summary>
+
+Offsets add the device's safe-area inset (`env(safe-area-inset-*)`). The stacking order comes from `--a11y-z-floating-button` (see [Shared tokens](#shared-tokens)).
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-floating-close-font-size` | `1.25rem` |
+| `--a11y-floating-content-gap` | `0.5rem` |
+| `--a11y-floating-gap` | `0.75rem` |
+| `--a11y-floating-launcher-border-radius` | `999px` |
+| `--a11y-floating-launcher-color-background` | `#111827` |
+| `--a11y-floating-launcher-color-text` | `#ffffff` |
+| `--a11y-floating-launcher-padding` | `0 1rem` |
+| `--a11y-floating-launcher-size` | `3rem` |
+| `--a11y-floating-max-width` | `calc(100vw - 2rem)` |
+| `--a11y-floating-offset` | `1rem` |
+| `--a11y-floating-offset-x` / `--a11y-floating-offset-y` | `--a11y-floating-offset` |
+| `--a11y-floating-panel-border-radius` | `0.5rem` |
+| `--a11y-floating-panel-color-background` | `#ffffff` |
+| `--a11y-floating-panel-color-text` | `#111827` |
+| `--a11y-floating-panel-initial-scale` | `0.97` |
+| `--a11y-floating-panel-max-height` | `min(480px, 70vh)` |
+| `--a11y-floating-panel-offset` | `0.5rem` |
+| `--a11y-floating-panel-padding` | `1rem` |
+| `--a11y-floating-panel-shadow-blur` | `10px` |
+| `--a11y-floating-panel-shadow-fade` | `80%` |
+| `--a11y-floating-panel-shadow-offset-y` | `2px` |
+| `--a11y-floating-panel-width` | `min(320px, calc(100vw - 2rem))` |
+| `--a11y-floating-transition-duration` | `0.2s` |
 
 </details>
 

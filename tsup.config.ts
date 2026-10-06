@@ -19,15 +19,17 @@ function findDefineEntries(root: string): Record<string, string> {
   return entries;
 }
 
-// Browser bundle: one self-contained ESM file per publicly-registrable element
-// (its `define.ts` companion), for zero-build `<script type="module">` usage..
+// Browser bundle: one ESM entry per publicly-registrable element (its
+// `define.ts` companion) plus `all.js`, for zero-build `<script type="module">`
+// usage. Code splitting puts what they share (core) in `chunk-*.js` files next
+// to them, so a page loading several elements fetches it once.
 const browserConfig = defineConfig({
-  entry: findDefineEntries('src'),
+  entry: { ...findDefineEntries('src'), all: 'src/all.ts' },
   outDir: 'dist/browser',
   format: ['esm'],
   platform: 'browser',
   target: 'es2022',
-  splitting: false,
+  splitting: true,
   bundle: true,
   sourcemap: true,
   clean: true,

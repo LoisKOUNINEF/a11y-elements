@@ -1,8 +1,7 @@
+import { defineElement } from '../../core/define-element.js';
 import { PictureElement } from './picture.element.js';
 
-if (!customElements.get('a11y-picture')) {
-  customElements.define('a11y-picture', PictureElement);
-}
+defineElement('a11y-picture', PictureElement);
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -12,5 +11,4 @@ declare global {
 
 export { PictureElement };
 export type { PictureImage, PictureSource } from './picture.element.js';
-// Re-exported so zero-build `<script type="module">` users can reach them too.
-export { resetStrings, setStrings } from '../../core/strings.js';
+export * from '../../core/zero-build-exports.js';

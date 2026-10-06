@@ -11,3 +11,4 @@ export * from './overlay-registry.js';
 export * from './dom-sync.js';
 export * from './transition.js';
 export * from './strings.js';
+export * from './define-element.js';

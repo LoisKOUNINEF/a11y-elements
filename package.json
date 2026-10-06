@@ -33,6 +33,11 @@
       "import": "./dist/core/index.js",
       "default": "./dist/core/index.js"
     },
+    "./all": {
+      "types": "./dist/all.d.ts",
+      "import": "./dist/all.js",
+      "default": "./dist/all.js"
+    },
     "./components/*": {
       "types": "./dist/components/*/define.d.ts",
       "import": "./dist/components/*/define.js",
@@ -65,6 +70,7 @@
   "sideEffects": [
     "**/define.ts",
     "**/define.js",
+    "dist/all.js",
     "dist/browser/**",
     "**/*.css"
   ],

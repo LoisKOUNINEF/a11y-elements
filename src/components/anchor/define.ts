@@ -1,8 +1,7 @@
+import { defineElement } from '../../core/define-element.js';
 import { AnchorElement } from './anchor.element.js';
 
-if (!customElements.get('a11y-anchor')) {
-  customElements.define('a11y-anchor', AnchorElement);
-}
+defineElement('a11y-anchor', AnchorElement);
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -11,5 +10,4 @@ declare global {
 }
 
 export { AnchorElement };
-// Re-exported so zero-build `<script type="module">` users can reach them too.
-export { resetStrings, setStrings } from '../../core/strings.js';
+export * from '../../core/zero-build-exports.js';

@@ -32,6 +32,7 @@
 @import url('overlays/tooltip/tooltip.css');
 @import url('overlays/dropdown/dropdown.css');
 @import url('overlays/context-menu/context-menu.css');
+@import url('overlays/floating/floating.css');
 @import url('overlays/blocking-loader/blocking-loader.css');
 @import url('overlays/snackbar/snackbar.css');
 @import url('overlays/notification-banner/notification-banner.css');

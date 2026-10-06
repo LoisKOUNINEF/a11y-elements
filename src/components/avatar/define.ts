@@ -1,8 +1,7 @@
+import { defineElement } from '../../core/define-element.js';
 import { AvatarElement } from './avatar.element.js';
 
-if (!customElements.get('a11y-avatar')) {
-  customElements.define('a11y-avatar', AvatarElement);
-}
+defineElement('a11y-avatar', AvatarElement);
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -11,5 +10,4 @@ declare global {
 }
 
 export { AvatarElement };
-// Re-exported so zero-build `<script type="module">` users can reach them too.
-export { resetStrings, setStrings } from '../../core/strings.js';
+export * from '../../core/zero-build-exports.js';

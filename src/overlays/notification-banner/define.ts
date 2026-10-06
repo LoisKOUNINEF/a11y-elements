@@ -1,9 +1,8 @@
+import { defineElement } from '../../core/define-element.js';
 import type { Raw } from '../../core/template.js';
 import { NotificationBannerElement, type NotificationBannerOptions } from './notification-banner.element.js';
 
-if (!customElements.get('a11y-notification-banner')) {
-  customElements.define('a11y-notification-banner', NotificationBannerElement);
-}
+defineElement('a11y-notification-banner', NotificationBannerElement);
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -35,6 +34,4 @@ export function showNotificationBanner(message: string | Raw, options: Notificat
   getRegion().show(message, options);
 }
 
-// Re-exported so zero-build `<script type="module">` users can reach them too.
-export { resetStrings, setStrings } from '../../core/strings.js';
-export { removeOverlaysWithin } from '../../core/overlay-registry.js';
+export * from '../core/zero-build-exports.js';

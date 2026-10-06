@@ -4,6 +4,8 @@
 
 ### Breaking changes
 
+- The zero-build bundles in `dist/browser/` are no longer self-contained. Their common code (core) now lives in shared `chunk-*.js` files next to them, so a page loading several elements fetches it once (all browser JS drops from about 680 KB to about 180 KB). Each `define.js` keeps its URL and exports, but a `define.js` copied on its own no longer loads: serve the `dist/browser/` folder as is.
+
 - `html` only trusts values made by `html`, `raw()`, `trustedRaw()`, `attr()` and `flag()`. A plain object with an `__html` key (e.g. parsed JSON passed as a snackbar or banner `message`) used to be inserted unescaped; it is now escaped like any other value. Wrap markup in `raw()` instead of a hand-made `{ __html }` object.
 
 - `raw()` is sanitized. `<script>`, `<style>`, `<link>`, `<base>` and `<meta>`, event handler attributes (`onclick`, …), `srcdoc`, `javascript:` URLs (also written `java&#9;script:`), `data:` URLs in frames and SVG `<animate>`/`<set>` targeting a URL attribute are removed. Markup is parsed once and inserted as nodes, so the cleaned result is never parsed again (mutation XSS). Use the new `trustedRaw()` for the old, unsanitized behavior, and only for markup you wrote yourself.
@@ -13,6 +15,14 @@
 - `raw()` in an attribute value (`title="${raw(x)}"`) is escaped, so it can't close the quote.
 
 ### Changes
+
+- New all-in-one entry: `import 'a11y-elements/all'`, or `dist/browser/all.js` without a build step, registers every element and re-exports every element class and helper.
+
+- New `defineElement(tag, ctor)` in `a11y-elements/core`: registers a custom element unless the tag is already taken. Every built-in `define` entry uses it.
+
+- The `<a11y-snackbar>` and `<a11y-notification-banner>` entries also export `dismissAllOverlays()`, like the other overlays.
+
+- New `<a11y-floating>` overlay, pinned to a corner or edge of the viewport and visible by default. With `controls="<id>"` its button opens and closes another overlay (a drawer, modal, popover…) and keeps `aria-controls`, `aria-expanded` and `aria-haspopup` on the button. With `expandable` it's a launcher that expands its own non-modal panel. It also takes `dismissible`, `hide-on-scroll` (it stays focusable and comes back when focused) and `announce`. Several in one corner stack, offsets include the safe-area inset, and `dismissAllOverlays()` only collapses its panel.
 
 - New `<a11y-card-link>` for cards that go to another page: one real `<a href>` inside stays the only tab stop and gives the card its name, and clicks on the rest of the card are forwarded to it. Cmd/Ctrl/Shift-click and middle-click open it in a new tab; clicks on other controls and text selection are left alone. Add `describe` to read a `data-card-description` element after the title. Use it instead of `<a11y-focusable>` for navigation cards, which announced them as buttons.
 

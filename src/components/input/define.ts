@@ -1,8 +1,7 @@
+import { defineElement } from '../../core/define-element.js';
 import { InputElement } from './input.element.js';
 
-if (!customElements.get('a11y-input')) {
-  customElements.define('a11y-input', InputElement);
-}
+defineElement('a11y-input', InputElement);
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -11,6 +10,5 @@ declare global {
 }
 
 export { InputElement };
-// Re-exported so zero-build `<script type="module">` users can reach them too.
 export { bindField } from '../../core/field.js';
-export { resetStrings, setStrings } from '../../core/strings.js';
+export * from '../../core/zero-build-exports.js';

@@ -1,0 +1,181 @@
+/* One fixed container per position, shared by every <a11y-floating> placed
+   there, so several in one corner stack instead of overlapping. Offsets add
+   the device's safe-area inset (notches, home indicators). */
+.a11y-floating-stack {
+  position: fixed;
+  z-index: var(--a11y-z-floating-button, 120);
+  display: flex;
+  flex-direction: column;
+  gap: var(--a11y-floating-gap, 0.75rem);
+  pointer-events: none;
+}
+
+.a11y-floating-stack > * {
+  pointer-events: auto;
+}
+
+.a11y-floating-stack[data-position^='top'] {
+  top: calc(var(--a11y-floating-offset-y, var(--a11y-floating-offset, 1rem)) + env(safe-area-inset-top, 0px));
+}
+
+/* The first one sits closest to the edge. */
+.a11y-floating-stack[data-position^='bottom'] {
+  bottom: calc(var(--a11y-floating-offset-y, var(--a11y-floating-offset, 1rem)) + env(safe-area-inset-bottom, 0px));
+  flex-direction: column-reverse;
+}
+
+.a11y-floating-stack[data-position$='left'] {
+  left: calc(var(--a11y-floating-offset-x, var(--a11y-floating-offset, 1rem)) + env(safe-area-inset-left, 0px));
+  align-items: flex-start;
+}
+
+.a11y-floating-stack[data-position$='right'] {
+  right: calc(var(--a11y-floating-offset-x, var(--a11y-floating-offset, 1rem)) + env(safe-area-inset-right, 0px));
+  align-items: flex-end;
+}
+
+.a11y-floating-stack[data-position='top'],
+.a11y-floating-stack[data-position='bottom'] {
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
+a11y-floating {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--a11y-floating-content-gap, 0.5rem);
+  max-width: var(--a11y-floating-max-width, calc(100vw - 2rem));
+  transition:
+    opacity var(--a11y-floating-transition-duration, 0.2s) ease,
+    transform var(--a11y-floating-transition-duration, 0.2s) ease;
+}
+
+a11y-floating[hidden] {
+  display: none;
+}
+
+a11y-floating.a11y-is-dismissing {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* hide-on-scroll: faded and slid toward the edge, but still in the Tab
+   order — focusing it brings it back. */
+a11y-floating.a11y-floating--scrolled-away {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.a11y-floating-stack[data-position^='bottom'] > a11y-floating.a11y-floating--scrolled-away {
+  transform: translateY(calc(100% + var(--a11y-floating-offset-y, var(--a11y-floating-offset, 1rem))));
+}
+
+.a11y-floating-stack[data-position^='top'] > a11y-floating.a11y-floating--scrolled-away {
+  transform: translateY(calc(-100% - var(--a11y-floating-offset-y, var(--a11y-floating-offset, 1rem))));
+}
+
+.a11y-floating-launcher {
+  min-width: var(--a11y-floating-launcher-size, 3rem);
+  min-height: var(--a11y-floating-launcher-size, 3rem);
+  padding: var(--a11y-floating-launcher-padding, 0 1rem);
+  border: none;
+  border-radius: var(--a11y-floating-launcher-border-radius, 999px);
+  background: var(--a11y-floating-launcher-color-background, #111827);
+  color: var(--a11y-floating-launcher-color-text, #ffffff);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 20%);
+}
+
+/* Opens toward the middle of the screen. */
+.a11y-floating-panel {
+  position: absolute;
+  width: var(--a11y-floating-panel-width, min(320px, calc(100vw - 2rem)));
+  max-height: var(--a11y-floating-panel-max-height, min(480px, 70vh));
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: var(--a11y-floating-panel-padding, 1rem);
+  background: var(--a11y-floating-panel-color-background, #ffffff);
+  color: var(--a11y-floating-panel-color-text, #111827);
+  border-radius: var(--a11y-floating-panel-border-radius, 0.5rem);
+  box-shadow:
+    0
+    var(--a11y-floating-panel-shadow-offset-y, 2px)
+    var(--a11y-floating-panel-shadow-blur, 10px)
+    color-mix(in srgb, var(--a11y-floating-panel-color-text, #111827), transparent var(--a11y-floating-panel-shadow-fade, 80%));
+  opacity: 0;
+  transform: scale(var(--a11y-floating-panel-initial-scale, 0.97));
+  transition:
+    opacity var(--a11y-floating-transition-duration, 0.2s) ease,
+    transform var(--a11y-floating-transition-duration, 0.2s) ease;
+}
+
+.a11y-floating-panel.a11y-is-open {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.a11y-floating-panel[hidden] {
+  display: none;
+}
+
+.a11y-floating-stack[data-position^='bottom'] .a11y-floating-panel {
+  bottom: calc(100% + var(--a11y-floating-panel-offset, 0.5rem));
+}
+
+.a11y-floating-stack[data-position^='top'] .a11y-floating-panel {
+  top: calc(100% + var(--a11y-floating-panel-offset, 0.5rem));
+}
+
+.a11y-floating-stack[data-position$='right'] .a11y-floating-panel {
+  right: 0;
+  transform-origin: right;
+}
+
+.a11y-floating-stack[data-position$='left'] .a11y-floating-panel {
+  left: 0;
+  transform-origin: left;
+}
+
+.a11y-floating-stack[data-position='top'] .a11y-floating-panel,
+.a11y-floating-stack[data-position='bottom'] .a11y-floating-panel {
+  left: calc(50% - var(--a11y-floating-panel-width, min(320px, calc(100vw - 2rem))) / 2);
+}
+
+.a11y-floating-stack[data-position^='bottom'] .a11y-floating-panel { transform-origin: bottom; }
+.a11y-floating-stack[data-position^='top'] .a11y-floating-panel { transform-origin: top; }
+.a11y-floating-stack[data-position='bottom-right'] .a11y-floating-panel { transform-origin: bottom right; }
+.a11y-floating-stack[data-position='bottom-left'] .a11y-floating-panel { transform-origin: bottom left; }
+.a11y-floating-stack[data-position='top-right'] .a11y-floating-panel { transform-origin: top right; }
+.a11y-floating-stack[data-position='top-left'] .a11y-floating-panel { transform-origin: top left; }
+
+.a11y-floating-panel-close {
+  float: right;
+  margin: -0.5rem -0.5rem 0 0.5rem;
+}
+
+.a11y-floating-panel-close,
+.a11y-floating-dismiss {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: var(--a11y-floating-close-font-size, 1.25rem);
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the fades, drop the scale and slide. */
+  a11y-floating,
+  a11y-floating.a11y-is-dismissing,
+  .a11y-floating-stack > a11y-floating.a11y-floating--scrolled-away,
+  .a11y-floating-panel,
+  .a11y-floating-panel.a11y-is-open {
+    transform: none;
+  }
+}

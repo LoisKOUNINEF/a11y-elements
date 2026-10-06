@@ -1,8 +1,7 @@
+import { defineElement } from '../../core/define-element.js';
 import { ProgressElement } from './progress.element.js';
 
-if (!customElements.get('a11y-progress')) {
-  customElements.define('a11y-progress', ProgressElement);
-}
+defineElement('a11y-progress', ProgressElement);
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -11,5 +10,4 @@ declare global {
 }
 
 export { ProgressElement };
-// Re-exported so zero-build `<script type="module">` users can reach them too.
-export { resetStrings, setStrings } from '../../core/strings.js';
+export * from '../../core/zero-build-exports.js';

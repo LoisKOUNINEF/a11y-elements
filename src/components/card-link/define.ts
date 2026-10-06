@@ -1,8 +1,7 @@
+import { defineElement } from '../../core/define-element.js';
 import { CardLinkElement } from './card-link.element.js';
 
-if (!customElements.get('a11y-card-link')) {
-  customElements.define('a11y-card-link', CardLinkElement);
-}
+defineElement('a11y-card-link', CardLinkElement);
 
 declare global {
   interface HTMLElementTagNameMap {
@@ -11,5 +10,4 @@ declare global {
 }
 
 export { CardLinkElement };
-// Re-exported so zero-build `<script type="module">` users can reach them too.
-export { resetStrings, setStrings } from '../../core/strings.js';
+export * from '../../core/zero-build-exports.js';

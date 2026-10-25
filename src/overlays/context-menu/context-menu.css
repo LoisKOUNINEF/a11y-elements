@@ -1,13 +1,13 @@
 .a11y-context-menu-wrapper {
   z-index: var(--a11y-z-context-menu, 330);
-  background: var(--a11y-context-menu-color-background, #ffffff);
-  color: var(--a11y-context-menu-color-text, #111827);
+  background: var(--a11y-context-menu-color-background, var(--a11y-color-surface, #ffffff));
+  color: var(--a11y-context-menu-color-text, var(--a11y-color-text-default, #111827));
   border-radius: var(--a11y-context-menu-border-radius, 0.5rem);
   box-shadow:
     0
     var(--a11y-context-menu-shadow-offset-y, 2px)
     var(--a11y-context-menu-shadow-blur, 10px)
-    color-mix(in srgb, var(--a11y-context-menu-color-text, #111827), transparent var(--a11y-context-menu-shadow-fade, 85%));
+    color-mix(in srgb, var(--a11y-context-menu-color-text, var(--a11y-color-text-default, #111827)), transparent var(--a11y-context-menu-shadow-fade, 85%));
   min-width: var(--a11y-context-menu-min-width, 160px);
 }
 

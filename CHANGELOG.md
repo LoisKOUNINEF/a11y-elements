@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.5.0
+
+### Changes
+
+- New `<a11y-tabs>` element (`a11y-elements/components/tabs`): your own `[data-tab]` buttons and `[data-panel]`s as WAI-ARIA tabs, with arrow-key/Home/End navigation, a `vertical` orientation, and same-page links or the URL hash selecting the panel their target is in. Styled by `tabs.css` (`--a11y-tabs-*` variables).
+
+- The default status colors pass WCAG AA with their text: success `#2e7d32`, info `#1565c0`, error `#c62828`. Warning is now amber (`#f9a825`) instead of the error red. The old defaults (2.78:1 to 3.68:1 with white) failed it. Each type has its own text color, `--a11y-color-text-on-success|info|error|warning`. The first three default to `--a11y-color-text` (white); warning defaults to `#111827`, since white on amber is 1.97:1. Snackbar and notification-banner buttons now use the item's text color. A test checks every default pair.
+
+- `<a11y-modal>` (and `<a11y-emergency-dialog>`) is sized to its content, up to `32rem` wide, instead of filling the backdrop's padded area. New variables `--a11y-modal-width` (`min(32rem, 100%)`), `--a11y-modal-height` (`auto`), `--a11y-modal-max-width` and `--a11y-modal-max-height` (`100%`) size it. Set the width and height to `100%` for the old look. `fullscreen` is unchanged.
+
+- `.a11y-modal-buttons` styles only plain `<button>`s, at zero specificity (`:where()`). It used to override the padding, font size and hover colors of buttons with your own classes, e.g. turn a red "Delete" grey on hover.
+
+- `<a11y-notification-banner>` takes `type: 'warning'` (`.a11y-notification-banner--warning`), like the snackbar: amber with dark text, announced politely (`role="status"`).
+
+- `<a11y-select>` inherits the page font, like `<a11y-input>` and `<a11y-textarea>`, instead of defaulting to Arial (`--a11y-select-control-font-family`).
+
+- `a11y-overlay-open` and `a11y-overlay-close` are dispatched on the overlay element and bubble to `document`. Listeners on `document` still get them, but `event.target` is now the overlay (`document` when it was removed while open). `detail` adds `element`.
+
+- New close reasons. `a11y-overlay-close`'s `detail.reason` and the `onClose(reason)` argument of `<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>` and `<a11y-popover>` say why it closed: `escape`, `backdrop`, `close-button`, `outside-click`, `focus-out`, `item`, `dismiss-all`, `removed` or `api`. `close(reason)` takes one too. Exported as the `OverlayCloseReason` type.
+
+- New `initial-focus` attribute on `<a11y-modal>`, `<a11y-drawer>` and `<a11y-emergency-dialog>`: an id or selector of the element to focus on open. A descendant with `autofocus` is honoured too. The default is unchanged: the first focusable element, which is the × button when dismissible. `FocusTrapHelper` takes the matching `initialFocus` option.
+
+- New `confirmDialog({ title, message, confirmLabel, cancelLabel, danger })`, exported by `a11y-elements/overlays/modal` and `all`. It resolves `true` for the confirm button and `false` for any other close, starts focus on Cancel, and removes its modal afterwards. New strings `confirm` (`OK`) and `cancel` (`Cancel`) for `setStrings()`.
+
+- Global semantic variables: every component color, and the form controls' radius and font, falls back to one of `--a11y-color-surface`, `-surface-muted`, `-surface-disabled`, `-text-default`, `-text-muted`, `-text-disabled`, `-border`, `-border-strong`, `-primary`, `-focus`, `-danger`, `--a11y-radius` and `--a11y-font-family` before its shipped default. They aren't set by default, so nothing changes until you set them. About a dozen variables theme every element.
+
+- New opt-in dark theme, `a11y-elements/a11y-dark.css` (`dist/a11y-dark.css`). It sets those semantic variables and `color-scheme: dark` under `prefers-color-scheme: dark`, or with `data-theme="dark"` on `<html>`. `data-theme="light"` opts out.
+
+### Fixes
+
+- Opening a dialog no longer narrows a page that had no scrollbar. The scroll lock reserved a scrollbar gutter (`scrollbar-gutter: stable`) on every page. It's now in a separate `html.a11y-no-scroll--gutter` class, added only when the page had a classic scrollbar.
+
+- Focus traps (`<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`, a `trap-focus` `<a11y-floating>` panel) treat each radio group as a single Tab stop, like native Tab: the checked radio, or the first one when none is checked. Radios sharing a `name` in the same form are one group; unnamed radios stay separate stops. Tab used to stop on every radio of a group (e.g. every option of an `<a11y-radio-group>` in a drawer).
+
 ## 0.4.0
 
 ### Breaking changes

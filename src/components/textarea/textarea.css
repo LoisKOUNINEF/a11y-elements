@@ -8,11 +8,11 @@ a11y-textarea > textarea {
   width: 100%;
   box-sizing: border-box;
   padding: var(--a11y-textarea-control-padding-y, 0.5rem) var(--a11y-textarea-control-padding-x, 0.75rem);
-  background-color: var(--a11y-textarea-color-background, #ffffff);
-  color: var(--a11y-textarea-color-text, #111827);
-  border: var(--a11y-textarea-control-border-width, 1px) solid var(--a11y-textarea-color-border, #d1d5db);
-  border-radius: var(--a11y-textarea-control-border-radius, 4px);
-  font-family: var(--a11y-textarea-control-font-family, inherit);
+  background-color: var(--a11y-textarea-color-background, var(--a11y-color-surface, #ffffff));
+  color: var(--a11y-textarea-color-text, var(--a11y-color-text-default, #111827));
+  border: var(--a11y-textarea-control-border-width, 1px) solid var(--a11y-textarea-color-border, var(--a11y-color-border, #d1d5db));
+  border-radius: var(--a11y-textarea-control-border-radius, var(--a11y-radius, 4px));
+  font-family: var(--a11y-textarea-control-font-family, var(--a11y-font-family, inherit));
   font-size: var(--a11y-textarea-control-font-size, 1rem);
   line-height: var(--a11y-textarea-control-line-height, 1.4);
   transition:
@@ -26,26 +26,26 @@ a11y-textarea > textarea {
 }
 
 a11y-textarea > textarea:hover:not(:disabled) {
-  border-color: var(--a11y-textarea-color-border-strong, #9ca3af);
+  border-color: var(--a11y-textarea-color-border-strong, var(--a11y-color-border-strong, #9ca3af));
 }
 
 a11y-textarea > textarea:focus-visible {
-  outline: var(--a11y-textarea-focus-outline-width, 2px) solid var(--a11y-textarea-color-primary, #2563eb);
+  outline: var(--a11y-textarea-focus-outline-width, 2px) solid var(--a11y-textarea-color-primary, var(--a11y-color-focus, var(--a11y-color-primary, #2563eb)));
   outline-offset: var(--a11y-textarea-focus-outline-offset, 2px);
-  border-color: var(--a11y-textarea-color-primary, #2563eb);
+  border-color: var(--a11y-textarea-color-primary, var(--a11y-color-primary, #2563eb));
 }
 
 /* Set by bindField() only once the error is shown (after blur or a submit attempt). */
 a11y-textarea > textarea[aria-invalid="true"] {
-  border-color: var(--a11y-textarea-color-error, #b91c1c);
+  border-color: var(--a11y-textarea-color-error, var(--a11y-color-danger, #b91c1c));
 }
 
 a11y-textarea > textarea[aria-invalid="true"]:focus-visible {
-  outline-color: var(--a11y-textarea-color-error, #b91c1c);
+  outline-color: var(--a11y-textarea-color-error, var(--a11y-color-danger, #b91c1c));
 }
 
 a11y-textarea > textarea:disabled {
-  background-color: var(--a11y-textarea-color-disabled-bg, #e5e7eb);
-  color: var(--a11y-textarea-color-disabled-text, #9ca3af);
+  background-color: var(--a11y-textarea-color-disabled-bg, var(--a11y-color-surface-disabled, #e5e7eb));
+  color: var(--a11y-textarea-color-disabled-text, var(--a11y-color-text-disabled, #9ca3af));
   cursor: not-allowed;
 }

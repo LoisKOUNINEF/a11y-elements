@@ -9,7 +9,7 @@
 .a11y-progress__label {
   font-size: var(--a11y-progress-label-font-size, 0.875rem);
   font-weight: var(--a11y-progress-label-font-weight, 500);
-  color: var(--a11y-progress-color-text-muted, #6b7280);
+  color: var(--a11y-progress-color-text-muted, var(--a11y-color-text-muted, #6b7280));
 }
 
 .a11y-progress__label:empty { display: none; }
@@ -22,25 +22,25 @@
   height: var(--a11y-progress-bar-height, 0.5rem);
   border: none;
   border-radius: var(--a11y-progress-bar-border-radius, 9999px);
-  background-color: var(--a11y-progress-color-surface, #f3f4f6);
+  background-color: var(--a11y-progress-color-surface, var(--a11y-color-surface-muted, #f3f4f6));
   overflow: hidden;
 }
 
 /* WebKit / Blink */
 .a11y-progress__bar::-webkit-progress-bar {
-  background-color: var(--a11y-progress-color-surface, #f3f4f6);
+  background-color: var(--a11y-progress-color-surface, var(--a11y-color-surface-muted, #f3f4f6));
   border-radius: inherit;
 }
 
 .a11y-progress__bar::-webkit-progress-value {
-  background-color: var(--a11y-progress-color-primary, #2563eb);
+  background-color: var(--a11y-progress-color-primary, var(--a11y-color-primary, #2563eb));
   border-radius: inherit;
   transition: width var(--a11y-progress-bar-transition-duration, 0.3s) ease;
 }
 
 /* Firefox */
 .a11y-progress__bar::-moz-progress-bar {
-  background-color: var(--a11y-progress-color-primary, #2563eb);
+  background-color: var(--a11y-progress-color-primary, var(--a11y-color-primary, #2563eb));
   border-radius: inherit;
 }
 
@@ -48,9 +48,9 @@
 .a11y-progress__bar:not([value]) {
   background: linear-gradient(
     90deg,
-    var(--a11y-progress-color-surface, #f3f4f6) 25%,
-    var(--a11y-progress-color-primary, #2563eb) 50%,
-    var(--a11y-progress-color-surface, #f3f4f6) 75%
+    var(--a11y-progress-color-surface, var(--a11y-color-surface-muted, #f3f4f6)) 25%,
+    var(--a11y-progress-color-primary, var(--a11y-color-primary, #2563eb)) 50%,
+    var(--a11y-progress-color-surface, var(--a11y-color-surface-muted, #f3f4f6)) 75%
   );
   background-size: 200% 100%;
   animation: a11y-progress-indeterminate var(--a11y-progress-indeterminate-duration, 1.5s) linear infinite;

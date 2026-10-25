@@ -1,5 +1,10 @@
 html.a11y-no-scroll {
   overflow: hidden;
+}
+
+/* Added by lockScroll() only when the page had a scrollbar, so the page
+   keeps its width instead of widening once the scrollbar is gone. */
+html.a11y-no-scroll--gutter {
   scrollbar-gutter: stable;
 }
 

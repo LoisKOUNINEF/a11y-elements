@@ -11,5 +11,5 @@ a11y-emergency-dialog {
 }
 
 .a11y-emergency-dialog-wrapper {
-  border-top: var(--a11y-emergency-dialog-accent-width, 4px) solid var(--a11y-color-error, rgb(244 67 54));
+  border-top: var(--a11y-emergency-dialog-accent-width, 4px) solid var(--a11y-color-error, #c62828);
 }

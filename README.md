@@ -4,7 +4,7 @@ Framework-agnostic accessibility Custom Elements (Web Components). A behavior la
 
 Every element is Light DOM only (no Shadow DOM), so you always style real markup with your own CSS.
 
-See a [demo of the elements](https://nutin.org/a11y-elements/elements) - See a [demo of the overlays](https://nutin.org/a11y-elements/overlays)
+See a [demo of the elements](https://nutin.dev/a11y-elements/elements) - See a [demo of the overlays](https://nutin.org/a11y-elements/overlays)
 
 ## Usage
 
@@ -56,7 +56,6 @@ A few English strings end up in accessible names and announcements. Replace them
 
 ```js
 import { setStrings } from 'a11y-elements/core';
-// or: import { setStrings } from './node_modules/a11y-elements/dist/browser/overlays/modal/define.js';
 
 setStrings({
   closeDialog: 'Fermer la boîte de dialogue',
@@ -70,6 +69,7 @@ setStrings({
 | `opensInNewTab` | `(opens in new tab)` | `<a11y-anchor>` new-tab links | `new-tab-label` |
 | `navigatedTo` | `Navigated to {name}` | `<a11y-anchor>` jump announcement (`{name}` is the target's name) | `navigated-label` |
 | `closeDialog` | `Close dialog` | the × button of `<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`, an expandable `<a11y-floating>`'s panel | `close-label` |
+| `confirm` / `cancel` | `OK` / `Cancel` | the buttons of `confirmDialog()` | `confirmLabel` / `cancelLabel` |
 | `dismiss` | `Dismiss` | the × button of each `<a11y-notification-banner>` item and of a `dismissible` `<a11y-floating>` | `dismiss-label` |
 | `loading` | `Loading` | `<a11y-spinner>`, `<a11y-blocking-loader>` | `label` / `message` |
 | `progress` | `Progress` | `<a11y-progress>` without a label | `label` / `aria-label` |
@@ -98,7 +98,7 @@ Each section shows an example, the element's own attributes/properties/methods, 
 
 Behavior shared by overlays is described once, in [Common to all overlays](#common-to-all-overlays).
 
-**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-card-link>`](#a11y-card-link) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-checkbox-group>`](#a11y-checkbox-group) · [`<a11y-file-input>`](#a11y-file-input) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
+**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-card-link>`](#a11y-card-link) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-checkbox-group>`](#a11y-checkbox-group) · [`<a11y-file-input>`](#a11y-file-input) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-tabs>`](#a11y-tabs) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
 
 **Overlays:** [`<a11y-blocking-loader>`](#a11y-blocking-loader) · [`<a11y-context-menu>`](#a11y-context-menu) · [`<a11y-drawer>`](#a11y-drawer) · [`<a11y-dropdown>`](#a11y-dropdown) · [`<a11y-emergency-dialog>`](#a11y-emergency-dialog) · [`<a11y-floating>`](#a11y-floating) · [`<a11y-modal>`](#a11y-modal) · [`<a11y-notification-banner>`](#a11y-notification-banner) · [`<a11y-popover>`](#a11y-popover) · [`<a11y-snackbar>`](#a11y-snackbar) · [`<a11y-tooltip>`](#a11y-tooltip)
 
@@ -145,6 +145,8 @@ An avatar image with an initials fallback. When the image is missing or fails to
 | `initials` | attribute | — | Text shown when there's no image, or it fails to load. |
 | `size` | attribute | — | Sets `--a11y-avatar-size`. |
 | `shape` | attribute / property | `circle` | `circle` or `square`. |
+
+The initials are set in Arial rather than the page font, so they fit the circle the same way everywhere. Set `--a11y-avatar-font-family` to use your own font.
 
 <details>
 <summary>CSS variables</summary>
@@ -762,6 +764,8 @@ Wraps a real `<select>` in a `<label>` with a visible label text. Options and ke
 | `onChange` | callback | — | `(value: string) => void`, called on every `change`. |
 | `getValue()` / `setValue(value)` | method | — | Reads / sets the selected value. |
 
+The native `<select>` inside stays the source of truth: its `change` events and `.value` work as usual. A framework that binds events on the native element can use those and skip `onChange` / `getValue()`.
+
 <details>
 <summary>CSS variables</summary>
 
@@ -777,7 +781,7 @@ Wraps a real `<select>` in a `<label>` with a visible label text. Options and ke
 | `--a11y-select-color-text-muted` | `#6b7280` |
 | `--a11y-select-control-border-radius` | `4px` |
 | `--a11y-select-control-border-width` | `1px` |
-| `--a11y-select-control-font-family` | `Arial, sans-serif` |
+| `--a11y-select-control-font-family` | `inherit` |
 | `--a11y-select-control-font-size` | `1rem` |
 | `--a11y-select-control-line-height` | `1.4` |
 | `--a11y-select-control-padding-x` | `1rem` |
@@ -912,6 +916,61 @@ Like `<a11y-checkbox>`, but the input gets `role="switch"`.
 
 </details>
 
+#### `a11y-tabs`
+
+Turns your own tab buttons and panels into the WAI-ARIA Tabs pattern (automatic activation). Tabs are the `[data-tab]` elements inside the `[data-tablist]` child, each one showing the `[data-panel]` with the same name.
+
+```html
+<a11y-tabs label="Projects" selected="apps">
+    <div data-tablist>
+        <button data-tab="tools">Tools</button>
+        <button data-tab="apps">Apps</button>
+    </div>
+    <section data-panel="tools">…</section>
+    <section data-panel="apps">…</section>
+</a11y-tabs>
+```
+
+* Sets the roles, `aria-selected`, `aria-controls`/`aria-labelledby` (ids generated when missing) and a roving `tabindex`. Hidden panels get `hidden`. A panel gets `tabindex="0"` unless it already has a `tabindex`.
+* Arrow keys move the selection and focus (Left/Right, or Up/Down with `orientation="vertical"`, mirrored in right-to-left text). Home/End go to the first/last tab. Disabled tabs (`disabled` or `aria-disabled="true"`) are skipped.
+* A same-page link (`<a href="#id">`, with or without `<a11y-anchor>`) whose target is in a hidden panel selects that panel first. So do `hashchange` and the page's initial hash, even when its target is added after the element connects (it's then scrolled into view).
+* Tabs and panels inside a nested `<a11y-tabs>` belong to it.
+
+| Name | Kind | Default | Description |
+| --- | --- | --- | --- |
+| `label` | attribute | — | The tablist's accessible name (`aria-label`), unless the tablist has `aria-labelledby`. |
+| `selected` | attribute / property | first enabled tab | The selected tab's `data-tab`. Unknown or disabled names fall back to the first enabled tab. |
+| `orientation` | attribute | `horizontal` | `vertical` stacks the tabs and uses Up/Down. |
+| `onChange` | callback | — | `(name: string) => void`, called when the user changes the tab (click, keyboard, link or hash). Not called by `select()` or `selected`. |
+| `select(name)` | method | — | Selects a tab. |
+| `reveal(element)` | method | — | Selects the panel containing `element`. Returns `false` if it isn't in one of this element's panels. |
+
+<details>
+<summary>CSS variables</summary>
+
+| Variable | Default |
+| --- | --- |
+| `--a11y-tabs-border-width` | `1px` |
+| `--a11y-tabs-color-border` | `#d1d5db` |
+| `--a11y-tabs-color-disabled` | `#9ca3af` |
+| `--a11y-tabs-color-focus` | `#2563eb` |
+| `--a11y-tabs-color-selected` | `#2563eb` |
+| `--a11y-tabs-color-text` | `#4b5563` |
+| `--a11y-tabs-color-text-hover` | `#111827` |
+| `--a11y-tabs-focus-outline-offset` | `2px` |
+| `--a11y-tabs-focus-outline-width` | `2px` |
+| `--a11y-tabs-gap` | `0.25rem` |
+| `--a11y-tabs-indicator-width` | `2px` |
+| `--a11y-tabs-tab-background` | `transparent` |
+| `--a11y-tabs-tab-border-radius` | `0` |
+| `--a11y-tabs-tab-font-size` | `1rem` |
+| `--a11y-tabs-tab-font-weight` | `500` |
+| `--a11y-tabs-tab-line-height` | `1.4` |
+| `--a11y-tabs-tab-padding` | `0.5rem 1rem` |
+| `--a11y-tabs-transition-duration` | `0.2s` |
+
+</details>
+
 #### `a11y-textarea`
 
 `<a11y-input>` for a real `<textarea>`: same parts, attributes, properties, validation and states.
@@ -960,7 +1019,21 @@ No attributes or CSS variables. The class `a11y-visually-hidden` is also usable 
 
 * **Open/close** with the `open` attribute or property, or `show()` / `close()`.
 * **Before the element is defined** (lazy-loaded bundles), setting `.open = true`, `onClose` or any other property works: it's applied once the element upgrades. `setAttribute('open', '')` works too.
-* **Events:** `a11y-overlay-open` and `a11y-overlay-close` fire on `document`, with `event.detail.name` set to the tag name.
+* **Events:** `a11y-overlay-open` and `a11y-overlay-close` fire on the overlay element and bubble to `document`, so you can listen on either. `event.detail` has `name` (the tag name) and `element` (the overlay). On `a11y-overlay-close`, `detail.reason` says why it closed:
+
+  | `reason` | Closed by |
+  | --- | --- |
+  | `escape` | the Escape key |
+  | `backdrop` | a click on a dialog's backdrop |
+  | `close-button` | a dialog's × button |
+  | `outside-click` | a click outside an anchored overlay |
+  | `focus-out` | focus leaving a menu |
+  | `item` | activating a menu item |
+  | `dismiss-all` | `dismissAllOverlays()` |
+  | `removed` | removing the element while open (the event then fires on `document`) |
+  | `api` | `close()`, `open = false` or removing `open` |
+
+  `close(reason)` also takes a reason, for your own close buttons. `<a11y-floating>` passes `element` but no `reason`.
 * **`dismissAllOverlays()`** closes every open overlay (e.g. on navigation). It's exported from `a11y-elements/core` and from every overlay's `define.js`.
 * **Except `<a11y-floating>`**, which is visible by default and has no `open`: `dismissAllOverlays()` only collapses its expanded panel. See [`a11y-floating`](#a11y-floating).
 * **Body mounting:** every overlay (including the snackbar and notification-banner regions) moves itself to `<body>` when connected, so a `position: fixed` layer isn't clipped by an ancestor. See [Overlays in a framework](#overlays-in-a-framework) below.
@@ -992,14 +1065,19 @@ If the bundle loads after rendering, the same query does find it, so the result 
 * bind events on the overlay element itself, or delegate from it;
 * put final text into the markup before injecting it, rather than in a pass after rendering.
 
+##### Bind overlay events yourself.
+
+Framework template bindings (event directives, declarative listeners) usually run over the component's subtree after it's inserted. By then the overlay has already moved to `<body>`, so its bindings never attach. Get the overlay with `getElementById`, call `addEventListener` on it (or delegate from it) after each render, and remove the listener on unmount.
+
 <a id="dialogs"></a>
 
 ##### Dialogs (`<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`)
 
 They also share:
 
-* A focus trap (Tab stays inside, focus returns to the trigger on close) and a page scroll lock (`html.a11y-no-scroll`).
+* A focus trap (Tab stays inside, focus returns to the trigger on close) and a page scroll lock (`html.a11y-no-scroll`, `overflow: hidden`). If the page had a classic scrollbar, the lock also adds `html.a11y-no-scroll--gutter` (`scrollbar-gutter: stable`), so the page keeps its width while the scrollbar is gone.
 * Escape, a click on the backdrop, or the × close button close it, unless it's `non-dismissible`.
+* On open, focus moves to `initial-focus` if set, else to a descendant with `autofocus`, else to the first focusable element. That's the × close button when it's dismissible.
 * The dialog is named after its first heading (`aria-labelledby`), or `dialog-label`.
 
 | Name | Kind | Default | Description |
@@ -1007,8 +1085,9 @@ They also share:
 | `non-dismissible` | attribute | absent | No close button, no Escape, no backdrop click: close it from code. |
 | `dialog-label` | attribute | — | Accessible name (`aria-label`) when there's no heading. |
 | `close-label` | attribute | `Close dialog` | Accessible name of the × close button. See [Translating built-in strings](#translating-built-in-strings). |
+| `initial-focus` | attribute | — | The element to focus on open: an `id`, else a selector, looked up inside the dialog. Ignored if it's missing or can't take focus. |
 | `dismissible` | property (read-only) | `true` | Inverse of `non-dismissible`. |
-| `onClose` | callback | — | Called once the close transition has finished. |
+| `onClose` | callback | — | Called once the close transition has finished, with the close [`reason`](#common-to-all-overlays). |
 
 <a id="anchored-overlays"></a>
 
@@ -1130,7 +1209,7 @@ A panel that slides in from a screen edge. Behaves like `<a11y-modal>` (see [Dia
 | --- | --- | --- | --- |
 | `edge` | attribute / property (read-only) | `right` | `left`, `right`, `top` or `bottom`. Read when the drawer opens. |
 
-Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-label`, `close-label`, `dismissible` and `onClose`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
+Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-label`, `close-label`, `initial-focus`, `dismissible` and `onClose`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
 <details>
 <summary>CSS variables</summary>
@@ -1324,9 +1403,43 @@ document.getElementById('open-settings').addEventListener('click', () => {
 | --- | --- | --- | --- |
 | `fullscreen` | attribute | absent | Fills the viewport, without the backdrop gutter. Read when the modal opens. |
 
-Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-label`, `close-label`, `dismissible` and `onClose`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
+**Size:** the dialog is as tall as its content and up to `32rem` wide, inside the backdrop's padding (`--a11y-modal-overlay-padding`). Longer content scrolls inside it. Change the size with `--a11y-modal-width`, `--a11y-modal-height`, `--a11y-modal-max-width` and `--a11y-modal-max-height`. Set `--a11y-modal-width` and `--a11y-modal-height` to `100%` to fill the padded area, as before 0.5.0. `<a11y-emergency-dialog>` is sized the same way.
 
-`.a11y-modal-buttons` is an optional footer-row class for your own buttons.
+Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-label`, `close-label`, `initial-focus`, `dismissible` and `onClose`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
+
+`.a11y-modal-buttons` is an optional footer-row class for your own buttons. It lays them out in a row, and gives plain `<button>`s a default look (padding, font size, hover colors). Those styles have zero specificity (`:where()`), so any class on your buttons overrides them.
+
+##### Confirmation dialogs: `confirmDialog()`
+
+`confirmDialog()` asks a yes/no question in a temporary modal, and resolves `true` only when the confirm button is pressed. Every other close (Cancel, Escape, the backdrop, ×, `dismissAllOverlays()`) resolves `false`. Focus starts on Cancel, so a stray Enter doesn't confirm. The modal is removed once closed.
+
+```js
+import { confirmDialog } from 'a11y-elements/overlays/modal';
+
+if (await confirmDialog({ title: 'Delete all notes?', message: 'This can’t be undone.', confirmLabel: 'Delete', danger: true })) {
+    deleteAll();
+}
+```
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `title` | — | The heading, which also names the dialog. |
+| `message` | — | Text under the heading. Escaped; use `raw()` for markup. |
+| `confirmLabel` | `OK` | Confirm button text, else `setStrings({ confirm })`. |
+| `cancelLabel` | `Cancel` | Cancel button text, else `setStrings({ cancel })`. |
+| `danger` | `false` | Adds `a11y-confirm__confirm--danger` to the confirm button. |
+
+The modal has the class `a11y-confirm`. Its parts are `.a11y-confirm__title`, `.a11y-confirm__message`, and `.a11y-confirm__cancel` and `.a11y-confirm__confirm` in a `.a11y-modal-buttons` footer. Style them with your own CSS.
+
+To build your own instead, set `initial-focus` on Cancel, let your buttons record the answer before calling `modal.close()`, and treat every other close as Cancel:
+
+```js
+let answer = false;
+confirmButton.addEventListener('click', () => { answer = true; modal.close(); });
+cancelButton.addEventListener('click', () => modal.close());
+modal.onClose = () => resolve(answer); // Escape, backdrop, × … leave it false
+modal.open = true;
+```
 
 <details>
 <summary>CSS variables</summary>
@@ -1344,12 +1457,16 @@ Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-lab
 | `--a11y-modal-footer-button-padding` | `0.5rem 1rem` |
 | `--a11y-modal-footer-gap` | `1rem` |
 | `--a11y-modal-footer-margin-top` | `1.5rem` |
+| `--a11y-modal-height` | `auto` |
 | `--a11y-modal-initial-scale` | `0.95` |
+| `--a11y-modal-max-height` | `100%` |
+| `--a11y-modal-max-width` | `100%` |
 | `--a11y-modal-overlay-padding` | `clamp(1rem, 10vmin, 6rem)` |
 | `--a11y-modal-shadow-blur` | `2px` |
 | `--a11y-modal-shadow-fade` | `80%` |
 | `--a11y-modal-shadow-offset-y` | `2px` |
 | `--a11y-modal-transition-duration` | `0.3s` |
+| `--a11y-modal-width` | `min(32rem, 100%)` |
 
 </details>
 
@@ -1388,13 +1505,13 @@ It's a page region, not an open/close overlay: it fires no open/close events and
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `type` | `info` | `info`, `success` or `error` (`error` uses `role="alert"`). |
+| `type` | `info` | `info`, `success`, `warning` or `error` (`error` uses `role="alert"`). |
 | `position` | `top` | `top` or `bottom`. |
 | `actionText` / `onAction` | — | Adds an action button; clicking it runs `onAction` and dismisses the banner. |
 | `onClose` | — | Called when the banner is dismissed. |
 | `maxStack` | — | Sets `max-stack` on the region (sticky for later banners). |
 
-Classes: `.a11y-notification-banner--info` / `--success` / `--error`, `__message`, `__action`, `__close`.
+Classes: `.a11y-notification-banner--info` / `--success` / `--warning` / `--error`, `__message`, `__action`, `__close`.
 
 <details>
 <summary>CSS variables</summary>
@@ -1547,16 +1664,22 @@ Also takes the shared [anchored-overlay](#anchored-overlays) options: `anchor` /
 
 Status colors and the z-index scale, defined on `:root` (in `overlays/core/overlay-variables.css`). Override them globally, or override a component's own token instead.
 
+Each status color has a text color drawn on it (`--a11y-color-text-on-<type>`). Every default pair passes WCAG AA (4.5:1): success 5.13:1, info 5.75:1, error 5.62:1, warning 9.00:1. Warning is amber with dark text, since white on it is only 1.97:1. If you change a status color, check its contrast with its text color.
+
 <details>
 <summary>CSS variables</summary>
 
 | Variable | Default |
 | --- | --- |
-| `--a11y-color-success` | `rgb(76 175 80)` |
-| `--a11y-color-error` | `rgb(244 67 54)` |
-| `--a11y-color-info` | `rgb(33 150 243)` |
-| `--a11y-color-warning` | `rgb(244 67 54)` |
+| `--a11y-color-success` | `#2e7d32` |
+| `--a11y-color-error` | `#c62828` |
+| `--a11y-color-info` | `#1565c0` |
+| `--a11y-color-warning` | `#f9a825` |
 | `--a11y-color-text` | `white` |
+| `--a11y-color-text-on-success` | `var(--a11y-color-text)` |
+| `--a11y-color-text-on-error` | `var(--a11y-color-text)` |
+| `--a11y-color-text-on-info` | `var(--a11y-color-text)` |
+| `--a11y-color-text-on-warning` | `#111827` |
 | `--a11y-z-base` | `0` |
 | `--a11y-z-sticky-header` | `100` |
 | `--a11y-z-sticky-footer` | `110` |
@@ -1614,6 +1737,65 @@ Override at `:root` (or `body`) and every instance of that component on the page
 }
 ```
 
+### Theme with semantic variables
+
+Every component color, and the form controls' radius and font, falls back to a global semantic variable before its shipped default:
+
+```css
+/* from input.css */
+color: var(--a11y-input-color-text, var(--a11y-color-text-default, #111827));
+```
+
+So a dozen variables theme every element, and the per-component ones still win where you set them:
+
+| Variable | Default | Used for |
+| --- | --- | --- |
+| `--a11y-color-surface` | `#ffffff` | control and overlay backgrounds, text on primary or inverted surfaces |
+| `--a11y-color-surface-muted` | `#f3f4f6` | tracks, skeletons, avatar and select fills, the drop zone highlight |
+| `--a11y-color-surface-disabled` | `#e5e7eb` | disabled control backgrounds |
+| `--a11y-color-text-default` | `#111827` | text, the tooltip and floating launcher backgrounds |
+| `--a11y-color-text-muted` | `#6b7280` (`#4b5563` for hovers) | hints, secondary text, menu item and modal button hover backgrounds |
+| `--a11y-color-text-disabled` | `#9ca3af` | disabled text |
+| `--a11y-color-border` | `#d1d5db` | control borders |
+| `--a11y-color-border-strong` | `#9ca3af` | hovered borders, unchecked checkboxes and radios |
+| `--a11y-color-primary` | `#2563eb` | checked, active and focused states, links |
+| `--a11y-color-focus` | `--a11y-color-primary` | focus outlines |
+| `--a11y-color-danger` | `#b91c1c` | errors and required markers |
+| `--a11y-radius` | `4px` | input, textarea, select and file-input button radius |
+| `--a11y-font-family` | `inherit` | input, textarea and select text |
+
+They aren't set anywhere by default. The defaults pass WCAG AA for text (4.5:1) in the pairs the elements use. If you change them, keep text on its surface at 4.5:1. Status colors are separate (see [Shared tokens](#shared-tokens)).
+
+### Dark mode
+
+Load the opt-in dark theme after `a11y.css`:
+
+```html
+<link rel="stylesheet" href="node_modules/a11y-elements/dist/a11y.css" />
+<link rel="stylesheet" href="node_modules/a11y-elements/dist/a11y-dark.css" />
+```
+
+```js
+import 'a11y-elements/a11y.css';
+import 'a11y-elements/a11y-dark.css';
+```
+
+It redefines only the semantic variables above and sets `color-scheme: dark`, so native parts (scrollbars, `<select>` popups) follow. It applies under `prefers-color-scheme: dark`. `data-theme="dark"` or `data-theme="light"` on `<html>` forces a theme. Status colors keep their values: they pass AA with their text in both themes.
+
+To use your own palette instead, set the semantic variables yourself under your dark selector:
+
+```css
+@media (prefers-color-scheme: dark) {
+    :root {
+        --a11y-color-surface: var(--my-surface);
+        --a11y-color-text-default: var(--my-text);
+        /* … */
+    }
+}
+```
+
+Set them on `:root`, not on a dark-themed wrapper: overlays move to `<body>`, out of the wrapper (see below).
+
 ### Scope to one instance
 
 The same custom properties follow ordinary CSS cascade/inheritance, so you can target just one element instead. Two equivalent ways to do it:
@@ -1634,9 +1816,18 @@ The same custom properties follow ordinary CSS cascade/inheritance, so you can t
 
 Either way, only that element changes — every other `<a11y-spinner>` on the page keeps its default (or globally-rethemed) look.
 
+**Overlays are the exception for ancestors:** they move to `<body>` when connected, so variables set on a wrapper around one (`.dark-section { --a11y-modal-color-background: … }`) no longer reach it. Set overlay variables on `:root` / `body`, or on the overlay element itself (an inline style or a class on `<a11y-modal>`).
+
 Attributes that map to a custom property (`<a11y-spinner color="…" size="…">`, `<a11y-avatar size="…">`, `<a11y-skeleton width="…" height="…">`) take precedence over your inline value only while they're set; removing the attribute brings your inline value back.
 
 The full list of tokens, with their defaults, is in the shipped `dist/a11y.css` — search it for `--a11y-<component>-`.
+
+## Testing
+
+* **Elements exist only once their `define` entry is imported.** In a test that doesn't import it, an `<a11y-checkbox>` stays a plain unknown element. Read its attributes (`label`, …), and don't expect overlays to move to `<body>`, build their chrome or fire their events.
+* **The elements run under jsdom** once defined. This library's own suite does, with a small polyfill for `ElementInternals` validity (`setValidity()`, `validity`), which jsdom lacks and the form fields use. Expect no layout: positioning and transitions resolve immediately.
+* **Stub `notify()`** through your own wrapper (a service that calls it), and replace the wrapper in tests.
+* **Simulate a user closing an overlay:** with the element defined, call `close('escape')` (or `'backdrop'`, …): it fires `a11y-overlay-close` and `onClose` with that reason. Without it, set `open = false` and dispatch the event yourself: `document.dispatchEvent(new CustomEvent('a11y-overlay-close', { detail: { name: 'a11y-modal', element: modal, reason: 'escape' } }))`.
 
 ## License
 

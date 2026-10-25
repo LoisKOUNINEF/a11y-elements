@@ -6,8 +6,8 @@
   overflow: hidden;
   width:  var(--a11y-avatar-size, 2.5rem);
   height: var(--a11y-avatar-size, 2.5rem);
-  background-color: var(--a11y-avatar-color-surface, #f3f4f6);
-  color: var(--a11y-avatar-color-text-muted, #6b7280);
+  background-color: var(--a11y-avatar-color-surface, var(--a11y-color-surface-muted, #f3f4f6));
+  color: var(--a11y-avatar-color-text-muted, var(--a11y-color-text-muted, #6b7280));
   font-family: var(--a11y-avatar-font-family, Arial, sans-serif);
   font-size: calc(var(--a11y-avatar-size, 2.5rem) * var(--a11y-avatar-font-size-ratio, 0.38));
   font-weight: var(--a11y-avatar-font-weight, 600);

@@ -1,13 +1,13 @@
 .a11y-dropdown-wrapper {
   z-index: var(--a11y-z-dropdown, 300);
-  background: var(--a11y-dropdown-color-background, #ffffff);
-  color: var(--a11y-dropdown-color-text, #111827);
+  background: var(--a11y-dropdown-color-background, var(--a11y-color-surface, #ffffff));
+  color: var(--a11y-dropdown-color-text, var(--a11y-color-text-default, #111827));
   border-radius: var(--a11y-dropdown-border-radius, 0.5rem);
   box-shadow:
     0
     var(--a11y-dropdown-shadow-offset-y, 2px)
     var(--a11y-dropdown-shadow-blur, 10px)
-    color-mix(in srgb, var(--a11y-dropdown-color-text, #111827), transparent var(--a11y-dropdown-shadow-fade, 85%));
+    color-mix(in srgb, var(--a11y-dropdown-color-text, var(--a11y-color-text-default, #111827)), transparent var(--a11y-dropdown-shadow-fade, 85%));
   min-width: var(--a11y-dropdown-min-width, 160px);
 }
 

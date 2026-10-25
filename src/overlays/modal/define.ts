@@ -10,4 +10,5 @@ declare global {
 }
 
 export { ModalElement };
+export { confirmDialog, type ConfirmDialogOptions } from './confirm-dialog.js';
 export * from '../core/zero-build-exports.js';

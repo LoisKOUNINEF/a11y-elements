@@ -8,11 +8,11 @@ a11y-input > input {
   width: 100%;
   box-sizing: border-box;
   padding: var(--a11y-input-control-padding-y, 0.5rem) var(--a11y-input-control-padding-x, 0.75rem);
-  background-color: var(--a11y-input-color-background, #ffffff);
-  color: var(--a11y-input-color-text, #111827);
-  border: var(--a11y-input-control-border-width, 1px) solid var(--a11y-input-color-border, #d1d5db);
-  border-radius: var(--a11y-input-control-border-radius, 4px);
-  font-family: var(--a11y-input-control-font-family, inherit);
+  background-color: var(--a11y-input-color-background, var(--a11y-color-surface, #ffffff));
+  color: var(--a11y-input-color-text, var(--a11y-color-text-default, #111827));
+  border: var(--a11y-input-control-border-width, 1px) solid var(--a11y-input-color-border, var(--a11y-color-border, #d1d5db));
+  border-radius: var(--a11y-input-control-border-radius, var(--a11y-radius, 4px));
+  font-family: var(--a11y-input-control-font-family, var(--a11y-font-family, inherit));
   font-size: var(--a11y-input-control-font-size, 1rem);
   line-height: var(--a11y-input-control-line-height, 1.4);
   transition:
@@ -21,26 +21,26 @@ a11y-input > input {
 }
 
 a11y-input > input:hover:not(:disabled) {
-  border-color: var(--a11y-input-color-border-strong, #9ca3af);
+  border-color: var(--a11y-input-color-border-strong, var(--a11y-color-border-strong, #9ca3af));
 }
 
 a11y-input > input:focus-visible {
-  outline: var(--a11y-input-focus-outline-width, 2px) solid var(--a11y-input-color-primary, #2563eb);
+  outline: var(--a11y-input-focus-outline-width, 2px) solid var(--a11y-input-color-primary, var(--a11y-color-focus, var(--a11y-color-primary, #2563eb)));
   outline-offset: var(--a11y-input-focus-outline-offset, 2px);
-  border-color: var(--a11y-input-color-primary, #2563eb);
+  border-color: var(--a11y-input-color-primary, var(--a11y-color-primary, #2563eb));
 }
 
 /* Set by bindField() only once the error is shown (after blur or a submit attempt). */
 a11y-input > input[aria-invalid="true"] {
-  border-color: var(--a11y-input-color-error, #b91c1c);
+  border-color: var(--a11y-input-color-error, var(--a11y-color-danger, #b91c1c));
 }
 
 a11y-input > input[aria-invalid="true"]:focus-visible {
-  outline-color: var(--a11y-input-color-error, #b91c1c);
+  outline-color: var(--a11y-input-color-error, var(--a11y-color-danger, #b91c1c));
 }
 
 a11y-input > input:disabled {
-  background-color: var(--a11y-input-color-disabled-bg, #e5e7eb);
-  color: var(--a11y-input-color-disabled-text, #9ca3af);
+  background-color: var(--a11y-input-color-disabled-bg, var(--a11y-color-surface-disabled, #e5e7eb));
+  color: var(--a11y-input-color-disabled-text, var(--a11y-color-text-disabled, #9ca3af));
   cursor: not-allowed;
 }

@@ -26,16 +26,21 @@
   overflow-y: auto;
   position: relative;
   overscroll-behavior: none;
-  background: var(--a11y-modal-color-background, #ffffff);
-  color: var(--a11y-modal-color-text, #111827);
+  background: var(--a11y-modal-color-background, var(--a11y-color-surface, #ffffff));
+  color: var(--a11y-modal-color-text, var(--a11y-color-text-default, #111827));
   box-shadow:
     0
     var(--a11y-modal-shadow-offset-y, 2px)
     var(--a11y-modal-shadow-blur, 2px)
-    color-mix(in srgb, var(--a11y-modal-color-text, #111827), transparent var(--a11y-modal-shadow-fade, 80%));
+    color-mix(in srgb, var(--a11y-modal-color-text, var(--a11y-color-text-default, #111827)), transparent var(--a11y-modal-shadow-fade, 80%));
   border-radius: var(--a11y-modal-border-radius, 1rem);
-  width: 100%;
-  height: 100%;
+  /* Sized to its content, up to the overlay's padded area (then it scrolls).
+     Set width/height to 100% to fill that area instead. */
+  box-sizing: border-box;
+  width: var(--a11y-modal-width, min(32rem, 100%));
+  max-width: var(--a11y-modal-max-width, 100%);
+  height: var(--a11y-modal-height, auto);
+  max-height: var(--a11y-modal-max-height, 100%);
   transform: scale(var(--a11y-modal-initial-scale, 0.95));
   opacity: 0;
   transition:
@@ -50,7 +55,9 @@
 
 .a11y-modal-wrapper--fullscreen {
   width: 100%;
+  max-width: none;
   height: 100%;
+  max-height: none;
   border-radius: 0;
   box-shadow: none;
 }
@@ -83,7 +90,7 @@ a11y-modal {
   font-size: var(--a11y-modal-close-button-size, 1.5rem);
   cursor: pointer;
   padding: 0 1rem;
-  color: var(--a11y-modal-color-text, #111827);
+  color: var(--a11y-modal-color-text, var(--a11y-color-text-default, #111827));
 }
 
 .a11y-modal-close-button:focus:not(:focus-visible) {
@@ -91,7 +98,7 @@ a11y-modal {
 }
 
 .a11y-modal-close-button:focus-visible {
-  outline: 2px solid var(--a11y-modal-color-secondary, #6b7280);
+  outline: 2px solid var(--a11y-modal-color-secondary, var(--a11y-color-text-muted, #6b7280));
 }
 
 /* Shared "modal footer buttons" convention for consumer-authored content. */
@@ -102,7 +109,9 @@ a11y-modal {
   margin-top: var(--a11y-modal-footer-margin-top, 1.5rem);
 }
 
-.a11y-modal-buttons button {
+/* A default look for plain `<button>`s only: `:where()` keeps it at zero
+   specificity, so any class on the consumer's own buttons wins. */
+:where(.a11y-modal-buttons button) {
   background-color: inherit;
   transition: background-color ease-in-out var(--a11y-modal-transition-duration, 0.3s);
   padding: var(--a11y-modal-footer-button-padding, 0.5rem 1rem);
@@ -110,9 +119,9 @@ a11y-modal {
   cursor: pointer;
 }
 
-.a11y-modal-buttons button:hover {
-  background-color: var(--a11y-modal-color-secondary-hover, #4b5563);
-  color: var(--a11y-modal-color-background, #ffffff);
+:where(.a11y-modal-buttons button:hover) {
+  background-color: var(--a11y-modal-color-secondary-hover, var(--a11y-color-text-muted, #4b5563));
+  color: var(--a11y-modal-color-background, var(--a11y-color-surface, #ffffff));
 }
 
 @media (prefers-reduced-motion: reduce) {

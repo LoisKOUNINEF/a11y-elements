@@ -175,7 +175,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
   }
 
   protected _focusTrapOptions(): IFocusTrapOptions {
-    return { onDeactivate: () => this.close() };
+    return { onDeactivate: () => this.close('escape') };
   }
 
   updatePosition(): void {
@@ -256,7 +256,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     this._boundOutsideClick = (e: MouseEvent): void => {
       const target = e.target as Node;
       if (wrapper.contains(target) || this.anchorElement?.contains(target)) return;
-      this.close();
+      this.close('outside-click');
     };
     // Deferred so the same click/tap that opened the overlay doesn't immediately close it.
     this._outsideClickTimer = setTimeout(() => {
@@ -265,7 +265,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
 
     if (!this.wantsFocusTrap()) {
       this._boundKeyDown = (e: KeyboardEvent): void => {
-        if (e.key === 'Escape') this.close();
+        if (e.key === 'Escape') this.close('escape');
       };
       document.addEventListener('keydown', this._boundKeyDown);
     }

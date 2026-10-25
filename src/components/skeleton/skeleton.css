@@ -5,7 +5,7 @@
 
 .a11y-skeleton {
   display: block;
-  background-color: var(--a11y-skeleton-color-surface, #f3f4f6);
+  background-color: var(--a11y-skeleton-color-surface, var(--a11y-color-surface-muted, #f3f4f6));
   border-radius: var(--a11y-skeleton-border-radius, 4px);
   animation: a11y-skeleton-pulse var(--a11y-skeleton-pulse-duration, 1.5s) ease-in-out infinite;
 }
@@ -46,7 +46,7 @@
 .a11y-skeleton__line {
   display: block;
   height: var(--a11y-skeleton-height, var(--a11y-skeleton-default-height, 1em));
-  background-color: var(--a11y-skeleton-color-surface, #f3f4f6);
+  background-color: var(--a11y-skeleton-color-surface, var(--a11y-color-surface-muted, #f3f4f6));
   border-radius: var(--a11y-skeleton-line-border-radius, 2px);
   animation: a11y-skeleton-pulse var(--a11y-skeleton-pulse-duration, 1.5s) ease-in-out infinite;
 }

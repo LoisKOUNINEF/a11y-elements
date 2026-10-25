@@ -89,3 +89,92 @@ describe('a11y-modal — translated close button', () => {
     expect(closeLabel()).toBe('Fermer');
   });
 });
+
+describe('a11y-modal initial focus', () => {
+  const body = '<h2>Delete?</h2><input id="name"><button class="cancel">Cancel</button><button>Delete</button>';
+
+  it('focuses the × close button by default', () => {
+    const el = mount(body) as HTMLElement & { open: boolean };
+    el.open = true;
+    expect(document.activeElement).toBe(el.querySelector('.a11y-modal-close-button'));
+  });
+
+  it('focuses the element whose id is initial-focus', () => {
+    const el = mount(body) as HTMLElement & { open: boolean };
+    el.setAttribute('initial-focus', 'name');
+    el.open = true;
+    expect(document.activeElement).toBe(el.querySelector('#name'));
+  });
+
+  it('accepts a selector', () => {
+    const el = mount(body) as HTMLElement & { open: boolean };
+    el.setAttribute('initial-focus', '.cancel');
+    el.open = true;
+    expect(document.activeElement).toBe(el.querySelector('.cancel'));
+  });
+
+  it('honours a descendant with autofocus', () => {
+    const el = mount(body.replace('<button class="cancel">', '<button class="cancel" autofocus>')) as HTMLElement & {
+      open: boolean;
+    };
+    el.open = true;
+    expect(document.activeElement).toBe(el.querySelector('.cancel'));
+  });
+
+  it('falls back to the first focusable element when the target is missing, invalid or disabled', () => {
+    for (const ref of ['missing', '[[', '#off']) {
+      const el = mount(`${body}<button id="off" disabled>Off</button>`) as HTMLElement & { open: boolean };
+      el.setAttribute('initial-focus', ref);
+      el.open = true;
+      expect(document.activeElement, ref).toBe(el.querySelector('.a11y-modal-close-button'));
+      el.remove();
+    }
+  });
+
+  it("ignores an id that's outside the modal", () => {
+    document.body.insertAdjacentHTML('beforeend', '<button id="outside">Outside</button>');
+    const el = mount(body) as HTMLElement & { open: boolean };
+    el.setAttribute('initial-focus', 'outside');
+    el.open = true;
+    expect(document.activeElement).toBe(el.querySelector('.a11y-modal-close-button'));
+  });
+});
+
+describe('a11y-modal close reason', () => {
+  function openModal(): HTMLElement & { open: boolean; onClose?: (reason: string) => void } {
+    const el = mount('<h2>Title</h2><button>OK</button>') as HTMLElement & {
+      open: boolean;
+      onClose?: (reason: string) => void;
+    };
+    el.open = true;
+    return el;
+  }
+
+  function lastCloseDetail(spy: ReturnType<typeof vi.fn>): { name: string; element: Element; reason: string } {
+    return (spy.mock.calls.at(-1)![0] as CustomEvent).detail;
+  }
+
+  it.each([
+    ['escape', () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))],
+    ['backdrop', () => document.querySelector<HTMLElement>('.a11y-modal-overlay')!.click()],
+    ['close-button', () => document.querySelector<HTMLElement>('.a11y-modal-close-button')!.click()],
+  ])('reports %s to onClose and the close event', (reason, act) => {
+    const el = openModal();
+    const onClose = vi.fn();
+    const closeSpy = vi.fn();
+    el.onClose = onClose;
+    el.addEventListener('a11y-overlay-close', closeSpy);
+
+    act();
+    expect(onClose).toHaveBeenCalledWith(reason);
+    expect(lastCloseDetail(closeSpy)).toEqual({ name: 'a11y-modal', element: el, reason });
+  });
+
+  it('reports api for open = false', () => {
+    const el = openModal();
+    const onClose = vi.fn();
+    el.onClose = onClose;
+    el.open = false;
+    expect(onClose).toHaveBeenCalledWith('api');
+  });
+});

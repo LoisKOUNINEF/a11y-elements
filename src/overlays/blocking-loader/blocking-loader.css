@@ -9,7 +9,7 @@
   gap: var(--a11y-blocking-loader-gap, 1rem);
   background-color: var(--a11y-blocking-loader-color-overlay, rgba(0, 0, 0, 0.5));
   backdrop-filter: blur(5px);
-  color: var(--a11y-blocking-loader-color-text, #111827);
+  color: var(--a11y-blocking-loader-color-text, var(--a11y-color-text-default, #111827));
 }
 
 .a11y-blocking-loader-overlay__message {

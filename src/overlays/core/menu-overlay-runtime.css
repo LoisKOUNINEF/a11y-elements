@@ -2,14 +2,14 @@
 [role='menuitem'] {
   padding: var(--a11y-menu-item-padding, 0.5rem 1rem);
   cursor: pointer;
-  color: var(--a11y-menu-item-color-text, #111827);
+  color: var(--a11y-menu-item-color-text, var(--a11y-color-text-default, #111827));
   outline: none;
 }
 
 [role='menuitem']:hover,
 [role='menuitem']:focus-visible {
-  background-color: var(--a11y-menu-item-color-secondary-hover, #4b5563);
-  color: var(--a11y-menu-item-color-background, #ffffff);
+  background-color: var(--a11y-menu-item-color-secondary-hover, var(--a11y-color-text-muted, #4b5563));
+  color: var(--a11y-menu-item-color-background, var(--a11y-color-surface, #ffffff));
 }
 
 [role='menuitem'][aria-disabled='true'] {
@@ -19,5 +19,5 @@
 
 [role='menuitem'][aria-disabled='true']:hover {
   background-color: transparent;
-  color: var(--a11y-menu-item-color-text, #111827);
+  color: var(--a11y-menu-item-color-text, var(--a11y-color-text-default, #111827));
 }

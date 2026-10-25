@@ -1,0 +1,65 @@
+a11y-tabs {
+  display: block;
+}
+
+.a11y-tabs__list {
+  display: flex;
+  gap: var(--a11y-tabs-gap, 0.25rem);
+  border-bottom: var(--a11y-tabs-border-width, 1px) solid var(--a11y-tabs-color-border, var(--a11y-color-border, #d1d5db));
+}
+
+.a11y-tabs__list[aria-orientation="vertical"] {
+  flex-direction: column;
+  border-bottom: none;
+  border-inline-end: var(--a11y-tabs-border-width, 1px) solid var(--a11y-tabs-color-border, var(--a11y-color-border, #d1d5db));
+}
+
+.a11y-tabs__tab {
+  appearance: none;
+  margin: 0;
+  padding: var(--a11y-tabs-tab-padding, 0.5rem 1rem);
+  border: none;
+  border-bottom: var(--a11y-tabs-indicator-width, 2px) solid transparent;
+  border-radius: var(--a11y-tabs-tab-border-radius, 0);
+  background: var(--a11y-tabs-tab-background, transparent);
+  color: var(--a11y-tabs-color-text, var(--a11y-color-text-muted, #4b5563));
+  font: inherit;
+  font-size: var(--a11y-tabs-tab-font-size, 1rem);
+  font-weight: var(--a11y-tabs-tab-font-weight, 500);
+  line-height: var(--a11y-tabs-tab-line-height, 1.4);
+  cursor: pointer;
+  transition:
+    color var(--a11y-tabs-transition-duration, 0.2s) ease,
+    border-color var(--a11y-tabs-transition-duration, 0.2s) ease;
+}
+
+.a11y-tabs__list[aria-orientation="vertical"] .a11y-tabs__tab {
+  border-bottom: none;
+  border-inline-end: var(--a11y-tabs-indicator-width, 2px) solid transparent;
+  text-align: start;
+}
+
+.a11y-tabs__tab:hover {
+  color: var(--a11y-tabs-color-text-hover, var(--a11y-color-text-default, #111827));
+}
+
+.a11y-tabs__tab[aria-selected="true"] {
+  color: var(--a11y-tabs-color-selected, var(--a11y-color-primary, #2563eb));
+  border-color: var(--a11y-tabs-color-selected, var(--a11y-color-primary, #2563eb));
+}
+
+.a11y-tabs__tab:focus-visible,
+.a11y-tabs__panel:focus-visible {
+  outline: var(--a11y-tabs-focus-outline-width, 2px) solid var(--a11y-tabs-color-focus, var(--a11y-color-focus, var(--a11y-color-primary, #2563eb)));
+  outline-offset: var(--a11y-tabs-focus-outline-offset, 2px);
+}
+
+.a11y-tabs__tab:disabled,
+.a11y-tabs__tab[aria-disabled="true"] {
+  color: var(--a11y-tabs-color-disabled, var(--a11y-color-text-disabled, #9ca3af));
+  cursor: not-allowed;
+}
+
+.a11y-tabs__panel[hidden] {
+  display: none;
+}

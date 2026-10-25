@@ -29,6 +29,12 @@ export interface IFocusTrapOptions {
    * dropped into arbitrary HTML can't assume that, so this is opt-in.
    */
   inertTarget?: HTMLElement | string | null;
+  /**
+   * Where focus goes on `activate()`, instead of the first focusable element:
+   * an element, or a function returning one (called on activation). Ignored
+   * when it's outside the container or can't take focus.
+   */
+  initialFocus?: HTMLElement | (() => HTMLElement | null) | null;
 }
 
 export interface IFocusTrapHelperParams {
@@ -49,6 +55,28 @@ function isTabbable(el: HTMLElement): boolean {
   if (el.closest('[hidden], [inert]')) return false;
   if (typeof el.checkVisibility === 'function') return el.checkVisibility({ visibilityProperty: true });
   return true;
+}
+
+function isNamedRadio(el: Element | null): el is HTMLInputElement {
+  return el instanceof HTMLInputElement && el.type === 'radio' && el.name !== '';
+}
+
+/**
+ * Native Tab treats radios sharing a `name` (in the same form) as a single stop:
+ * the checked one, else the first one. Arrow keys move inside the group. Without
+ * this, a trap would stop on every radio of a group (e.g. 48 in a theme list).
+ * `elements` are already tabbable, so a disabled or hidden radio is never a stop.
+ */
+function collapseRadioGroups(elements: HTMLElement[]): HTMLElement[] {
+  const stops = new Map<HTMLFormElement | null, Map<string, HTMLInputElement>>();
+  for (const el of elements) {
+    if (!isNamedRadio(el)) continue;
+    let byName = stops.get(el.form);
+    if (!byName) stops.set(el.form, (byName = new Map()));
+    const stop = byName.get(el.name);
+    if (!stop || (el.checked && !stop.checked)) byName.set(el.name, el);
+  }
+  return elements.filter((el) => !isNamedRadio(el) || stops.get(el.form)?.get(el.name) === el);
 }
 
 interface PointerState {
@@ -129,18 +157,28 @@ export class FocusTrapHelper {
       returnFocusOnDeactivate: options.returnFocusOnDeactivate ?? true,
       onDeactivate: options.onDeactivate,
       inertTarget: options.inertTarget ?? null,
+      initialFocus: options.initialFocus ?? null,
     };
     this._boundKeyDown = this._handleKeyDown.bind(this);
   }
 
   private _getFocusableElements(): HTMLElement[] {
-    return Array.from(this._container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(isTabbable);
+    return collapseRadioGroups(
+      Array.from(this._container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(isTabbable),
+    );
   }
 
   private _resolveInertTarget(): HTMLElement | null {
     const target = this._options.inertTarget;
     if (!target) return null;
     return typeof target === 'string' ? document.querySelector<HTMLElement>(target) : target;
+  }
+
+  private _resolveInitialFocus(): HTMLElement | null {
+    const option = this._options.initialFocus;
+    const el = typeof option === 'function' ? option() : option;
+    if (!el || !this._container.contains(el)) return null;
+    return el.matches(FOCUSABLE_SELECTOR) && isTabbable(el) ? el : null;
   }
 
   public activate(): void {
@@ -151,7 +189,7 @@ export class FocusTrapHelper {
 
     if (this._focusableElements.length > 0) {
       this._firstFocusableElement = this._focusableElements[0] ?? null;
-      this._firstFocusableElement?.focus();
+      (this._resolveInitialFocus() ?? this._firstFocusableElement)?.focus();
     } else {
       this._container.setAttribute('tabindex', '-1');
       this._container.focus();
@@ -266,7 +304,12 @@ export class FocusTrapHelper {
     event.preventDefault();
 
     const elements = this._focusableElements;
-    const currentIndex = elements.indexOf(document.activeElement as HTMLElement);
+    const active = document.activeElement as HTMLElement | null;
+    let currentIndex = active ? elements.indexOf(active) : -1;
+    // A focused radio that isn't its group's stop (e.g. focused from script) stands for its group
+    if (currentIndex === -1 && isNamedRadio(active)) {
+      currentIndex = elements.findIndex((el) => isNamedRadio(el) && el.name === active.name && el.form === active.form);
+    }
 
     const nextIndex = event.shiftKey
       ? currentIndex <= 0

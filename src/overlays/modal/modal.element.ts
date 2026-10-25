@@ -1,4 +1,5 @@
 import { A11yModalOverlayElement } from '../core/a11y-modal-overlay-element.js';
+import type { OverlayCloseReason } from '../../core/overlay-registry.js';
 
 /**
  * A centered modal dialog. Consumer content is the light-DOM children.
@@ -22,8 +23,8 @@ export class ModalElement extends A11yModalOverlayElement {
     return [...super.observedAttributes, 'fullscreen'];
   }
 
-  /** Called once this modal has finished closing (after its close transition). */
-  declare onClose?: () => void;
+  /** Called once this modal has finished closing (after its close transition), with why it closed. */
+  declare onClose?: (reason: OverlayCloseReason) => void;
 
   protected override createBackdrop(): HTMLElement {
     const el = super.createBackdrop();
@@ -38,7 +39,8 @@ export class ModalElement extends A11yModalOverlayElement {
   }
 
   protected override _onHidden(name?: string): void {
+    const reason = this._closeReason;
     super._onHidden(name);
-    this.onClose?.();
+    this.onClose?.(reason);
   }
 }

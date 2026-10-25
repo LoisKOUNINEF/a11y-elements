@@ -37,6 +37,16 @@ describe('a11y-notification-banner element', () => {
     expect(banner.getAttribute('aria-live')).toBe('assertive');
   });
 
+  it('warning type gets its own class and stays role=status/aria-live=polite', () => {
+    const el = document.createElement('a11y-notification-banner') as any;
+    document.body.appendChild(el);
+    el.show('Storage almost full', { type: 'warning' });
+    const banner = el.querySelector('.a11y-notification-banner')!;
+    expect(banner.classList.contains('a11y-notification-banner--warning')).toBe(true);
+    expect(banner.getAttribute('role')).toBe('status');
+    expect(banner.getAttribute('aria-live')).toBe('polite');
+  });
+
   it('never auto-dismisses, even after a very long time', () => {
     vi.useFakeTimers();
     const el = document.createElement('a11y-notification-banner') as any;

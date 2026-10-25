@@ -135,12 +135,12 @@ export abstract class A11yMenuOverlayElement extends A11yAnchoredOverlayElement 
 
     this._boundFocusOut = (e: FocusEvent): void => {
       const related = e.relatedTarget as Node | null;
-      if (related && !wrapper.contains(related)) this.close();
+      if (related && !wrapper.contains(related)) this.close('focus-out');
     };
 
     this._boundClick = (e: MouseEvent): void => {
       const item = (e.target as HTMLElement).closest<HTMLElement>('[role="menuitem"]');
-      if (item && item.getAttribute('aria-disabled') !== 'true') this.close();
+      if (item && item.getAttribute('aria-disabled') !== 'true') this.close('item');
     };
 
     wrapper.addEventListener('keydown', this._boundMenuKeyDown);

@@ -2,7 +2,7 @@ import { A11yPassiveOverlayElement, type PassiveOverlayItem } from '../core/a11y
 import { getString } from '../../core/strings.js';
 import { html, renderInto, type Raw } from '../../core/template.js';
 
-export type NotificationBannerType = 'info' | 'success' | 'error';
+export type NotificationBannerType = 'info' | 'success' | 'error' | 'warning';
 
 export interface NotificationBannerOptions {
   type?: NotificationBannerType;

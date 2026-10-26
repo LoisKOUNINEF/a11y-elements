@@ -17,7 +17,7 @@ a11y-select {
 .a11y-select__label {
   font-size: var(--a11y-select-label-font-size, 0.875rem);
   font-weight: var(--a11y-select-label-font-weight, 600);
-  color: var(--a11y-select-color-text-muted, #6b7280);
+  color: var(--a11y-select-color-text-muted, var(--a11y-color-text-muted, #6b7280));
 }
 
 .a11y-select__label:empty { display: none; }
@@ -25,11 +25,11 @@ a11y-select {
 .a11y-select__control {
   width: 100%;
   padding: var(--a11y-select-control-padding-y, 0.5rem) var(--a11y-select-control-padding-x, 1rem);
-  background-color: var(--a11y-select-color-surface, #f3f4f6);
-  color: var(--a11y-select-color-text, #111827);
-  border: var(--a11y-select-control-border-width, 1px) solid var(--a11y-select-color-border, #d1d5db);
-  border-radius: var(--a11y-select-control-border-radius, 4px);
-  font-family: var(--a11y-select-control-font-family, Arial, sans-serif);
+  background-color: var(--a11y-select-color-surface, var(--a11y-color-surface-muted, #f3f4f6));
+  color: var(--a11y-select-color-text, var(--a11y-color-text-default, #111827));
+  border: var(--a11y-select-control-border-width, 1px) solid var(--a11y-select-color-border, var(--a11y-color-border, #d1d5db));
+  border-radius: var(--a11y-select-control-border-radius, var(--a11y-radius, 4px));
+  font-family: var(--a11y-select-control-font-family, var(--a11y-font-family, inherit));
   font-size: var(--a11y-select-control-font-size, 1rem);
   line-height: var(--a11y-select-control-line-height, 1.4);
   cursor: inherit;
@@ -39,23 +39,23 @@ a11y-select {
 }
 
 .a11y-select__control:hover:not(:disabled) {
-  border-color: var(--a11y-select-color-border-strong, #9ca3af);
+  border-color: var(--a11y-select-color-border-strong, var(--a11y-color-border-strong, #9ca3af));
 }
 
 .a11y-select__control:focus-visible {
-  outline: var(--a11y-select-focus-outline-width, 2px) solid var(--a11y-select-color-primary, #2563eb);
+  outline: var(--a11y-select-focus-outline-width, 2px) solid var(--a11y-select-color-primary, var(--a11y-color-focus, var(--a11y-color-primary, #2563eb)));
   outline-offset: var(--a11y-select-focus-outline-offset, 2px);
-  border-color: var(--a11y-select-color-primary, #2563eb);
+  border-color: var(--a11y-select-color-primary, var(--a11y-color-primary, #2563eb));
 }
 
 .a11y-select__control:disabled {
-  background-color: var(--a11y-select-color-disabled-bg, #e5e7eb);
-  color: var(--a11y-select-color-disabled-text, #9ca3af);
-  border-color: var(--a11y-select-color-border, #d1d5db);
+  background-color: var(--a11y-select-color-disabled-bg, var(--a11y-color-surface-disabled, #e5e7eb));
+  color: var(--a11y-select-color-disabled-text, var(--a11y-color-text-disabled, #9ca3af));
+  border-color: var(--a11y-select-color-border, var(--a11y-color-border, #d1d5db));
   cursor: not-allowed;
 }
 
 .a11y-select__control option {
-  background-color: var(--a11y-select-color-surface, #f3f4f6);
-  color: var(--a11y-select-color-text, #111827);
+  background-color: var(--a11y-select-color-surface, var(--a11y-color-surface-muted, #f3f4f6));
+  color: var(--a11y-select-color-text, var(--a11y-color-text-default, #111827));
 }

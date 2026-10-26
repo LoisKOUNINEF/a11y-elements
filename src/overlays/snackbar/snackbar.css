@@ -33,8 +33,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: var(--a11y-color-info, rgb(33 150 243));
-  color: var(--a11y-color-text, white);
+  background: var(--a11y-color-info, #1565c0);
+  color: var(--a11y-color-text-on-info, var(--a11y-color-text, white));
   padding: var(--a11y-snackbar-padding, 0.75rem 1.5rem);
   border-radius: var(--a11y-snackbar-border-radius, 0.5rem);
   box-shadow:
@@ -47,15 +47,27 @@
   animation: a11y-snackbar-fade-in var(--a11y-snackbar-animation-duration, 0.3s) ease;
 }
 
-.a11y-snackbar--success { background: var(--a11y-color-success, rgb(76 175 80)); }
-.a11y-snackbar--error   { background: var(--a11y-color-error, rgb(244 67 54)); }
-.a11y-snackbar--info    { background: var(--a11y-color-info, rgb(33 150 243)); }
-.a11y-snackbar--warning { background: var(--a11y-color-warning, rgb(244 67 54)); }
+.a11y-snackbar--success {
+  background: var(--a11y-color-success, #2e7d32);
+  color: var(--a11y-color-text-on-success, var(--a11y-color-text, white));
+}
+.a11y-snackbar--error {
+  background: var(--a11y-color-error, #c62828);
+  color: var(--a11y-color-text-on-error, var(--a11y-color-text, white));
+}
+.a11y-snackbar--info {
+  background: var(--a11y-color-info, #1565c0);
+  color: var(--a11y-color-text-on-info, var(--a11y-color-text, white));
+}
+.a11y-snackbar--warning {
+  background: var(--a11y-color-warning, #f9a825);
+  color: var(--a11y-color-text-on-warning, #111827);
+}
 
 .a11y-snackbar button {
   background: transparent;
   border: none;
-  color: var(--a11y-color-text, white);
+  color: inherit;
   font-weight: bold;
   cursor: pointer;
 }

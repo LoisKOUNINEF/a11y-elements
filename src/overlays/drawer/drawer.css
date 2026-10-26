@@ -14,13 +14,13 @@
 .a11y-drawer-wrapper {
   position: fixed;
   z-index: var(--a11y-z-drawer, 530);
-  background: var(--a11y-drawer-color-background, #ffffff);
-  color: var(--a11y-drawer-color-text, #111827);
+  background: var(--a11y-drawer-color-background, var(--a11y-color-surface, #ffffff));
+  color: var(--a11y-drawer-color-text, var(--a11y-color-text-default, #111827));
   box-shadow:
     0
     var(--a11y-drawer-shadow-offset-y, 2px)
     var(--a11y-drawer-shadow-blur, 10px)
-    color-mix(in srgb, var(--a11y-drawer-color-text, #111827), transparent var(--a11y-drawer-shadow-fade, 80%));
+    color-mix(in srgb, var(--a11y-drawer-color-text, var(--a11y-color-text-default, #111827)), transparent var(--a11y-drawer-shadow-fade, 80%));
   overflow-y: auto;
   transition: transform var(--a11y-drawer-transition-duration, 0.3s) ease;
 }

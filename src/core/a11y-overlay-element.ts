@@ -6,6 +6,7 @@ import {
   emitOverlayClose,
   recordPortalOrigin,
   forgetPortalOrigin,
+  type OverlayCloseReason,
 } from './overlay-registry.js';
 
 /**
@@ -61,6 +62,8 @@ export abstract class A11yOverlayElement extends A11yElement {
    */
   protected _detaching = false;
   private _internalMove = false;
+  /** Why the current close happened, reported by `_onHidden()` — see `close()`. */
+  protected _closeReason: OverlayCloseReason = 'api';
 
   get open(): boolean {
     return this.boolAttr('open');
@@ -88,6 +91,7 @@ export abstract class A11yOverlayElement extends A11yElement {
   override disconnectedCallback(): void {
     if (this._internalMove) return; // reparented by our own _moveSelfTo() — not a real disconnect event
     if (this._isShowing) {
+      this._closeReason = 'removed';
       this._detaching = true;
       try {
         this._hide({ immediate: true });
@@ -134,8 +138,13 @@ export abstract class A11yOverlayElement extends A11yElement {
     this.open = true;
   }
 
-  /** Convenience wrapper — identical to `element.open = false`. */
-  close(): void {
+  /**
+   * Same as `element.open = false`, recording why it closed: the reason is
+   * passed to `onClose` and to the `a11y-overlay-close` event once hidden.
+   * Defaults to `'api'`, as for `open = false`.
+   */
+  close(reason: OverlayCloseReason = 'api'): void {
+    if (this.open) this._closeReason = reason; // a no-op close mustn't label the next one
     this.open = false;
   }
 
@@ -176,14 +185,18 @@ export abstract class A11yOverlayElement extends A11yElement {
 
   protected _onShown(name: string = this.tagName.toLowerCase()): void {
     this._isShowing = true;
+    this._closeReason = 'api';
     registerOpenOverlay(this);
-    emitOverlayOpen(name);
+    emitOverlayOpen(name, { element: this });
   }
 
+  /** Subclasses calling `onClose` read the reason here, before `super._onHidden()` resets it. */
   protected _onHidden(name: string = this.tagName.toLowerCase()): void {
+    const reason = this._closeReason;
+    this._closeReason = 'api';
     this._isShowing = false;
     unregisterOpenOverlay(this);
-    emitOverlayClose(name);
+    emitOverlayClose(name, { element: this, reason });
   }
 
   /**

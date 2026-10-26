@@ -9,11 +9,11 @@ a11y-counter {
 }
 
 a11y-hint {
-  color: var(--a11y-field-color-text-muted, #6b7280);
+  color: var(--a11y-field-color-text-muted, var(--a11y-color-text-muted, #6b7280));
 }
 
 a11y-error {
-  color: var(--a11y-field-color-error, #b91c1c);
+  color: var(--a11y-field-color-error, var(--a11y-color-danger, #b91c1c));
   font-weight: var(--a11y-field-error-font-weight, 600);
 }
 
@@ -23,7 +23,7 @@ a11y-counter[hidden] {
 }
 
 a11y-counter {
-  color: var(--a11y-field-color-text-muted, #6b7280);
+  color: var(--a11y-field-color-text-muted, var(--a11y-color-text-muted, #6b7280));
   text-align: end;
   font-variant-numeric: tabular-nums;
 }

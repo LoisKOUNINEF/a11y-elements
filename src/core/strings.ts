@@ -12,6 +12,10 @@ export interface A11yStrings {
   navigatedTo: string;
   /** The close button of `<a11y-modal>`, `<a11y-drawer>` and `<a11y-emergency-dialog>`. */
   closeDialog: string;
+  /** Default confirm button of `confirmDialog()`. */
+  confirm: string;
+  /** Default cancel button of `confirmDialog()`. */
+  cancel: string;
   /** The close button of each `<a11y-notification-banner>` item. */
   dismiss: string;
   /** Default label of `<a11y-spinner>` and `<a11y-blocking-loader>`. */
@@ -56,6 +60,8 @@ export const DEFAULT_STRINGS: Readonly<A11yStrings> = Object.freeze({
   opensInNewTab: '(opens in new tab)',
   navigatedTo: 'Navigated to {name}',
   closeDialog: 'Close dialog',
+  confirm: 'OK',
+  cancel: 'Cancel',
   dismiss: 'Dismiss',
   loading: 'Loading',
   progress: 'Progress',

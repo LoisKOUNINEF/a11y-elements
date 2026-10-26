@@ -1,5 +1,6 @@
 import { A11yModalOverlayElement } from '../core/a11y-modal-overlay-element.js';
 import type { IFocusTrapOptions } from '../../core/focus-trap.js';
+import type { OverlayCloseReason } from '../../core/overlay-registry.js';
 
 /**
  * A modal that cannot be dismissed except programmatically — no close
@@ -15,7 +16,7 @@ import type { IFocusTrapOptions } from '../../core/focus-trap.js';
  * ```
  */
 export class EmergencyDialogElement extends A11yModalOverlayElement {
-  declare onClose?: () => void;
+  declare onClose?: (reason: OverlayCloseReason) => void;
 
   override get dismissible(): boolean {
     return false;
@@ -38,7 +39,8 @@ export class EmergencyDialogElement extends A11yModalOverlayElement {
   }
 
   protected override _onHidden(name?: string): void {
+    const reason = this._closeReason;
     super._onHidden(name);
-    this.onClose?.();
+    this.onClose?.(reason);
   }
 }

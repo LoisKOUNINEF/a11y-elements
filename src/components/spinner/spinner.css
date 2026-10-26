@@ -20,7 +20,7 @@
   width: var(--a11y-spinner-size, 2rem);
   height: var(--a11y-spinner-size, 2rem);
   border: var(--a11y-spinner-thickness, 3px) solid transparent;
-  border-top-color: var(--a11y-spinner-color, #2563eb);
+  border-top-color: var(--a11y-spinner-color, var(--a11y-color-primary, #2563eb));
 }
 
 .a11y-spinner--sm .a11y-spinner__ring {

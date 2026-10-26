@@ -40,8 +40,9 @@ const browserConfig = defineConfig({
 // CSS bundle: resolves src/a11y.css's `@import` chain (the barrel of every
 // component/overlay stylesheet) into a single dist/a11y.css, replacing the
 // old `sass` CLI compile — no Sass dependency, plain CSS + custom properties.
+// a11y-dark.css is the opt-in dark theme, shipped next to it.
 const cssConfig = defineConfig({
-  entry: { a11y: 'src/a11y.css' },
+  entry: { a11y: 'src/a11y.css', 'a11y-dark': 'src/a11y-dark.css' },
   outDir: 'dist',
   clean: false,
   sourcemap: false,

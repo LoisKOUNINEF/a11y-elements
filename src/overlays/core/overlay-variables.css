@@ -1,12 +1,19 @@
 :root {
-  /* Shared default palette for overlay "status" colors (success/error/info).
-     Any consumer can override these globally, or override a single
-     component's own `--a11y-<component>-color-*` token instead. */
-  --a11y-color-success: rgb(76 175 80);
-  --a11y-color-error: rgb(244 67 54);
-  --a11y-color-info: rgb(33 150 243);
-  --a11y-color-warning: rgb(244 67 54);
+  /* Shared default palette for overlay "status" colors (success/error/info/
+     warning), each with the text color drawn on it. Every pair passes WCAG AA
+     (4.5:1, checked by contrast.test.ts). Any consumer can override these
+     globally, or override a single component's own `--a11y-<component>-color-*`
+     token instead. */
+  --a11y-color-success: #2e7d32;
+  --a11y-color-error: #c62828;
+  --a11y-color-info: #1565c0;
+  --a11y-color-warning: #f9a825;
   --a11y-color-text: white;
+  --a11y-color-text-on-success: var(--a11y-color-text);
+  --a11y-color-text-on-error: var(--a11y-color-text);
+  --a11y-color-text-on-info: var(--a11y-color-text);
+  /* Amber needs dark text: white on it is 1.97:1. */
+  --a11y-color-text-on-warning: #111827;
 
   /* Single source of truth for overlay stacking, as CSS custom properties so
      any consumer can read/override it without a build step. */

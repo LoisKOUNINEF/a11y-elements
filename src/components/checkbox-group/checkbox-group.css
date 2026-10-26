@@ -27,7 +27,7 @@ a11y-checkbox-group {
 .a11y-checkbox-group__legend {
   font-size: var(--a11y-checkbox-group-legend-font-size, 0.875rem);
   font-weight: 600;
-  color: var(--a11y-checkbox-group-color-text-muted, #6b7280);
+  color: var(--a11y-checkbox-group-color-text-muted, var(--a11y-color-text-muted, #6b7280));
   padding: 0;
   margin-bottom: var(--a11y-checkbox-group-legend-margin-bottom, 0.5rem);
 }

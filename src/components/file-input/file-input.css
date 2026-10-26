@@ -27,9 +27,9 @@ a11y-file-input > input[type="file"] {
   justify-content: center;
   gap: var(--a11y-file-input-dropzone-gap, 0.5rem);
   padding: var(--a11y-file-input-dropzone-padding, 1.5rem 1rem);
-  background-color: var(--a11y-file-input-color-background, #ffffff);
-  color: var(--a11y-file-input-color-text-muted, #6b7280);
-  border: var(--a11y-file-input-dropzone-border-width, 2px) dashed var(--a11y-file-input-color-border, #d1d5db);
+  background-color: var(--a11y-file-input-color-background, var(--a11y-color-surface, #ffffff));
+  color: var(--a11y-file-input-color-text-muted, var(--a11y-color-text-muted, #6b7280));
+  border: var(--a11y-file-input-dropzone-border-width, 2px) dashed var(--a11y-file-input-color-border, var(--a11y-color-border, #d1d5db));
   border-radius: var(--a11y-file-input-dropzone-border-radius, 8px);
   text-align: center;
   transition:
@@ -38,8 +38,8 @@ a11y-file-input > input[type="file"] {
 }
 
 .a11y-file-input__dropzone[data-dragover] {
-  border-color: var(--a11y-file-input-color-primary, #2563eb);
-  background-color: var(--a11y-file-input-color-dragover-bg, #eff6ff);
+  border-color: var(--a11y-file-input-color-primary, var(--a11y-color-primary, #2563eb));
+  background-color: var(--a11y-file-input-color-dragover-bg, var(--a11y-color-surface-muted, #eff6ff));
 }
 
 .a11y-file-input__button {
@@ -48,32 +48,32 @@ a11y-file-input > input[type="file"] {
   min-height: 2.5rem;
   box-sizing: border-box;
   padding: var(--a11y-file-input-button-padding-y, 0.5rem) var(--a11y-file-input-button-padding-x, 1rem);
-  background-color: var(--a11y-file-input-color-background, #ffffff);
-  color: var(--a11y-file-input-color-primary, #2563eb);
-  border: 1px solid var(--a11y-file-input-color-primary, #2563eb);
-  border-radius: var(--a11y-file-input-button-border-radius, 4px);
+  background-color: var(--a11y-file-input-color-background, var(--a11y-color-surface, #ffffff));
+  color: var(--a11y-file-input-color-primary, var(--a11y-color-primary, #2563eb));
+  border: 1px solid var(--a11y-file-input-color-primary, var(--a11y-color-primary, #2563eb));
+  border-radius: var(--a11y-file-input-button-border-radius, var(--a11y-radius, 4px));
   font-weight: var(--a11y-file-input-button-font-weight, 600);
   cursor: pointer;
 }
 
 .a11y-file-input__button:hover {
-  background-color: var(--a11y-file-input-color-dragover-bg, #eff6ff);
+  background-color: var(--a11y-file-input-color-dragover-bg, var(--a11y-color-surface-muted, #eff6ff));
 }
 
 /* The focus lands on the hidden input; show it on the button that stands for it. */
 a11y-file-input > input[type="file"]:focus-visible + .a11y-file-input__dropzone .a11y-file-input__button {
-  outline: var(--a11y-file-input-focus-outline-width, 2px) solid var(--a11y-file-input-color-primary, #2563eb);
+  outline: var(--a11y-file-input-focus-outline-width, 2px) solid var(--a11y-file-input-color-primary, var(--a11y-color-focus, var(--a11y-color-primary, #2563eb)));
   outline-offset: var(--a11y-file-input-focus-outline-offset, 2px);
 }
 
 /* Set by bindField() only once the error is shown (after blur, a drop or a removal, or a submit attempt). */
 a11y-file-input > input[aria-invalid="true"] + .a11y-file-input__dropzone {
-  border-color: var(--a11y-file-input-color-error, #b91c1c);
+  border-color: var(--a11y-file-input-color-error, var(--a11y-color-danger, #b91c1c));
 }
 
 a11y-file-input > input:disabled + .a11y-file-input__dropzone {
-  background-color: var(--a11y-file-input-color-disabled-bg, #e5e7eb);
-  color: var(--a11y-file-input-color-disabled-text, #9ca3af);
+  background-color: var(--a11y-file-input-color-disabled-bg, var(--a11y-color-surface-disabled, #e5e7eb));
+  color: var(--a11y-file-input-color-disabled-text, var(--a11y-color-text-disabled, #9ca3af));
   cursor: not-allowed;
 }
 
@@ -97,7 +97,7 @@ a11y-file-input > input:disabled + .a11y-file-input__dropzone .a11y-file-input__
 }
 
 .a11y-file-input__rejected {
-  color: var(--a11y-file-input-color-error, #b91c1c);
+  color: var(--a11y-file-input-color-error, var(--a11y-color-danger, #b91c1c));
   font-size: var(--a11y-field-part-font-size, 0.875rem);
   line-height: var(--a11y-field-part-line-height, 1.4);
 }
@@ -114,9 +114,9 @@ a11y-file-input > input:disabled + .a11y-file-input__dropzone .a11y-file-input__
   align-items: center;
   gap: var(--a11y-file-input-item-gap, 0.75rem);
   padding: var(--a11y-file-input-item-padding, 0.5rem 0.75rem);
-  border: 1px solid var(--a11y-file-input-color-border, #d1d5db);
-  border-radius: var(--a11y-file-input-item-border-radius, 4px);
-  color: var(--a11y-file-input-color-text, #111827);
+  border: 1px solid var(--a11y-file-input-color-border, var(--a11y-color-border, #d1d5db));
+  border-radius: var(--a11y-file-input-item-border-radius, var(--a11y-radius, 4px));
+  color: var(--a11y-file-input-color-text, var(--a11y-color-text-default, #111827));
 }
 
 .a11y-file-input__preview {
@@ -135,7 +135,7 @@ a11y-file-input > input:disabled + .a11y-file-input__dropzone .a11y-file-input__
 
 .a11y-file-input__size {
   flex: none;
-  color: var(--a11y-file-input-color-text-muted, #6b7280);
+  color: var(--a11y-file-input-color-text-muted, var(--a11y-color-text-muted, #6b7280));
   font-size: var(--a11y-field-part-font-size, 0.875rem);
   font-variant-numeric: tabular-nums;
 }
@@ -146,7 +146,7 @@ a11y-file-input > input:disabled + .a11y-file-input__dropzone .a11y-file-input__
   min-height: 2rem;
   padding: 0.25rem 0.5rem;
   background: none;
-  color: var(--a11y-file-input-color-error, #b91c1c);
+  color: var(--a11y-file-input-color-error, var(--a11y-color-danger, #b91c1c));
   border: 1px solid transparent;
   border-radius: 4px;
   font: inherit;
@@ -158,12 +158,12 @@ a11y-file-input > input:disabled + .a11y-file-input__dropzone .a11y-file-input__
 }
 
 .a11y-file-input__remove:focus-visible {
-  outline: var(--a11y-file-input-focus-outline-width, 2px) solid var(--a11y-file-input-color-primary, #2563eb);
+  outline: var(--a11y-file-input-focus-outline-width, 2px) solid var(--a11y-file-input-color-primary, var(--a11y-color-focus, var(--a11y-color-primary, #2563eb)));
   outline-offset: var(--a11y-file-input-focus-outline-offset, 2px);
 }
 
 .a11y-file-input__remove:disabled {
-  color: var(--a11y-file-input-color-disabled-text, #9ca3af);
+  color: var(--a11y-file-input-color-disabled-text, var(--a11y-color-text-disabled, #9ca3af));
   cursor: not-allowed;
 }
 

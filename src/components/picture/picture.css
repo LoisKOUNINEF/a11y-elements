@@ -21,7 +21,7 @@
 .a11y-picture figcaption {
   margin-top: var(--a11y-picture-caption-margin-top, 0.25rem);
   font-size: var(--a11y-picture-caption-font-size, 0.875rem);
-  color: var(--a11y-picture-color-text-muted, #6b7280);
+  color: var(--a11y-picture-color-text-muted, var(--a11y-color-text-muted, #6b7280));
   line-height: var(--a11y-picture-caption-line-height, 1.4);
 }
 

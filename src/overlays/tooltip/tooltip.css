@@ -1,7 +1,7 @@
 .a11y-tooltip-wrapper {
   z-index: var(--a11y-z-tooltip, 320);
-  background: var(--a11y-tooltip-color-text, #111827);
-  color: var(--a11y-tooltip-color-background, #ffffff);
+  background: var(--a11y-tooltip-color-text, var(--a11y-color-text-default, #111827));
+  color: var(--a11y-tooltip-color-background, var(--a11y-color-surface, #ffffff));
   border-radius: var(--a11y-tooltip-border-radius, 0.35rem);
   font-size: var(--a11y-tooltip-font-size, 0.85rem);
   max-width: var(--a11y-tooltip-max-width, 240px);

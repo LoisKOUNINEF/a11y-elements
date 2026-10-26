@@ -25,10 +25,14 @@ let titleIdCounter = 0;
  * `aria-labelledby` (its own `id` is kept, or a unique one is generated).
  *
  * The close button's name: `close-label="…"`, else `setStrings({ closeDialog })`.
+ *
+ * Initial focus: `initial-focus="…"` (an id, else a selector, looked up inside
+ * the content), else a descendant with `autofocus`, else the first focusable
+ * element — the × close button when dismissible.
  */
 export abstract class A11yModalOverlayElement extends A11yOverlayElement {
   static override get observedAttributes(): string[] {
-    return ['open', 'non-dismissible', 'dialog-label', 'close-label'];
+    return ['open', 'non-dismissible', 'dialog-label', 'close-label', 'initial-focus'];
   }
 
   protected _backdrop: HTMLElement | null = null;
@@ -45,6 +49,11 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
 
   get dialogLabel(): string {
     return this.stringAttr('dialog-label');
+  }
+
+  /** The `initial-focus` attribute: an id or selector of the element to focus on open. */
+  get initialFocus(): string {
+    return this.stringAttr('initial-focus');
   }
 
   /** The close button's accessible name. */
@@ -79,7 +88,22 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
   }
 
   protected focusTrapOptions(): IFocusTrapOptions {
-    return { onDeactivate: () => this.close() };
+    return { onDeactivate: () => this.close('escape'), initialFocus: () => this._initialFocusTarget() };
+  }
+
+  private _initialFocusTarget(): HTMLElement | null {
+    const ref = this.initialFocus;
+    if (ref) {
+      const byId = document.getElementById(ref);
+      if (byId && this.contains(byId)) return byId;
+      try {
+        const bySelector = this.querySelector<HTMLElement>(ref);
+        if (bySelector) return bySelector;
+      } catch {
+        // not a valid selector: fall through to the default
+      }
+    }
+    return this.querySelector<HTMLElement>('[autofocus]');
   }
 
   protected override _show(): void {
@@ -100,7 +124,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
 
     if (this.dismissible) {
       backdrop.addEventListener('click', (e: MouseEvent) => {
-        if (e.target === backdrop) this.close();
+        if (e.target === backdrop) this.close('backdrop');
       });
     }
 
@@ -168,7 +192,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
     btn.className = 'a11y-modal-close-button';
     btn.textContent = '×';
     btn.setAttribute('aria-label', this.closeLabel);
-    btn.addEventListener('click', () => this.close());
+    btn.addEventListener('click', () => this.close('close-button'));
     this.prepend(btn);
     this._closeButton = btn;
   }

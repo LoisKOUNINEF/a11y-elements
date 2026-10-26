@@ -1,0 +1,38 @@
+/* Opt-in dark theme: load after a11y.css (<link rel="stylesheet" href=".../dist/a11y-dark.css">).
+   It only redefines the global semantic variables every component falls back
+   to, so anything you set per component (--a11y-<component>-…) still wins.
+   It follows prefers-color-scheme, and data-theme="light"/"dark" on <html>
+   forces either theme. Status colors (--a11y-color-success, …) keep their
+   light values: they already pass AA with their text in both themes. Every
+   text pair here is checked by overlays/core/contrast.test.ts. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --a11y-color-surface: #1f2937;
+    --a11y-color-surface-muted: #374151;
+    --a11y-color-surface-disabled: #374151;
+    --a11y-color-text-default: #f9fafb;
+    --a11y-color-text-muted: #9ca3af;
+    --a11y-color-text-disabled: #6b7280;
+    --a11y-color-border: #4b5563;
+    --a11y-color-border-strong: #6b7280;
+    --a11y-color-primary: #60a5fa;
+    --a11y-color-focus: #93c5fd;
+    --a11y-color-danger: #f87171;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --a11y-color-surface: #1f2937;
+  --a11y-color-surface-muted: #374151;
+  --a11y-color-surface-disabled: #374151;
+  --a11y-color-text-default: #f9fafb;
+  --a11y-color-text-muted: #9ca3af;
+  --a11y-color-text-disabled: #6b7280;
+  --a11y-color-border: #4b5563;
+  --a11y-color-border-strong: #6b7280;
+  --a11y-color-primary: #60a5fa;
+  --a11y-color-focus: #93c5fd;
+  --a11y-color-danger: #f87171;
+}

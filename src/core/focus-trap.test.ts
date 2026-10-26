@@ -290,6 +290,97 @@ describe('FocusTrapHelper — which elements are Tab stops', () => {
   });
 });
 
+describe('FocusTrapHelper — radio groups are one Tab stop', () => {
+  const tabOrder = (presses: number): string[] => {
+    const order = [document.activeElement!.id];
+    for (let i = 0; i < presses; i++) {
+      tab(document.activeElement as HTMLElement);
+      order.push(document.activeElement!.id);
+    }
+    return order;
+  };
+
+  it('stops only on the checked radio of a group', () => {
+    container.innerHTML = `
+      <button id="a">A</button>
+      <input id="r1" type="radio" name="theme">
+      <input id="r2" type="radio" name="theme" checked>
+      <input id="r3" type="radio" name="theme">
+      <button id="b">B</button>
+    `;
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    expect(tabOrder(3)).toEqual(['a', 'r2', 'b', 'a']);
+    trap.deactivate();
+  });
+
+  it('stops on the first radio when none is checked', () => {
+    container.innerHTML = `
+      <button id="a">A</button>
+      <input id="r1" type="radio" name="theme">
+      <input id="r2" type="radio" name="theme">
+    `;
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    expect(tabOrder(2)).toEqual(['a', 'r1', 'a']);
+    trap.deactivate();
+  });
+
+  it('skips a disabled or hidden first radio', () => {
+    container.innerHTML = `
+      <button id="a">A</button>
+      <input id="r1" type="radio" name="theme" disabled>
+      <div hidden><input id="r2" type="radio" name="theme"></div>
+      <input id="r3" type="radio" name="theme">
+    `;
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    expect(tabOrder(2)).toEqual(['a', 'r3', 'a']);
+    trap.deactivate();
+  });
+
+  it('gives each group its own stop, and each unnamed radio its own stop', () => {
+    container.innerHTML = `
+      <input id="s1" type="radio" name="size" checked>
+      <input id="s2" type="radio" name="size">
+      <input id="c1" type="radio" name="color">
+      <input id="c2" type="radio" name="color" checked>
+      <input id="u1" type="radio">
+      <input id="u2" type="radio">
+    `;
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    expect(tabOrder(4)).toEqual(['s1', 'c2', 'u1', 'u2', 's1']);
+    trap.deactivate();
+  });
+
+  it('keeps same-name radios of different forms as separate groups', () => {
+    container.innerHTML = `
+      <form><input id="f1" type="radio" name="theme" checked></form>
+      <form><input id="f2" type="radio" name="theme" checked></form>
+    `;
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    expect(tabOrder(2)).toEqual(['f1', 'f2', 'f1']);
+    trap.deactivate();
+  });
+
+  it('moves on from a focused radio that is not its group\'s stop', () => {
+    container.innerHTML = `
+      <button id="a">A</button>
+      <input id="r1" type="radio" name="theme" checked>
+      <input id="r2" type="radio" name="theme">
+      <button id="b">B</button>
+    `;
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    (container.querySelector('#r2') as HTMLElement).focus();
+    tab(document.activeElement as HTMLElement);
+    expect(document.activeElement!.id).toBe('b');
+    trap.deactivate();
+  });
+});
+
 describe('focusReturnTarget — triggers the browser did not focus (Safari)', () => {
   const press = (el: Element): void => void el.dispatchEvent(new Event('pointerdown', { bubbles: true }));
 

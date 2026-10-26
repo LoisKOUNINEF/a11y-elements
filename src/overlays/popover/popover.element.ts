@@ -1,4 +1,5 @@
 import { A11yAnchoredOverlayElement } from '../core/a11y-anchored-overlay-element.js';
+import type { OverlayCloseReason } from '../../core/overlay-registry.js';
 
 /**
  * Content anchored to a trigger element. `interactive` controls both the
@@ -16,7 +17,7 @@ export class PopoverElement extends A11yAnchoredOverlayElement {
     return [...super.observedAttributes, 'interactive', 'trap-focus'];
   }
 
-  declare onClose?: () => void;
+  declare onClose?: (reason: OverlayCloseReason) => void;
 
   protected override wantsFocusTrap(): boolean {
     // A plain boolean attribute can only express "force true" via presence —
@@ -39,7 +40,8 @@ export class PopoverElement extends A11yAnchoredOverlayElement {
   }
 
   protected override _onHidden(name?: string): void {
+    const reason = this._closeReason;
     super._onHidden(name);
-    this.onClose?.();
+    this.onClose?.(reason);
   }
 }

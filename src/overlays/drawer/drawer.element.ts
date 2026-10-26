@@ -1,4 +1,5 @@
 import { A11yModalOverlayElement } from '../core/a11y-modal-overlay-element.js';
+import type { OverlayCloseReason } from '../../core/overlay-registry.js';
 
 export type DrawerEdge = 'left' | 'right' | 'top' | 'bottom';
 
@@ -15,7 +16,7 @@ export class DrawerElement extends A11yModalOverlayElement {
     return [...super.observedAttributes, 'edge'];
   }
 
-  declare onClose?: () => void;
+  declare onClose?: (reason: OverlayCloseReason) => void;
 
   get edge(): DrawerEdge {
     const value = this.getAttribute('edge');
@@ -39,7 +40,8 @@ export class DrawerElement extends A11yModalOverlayElement {
   }
 
   protected override _onHidden(name?: string): void {
+    const reason = this._closeReason;
     super._onHidden(name);
-    this.onClose?.();
+    this.onClose?.(reason);
   }
 }

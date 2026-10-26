@@ -30,13 +30,26 @@
   gap: var(--a11y-notification-banner-gap, 1rem);
   width: 100%;
   padding: var(--a11y-notification-banner-padding, 0.75rem 1.5rem);
-  color: var(--a11y-color-text, white);
+  color: var(--a11y-color-text-on-info, var(--a11y-color-text, white));
   animation: a11y-notification-banner-fade-in var(--a11y-notification-banner-animation-duration, 0.3s) ease;
 }
 
-.a11y-notification-banner--info    { background: var(--a11y-color-info, rgb(33 150 243)); }
-.a11y-notification-banner--success { background: var(--a11y-color-success, rgb(76 175 80)); }
-.a11y-notification-banner--error   { background: var(--a11y-color-error, rgb(244 67 54)); }
+.a11y-notification-banner--info {
+  background: var(--a11y-color-info, #1565c0);
+  color: var(--a11y-color-text-on-info, var(--a11y-color-text, white));
+}
+.a11y-notification-banner--success {
+  background: var(--a11y-color-success, #2e7d32);
+  color: var(--a11y-color-text-on-success, var(--a11y-color-text, white));
+}
+.a11y-notification-banner--error {
+  background: var(--a11y-color-error, #c62828);
+  color: var(--a11y-color-text-on-error, var(--a11y-color-text, white));
+}
+.a11y-notification-banner--warning {
+  background: var(--a11y-color-warning, #f9a825);
+  color: var(--a11y-color-text-on-warning, #111827);
+}
 
 .a11y-notification-banner__actions {
   display: flex;

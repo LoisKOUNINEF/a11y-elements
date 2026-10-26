@@ -7,6 +7,6 @@ a11y-card-link {
 }
 
 a11y-card-link:has(a[href]:focus-visible) {
-  outline: var(--a11y-card-link-focus-outline-width, 2px) solid var(--a11y-card-link-focus-outline-color, #2563eb);
+  outline: var(--a11y-card-link-focus-outline-width, 2px) solid var(--a11y-card-link-focus-outline-color, var(--a11y-color-focus, var(--a11y-color-primary, #2563eb)));
   outline-offset: var(--a11y-card-link-focus-outline-offset, 2px);
 }

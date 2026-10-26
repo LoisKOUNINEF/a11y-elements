@@ -1,13 +1,13 @@
 .a11y-popover-wrapper {
   z-index: var(--a11y-z-popover, 310);
-  background: var(--a11y-popover-color-background, #ffffff);
-  color: var(--a11y-popover-color-text, #111827);
+  background: var(--a11y-popover-color-background, var(--a11y-color-surface, #ffffff));
+  color: var(--a11y-popover-color-text, var(--a11y-color-text-default, #111827));
   border-radius: var(--a11y-popover-border-radius, 0.5rem);
   box-shadow:
     0
     var(--a11y-popover-shadow-offset-y, 2px)
     var(--a11y-popover-shadow-blur, 10px)
-    color-mix(in srgb, var(--a11y-popover-color-text, #111827), transparent var(--a11y-popover-shadow-fade, 85%));
+    color-mix(in srgb, var(--a11y-popover-color-text, var(--a11y-color-text-default, #111827)), transparent var(--a11y-popover-shadow-fade, 85%));
   max-width: var(--a11y-popover-max-width, 320px);
 }
 

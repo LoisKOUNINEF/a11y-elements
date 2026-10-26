@@ -94,3 +94,35 @@ describe('a11y-dropdown — trigger wiring', () => {
     expect(anchor.hasAttribute('aria-expanded')).toBe(false);
   });
 });
+
+describe('a11y-dropdown close reason', () => {
+  function closeReason(el: HTMLElement, act: () => void): string | undefined {
+    let reason: string | undefined;
+    el.addEventListener('a11y-overlay-close', (e) => (reason = (e as CustomEvent).detail.reason), { once: true });
+    act();
+    return reason;
+  }
+
+  it('reports item when a menu item is activated', () => {
+    const el = mount();
+    el.open = true;
+    expect(closeReason(el, () => el.querySelector<HTMLElement>('[role="menuitem"]')!.click())).toBe('item');
+  });
+
+  it('reports escape', () => {
+    const el = mount();
+    el.open = true;
+    const act = (): boolean =>
+      document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(closeReason(el, act)).toBe('escape');
+  });
+
+  it('reports outside-click', async () => {
+    const el = mount();
+    el.open = true;
+    await new Promise((resolve) => setTimeout(resolve, 0)); // the outside-click listener is deferred
+    const outside = document.createElement('p');
+    document.body.appendChild(outside);
+    expect(closeReason(el, () => outside.click())).toBe('outside-click');
+  });
+});

@@ -539,7 +539,7 @@ export class FloatingElement extends A11yElement {
     }, 0);
 
     registerOpenOverlay(this._registryHandle);
-    emitOverlayOpen('a11y-floating');
+    emitOverlayOpen('a11y-floating', { element: this });
     this.emit('a11y-floating-expand');
   }
 
@@ -567,7 +567,7 @@ export class FloatingElement extends A11yElement {
     });
 
     unregisterOpenOverlay(this._registryHandle);
-    emitOverlayClose('a11y-floating');
+    emitOverlayClose('a11y-floating', { element: this });
     this.emit('a11y-floating-collapse');
     this.onClose?.();
   }

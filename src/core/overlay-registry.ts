@@ -1,12 +1,40 @@
+/**
+ * Why an overlay closed: `'escape'`, a click on the `'backdrop'`, the ×
+ * `'close-button'`, an `'outside-click'`, focus leaving a menu (`'focus-out'`),
+ * a menu `'item'` being activated, `'dismiss-all'` (`dismissAllOverlays()`),
+ * the element being `'removed'` from the document while open, or `'api'`:
+ * `close()`, `open = false` or removing the `open` attribute.
+ */
+export type OverlayCloseReason =
+  | 'escape'
+  | 'backdrop'
+  | 'close-button'
+  | 'outside-click'
+  | 'focus-out'
+  | 'item'
+  | 'api'
+  | 'dismiss-all'
+  | 'removed';
+
 export interface OverlayOpenCloseDetail {
+  /** The overlay's tag name. */
   name: string;
+  /** The overlay element itself. */
+  element?: Element;
+  /** Only on `a11y-overlay-close`, for overlays opened with `open`. */
+  reason?: OverlayCloseReason;
+}
+
+export interface OverlayEventExtra {
+  element?: Element;
+  reason?: OverlayCloseReason;
 }
 
 export const OVERLAY_OPEN_EVENT = 'a11y-overlay-open';
 export const OVERLAY_CLOSE_EVENT = 'a11y-overlay-close';
 
 interface Dismissible {
-  close(): void;
+  close(reason?: OverlayCloseReason): void;
 }
 
 interface SharedState {
@@ -47,7 +75,7 @@ export function unregisterOpenOverlay(overlay: Dismissible): void {
 }
 
 export function dismissAllOverlays(): void {
-  for (const overlay of Array.from(state.openOverlays)) overlay.close();
+  for (const overlay of Array.from(state.openOverlays)) overlay.close('dismiss-all');
 }
 
 /** Remembers where an overlay was authored before it moved itself to `<body>`. */
@@ -79,35 +107,52 @@ export function removeOverlaysWithin(host: Node): number {
 }
 
 const NO_SCROLL_CLASS = 'a11y-no-scroll';
+const GUTTER_CLASS = 'a11y-no-scroll--gutter';
 
 /**
  * Reference-counted page scroll lock. Every scroll-locking overlay (modal,
  * drawer, emergency-dialog, blocking-loader) calls `lockScroll()` once on
  * show and `unlockScroll()` once when fully hidden, so closing one of two
  * stacked overlays doesn't unlock the page under the one still open.
+ *
+ * `overflow: hidden` removes a classic (non-overlay) scrollbar, which would
+ * widen the page. The gutter class keeps that space reserved, but only when
+ * the page had a scrollbar: reserving it on a page without one would narrow
+ * the page instead.
  */
 export function lockScroll(): void {
-  if (state.scrollLocks++ === 0) document.documentElement.classList.add(NO_SCROLL_CLASS);
+  if (state.scrollLocks++ !== 0) return;
+  const root = document.documentElement;
+  const scrollbarWidth = window.innerWidth - root.clientWidth;
+  root.classList.add(NO_SCROLL_CLASS);
+  if (scrollbarWidth > 0) root.classList.add(GUTTER_CLASS);
 }
 
 export function unlockScroll(): void {
   if (state.scrollLocks === 0) return;
-  if (--state.scrollLocks === 0) document.documentElement.classList.remove(NO_SCROLL_CLASS);
+  if (--state.scrollLocks === 0) document.documentElement.classList.remove(NO_SCROLL_CLASS, GUTTER_CLASS);
 }
 
 /**
  * Standardized replacement for the old `Overlays.overlayOpened/overlayClosed`
  * singleton, which was only called by 4 of the 10 concrete overlays. Every
- * `A11yOverlayElement` now dispatches these uniformly on `document`.
+ * `A11yOverlayElement` dispatches these uniformly. They bubble from the
+ * overlay element (so a listener on it, or on `document`, sees them), or fire
+ * on `document` when there's no element or it has already left the document.
  */
-export function emitOverlayOpen(name: string): boolean {
-  return document.dispatchEvent(
-    new CustomEvent<OverlayOpenCloseDetail>(OVERLAY_OPEN_EVENT, { bubbles: true, detail: { name } }),
-  );
+function emitOverlayEvent(type: string, name: string, extra: OverlayEventExtra): boolean {
+  const { element, reason } = extra;
+  const detail: OverlayOpenCloseDetail = { name };
+  if (element) detail.element = element;
+  if (reason) detail.reason = reason;
+  const target = element?.isConnected ? element : document;
+  return target.dispatchEvent(new CustomEvent<OverlayOpenCloseDetail>(type, { bubbles: true, detail }));
 }
 
-export function emitOverlayClose(name: string): boolean {
-  return document.dispatchEvent(
-    new CustomEvent<OverlayOpenCloseDetail>(OVERLAY_CLOSE_EVENT, { bubbles: true, detail: { name } }),
-  );
+export function emitOverlayOpen(name: string, extra: Omit<OverlayEventExtra, 'reason'> = {}): boolean {
+  return emitOverlayEvent(OVERLAY_OPEN_EVENT, name, extra);
+}
+
+export function emitOverlayClose(name: string, extra: OverlayEventExtra = {}): boolean {
+  return emitOverlayEvent(OVERLAY_CLOSE_EVENT, name, extra);
 }

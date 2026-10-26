@@ -95,13 +95,85 @@ describe('A11yOverlayElement', () => {
 
     overlay.open = true;
     expect(openSpy).toHaveBeenCalledTimes(1);
-    expect((openSpy.mock.calls[0]![0] as CustomEvent).detail).toEqual({ name: 'test-overlay' });
+    expect((openSpy.mock.calls[0]![0] as CustomEvent).detail).toEqual({ name: 'test-overlay', element: overlay });
 
     overlay.open = false;
     expect(closeSpy).toHaveBeenCalledTimes(1);
+    expect((closeSpy.mock.calls[0]![0] as CustomEvent).detail).toEqual({
+      name: 'test-overlay',
+      element: overlay,
+      reason: 'api',
+    });
 
     document.removeEventListener(OVERLAY_OPEN_EVENT, openSpy);
     document.removeEventListener(OVERLAY_CLOSE_EVENT, closeSpy);
+  });
+
+  it('dispatches the events on the overlay itself, bubbling', () => {
+    const overlay = document.createElement('test-a11y-overlay') as TestOverlay;
+    document.body.appendChild(overlay);
+    const targets: EventTarget[] = [];
+    overlay.addEventListener(OVERLAY_OPEN_EVENT, (e) => targets.push(e.target!));
+    overlay.addEventListener(OVERLAY_CLOSE_EVENT, (e) => targets.push(e.target!));
+
+    overlay.open = true;
+    overlay.open = false;
+    expect(targets).toEqual([overlay, overlay]);
+  });
+
+  describe('close reason', () => {
+    function closeReasons(overlay: TestOverlay): Array<string | undefined> {
+      const reasons: Array<string | undefined> = [];
+      document.addEventListener(OVERLAY_CLOSE_EVENT, (e) => {
+        if ((e as CustomEvent).detail.element === overlay) reasons.push((e as CustomEvent).detail.reason);
+      });
+      return reasons;
+    }
+
+    it('reports the reason given to close(), then resets to api', () => {
+      const overlay = document.createElement('test-a11y-overlay') as TestOverlay;
+      document.body.appendChild(overlay);
+      const reasons = closeReasons(overlay);
+
+      overlay.open = true;
+      overlay.close('escape');
+      overlay.open = true;
+      overlay.removeAttribute('open');
+      expect(reasons).toEqual(['escape', 'api']);
+    });
+
+    it("doesn't let a close() on a closed overlay label the next close", () => {
+      const overlay = document.createElement('test-a11y-overlay') as TestOverlay;
+      document.body.appendChild(overlay);
+      const reasons = closeReasons(overlay);
+
+      overlay.close('backdrop');
+      overlay.open = true;
+      overlay.open = false;
+      expect(reasons).toEqual(['api']);
+    });
+
+    it('reports dismiss-all from dismissAllOverlays()', () => {
+      const overlay = document.createElement('test-a11y-overlay') as TestOverlay;
+      document.body.appendChild(overlay);
+      const reasons = closeReasons(overlay);
+
+      overlay.open = true;
+      dismissAllOverlays();
+      expect(reasons).toEqual(['dismiss-all']);
+    });
+
+    it('reports removed, on document, when removed while open', () => {
+      const overlay = document.createElement('test-a11y-overlay') as TestOverlay;
+      document.body.appendChild(overlay);
+      const events: CustomEvent[] = [];
+      document.addEventListener(OVERLAY_CLOSE_EVENT, (e) => events.push(e as CustomEvent));
+
+      overlay.open = true;
+      overlay.remove();
+      expect(events.at(-1)!.detail).toEqual({ name: 'test-overlay', element: overlay, reason: 'removed' });
+      expect(events.at(-1)!.target).toBe(document);
+    });
   });
 
   it('dismissAllOverlays() closes every currently-open overlay instance', () => {

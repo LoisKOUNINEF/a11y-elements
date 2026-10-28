@@ -1,14 +1,14 @@
 import { A11yElement } from '../../core/a11y-element.js';
 import { forgetPortalOrigin, recordPortalOrigin } from '../../core/overlay-registry.js';
-import type { Raw } from '../../core/template.js';
+import type { Content } from '../../core/dom.js';
 
 const DEFAULT_MAX_STACK = 3;
 
 export type PassiveOverlayPosition = 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export interface PassiveOverlayItem {
-  /** Text, or markup from `html`/`raw()`/`trustedRaw()`. */
-  message: string | Raw;
+  /** Text, nodes, or markup from `raw()`/`trustedRaw()`. */
+  message: Content;
   position?: PassiveOverlayPosition;
   duration?: number;
   actionText?: string;
@@ -150,7 +150,7 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
   }
 
   /** Unused — items are appended/removed directly by `_showItem`, never generated from a template. */
-  protected override render(): string {
-    return '';
+  protected override render(): null {
+    return null;
   }
 }

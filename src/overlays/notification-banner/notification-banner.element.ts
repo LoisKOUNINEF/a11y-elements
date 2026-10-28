@@ -1,6 +1,6 @@
 import { A11yPassiveOverlayElement, type PassiveOverlayItem } from '../core/a11y-passive-overlay-element.js';
 import { getString } from '../../core/strings.js';
-import { html, renderInto, type Raw } from '../../core/template.js';
+import { h, type Content } from '../../core/dom.js';
 
 export type NotificationBannerType = 'info' | 'success' | 'error' | 'warning';
 
@@ -78,7 +78,7 @@ export class NotificationBannerElement extends A11yPassiveOverlayElement<Notific
     }
   }
 
-  show(message: string | Raw, options: NotificationBannerOptions = {}): void {
+  show(message: Content, options: NotificationBannerOptions = {}): void {
     if (options.maxStack) this.setMaxStack(options.maxStack);
     this.enqueue({
       message,
@@ -111,13 +111,15 @@ export class NotificationBannerElement extends A11yPassiveOverlayElement<Notific
     el.className = `a11y-notification-banner a11y-notification-banner--${type}`;
     el.setAttribute('role', type === 'error' ? 'alert' : 'status');
     el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
-    renderInto(el, html`
-      <span class="a11y-notification-banner__message">${item.message}</span>
-      <span class="a11y-notification-banner__actions">
-        ${item.actionText ? html`<button type="button" class="a11y-notification-banner__action">${item.actionText}</button>` : ''}
-        <button type="button" class="a11y-notification-banner__close" aria-label="${this.dismissLabel}">&times;</button>
-      </span>
-    `);
+    el.append(
+      h('span', { class: 'a11y-notification-banner__message' }, item.message),
+      h(
+        'span',
+        { class: 'a11y-notification-banner__actions' },
+        item.actionText ? h('button', { type: 'button', class: 'a11y-notification-banner__action' }, item.actionText) : null,
+        h('button', { type: 'button', class: 'a11y-notification-banner__close', 'aria-label': this.dismissLabel }, '\u00d7'),
+      ),
+    );
 
     container.appendChild(el);
 

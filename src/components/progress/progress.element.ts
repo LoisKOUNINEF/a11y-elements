@@ -1,6 +1,6 @@
 import { A11yElement } from '../../core/a11y-element.js';
 import { getString } from '../../core/strings.js';
-import { html } from '../../core/template.js';
+import { h, setAttrs } from '../../core/dom.js';
 
 let uidCounter = 0;
 const nextLabelId = (): string => `a11y-progress-label-${++uidCounter}`;
@@ -20,6 +20,9 @@ export class ProgressElement extends A11yElement {
   }
 
   private _labelId = nextLabelId();
+  /** Created once and patched on every render: replacing the bar on each `value` change would make screen readers lose it. */
+  private _label = h('span', { class: 'a11y-progress__label', id: this._labelId });
+  private _bar = h('progress', { class: 'a11y-progress__bar' });
 
   get value(): number | undefined {
     const v = this.getAttribute('value');
@@ -44,16 +47,19 @@ export class ProgressElement extends A11yElement {
     this.update();
   }
 
-  protected override render(): string {
+  protected override render(): Node[] {
     const { value, max } = this;
     const label = this.optionalStringAttr('label');
     const ariaLabel = this.optionalStringAttr('aria-label');
 
-    const labelMarkup = label ? html`<span class="a11y-progress__label" id="${this._labelId}">${label}</span>` : '';
-    const progressAttrs = html`class="a11y-progress__bar"${value !== undefined ? html` value="${value}"` : ''} max="${max}"${
-      label ? html` aria-labelledby="${this._labelId}"` : ariaLabel ? html` aria-label="${ariaLabel}"` : html` aria-label="${getString('progress')}"`
-    }`;
-
-    return `${labelMarkup}<progress ${progressAttrs}></progress>`;
+    setAttrs(this._bar, {
+      value,
+      max,
+      'aria-labelledby': label ? this._labelId : null,
+      'aria-label': label ? null : ariaLabel ?? getString('progress'),
+    });
+    if (!label) return [this._bar];
+    this._label.textContent = label;
+    return [this._label, this._bar];
   }
 }

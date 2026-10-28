@@ -1,5 +1,5 @@
 import { A11yElement } from '../../core/a11y-element.js';
-import { html, type Raw } from '../../core/template.js';
+import { h } from '../../core/dom.js';
 
 export type SkeletonVariant = 'rect' | 'circle' | 'text';
 
@@ -37,10 +37,10 @@ export class SkeletonElement extends A11yElement {
     this.classList.toggle('a11y-skeleton--multiline', this.variant === 'text' && this.lines > 1);
   }
 
-  protected override render(): string | Raw {
+  protected override render(): Node[] {
     if (this.variant === 'text' && this.lines > 1) {
-      return html`${Array.from({ length: this.lines }, () => html`<span class="a11y-skeleton__line"></span>`)}`;
+      return Array.from({ length: this.lines }, () => h('span', { class: 'a11y-skeleton__line' }));
     }
-    return '';
+    return [];
   }
 }

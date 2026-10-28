@@ -1,5 +1,5 @@
 import { defineElement } from '../../core/define-element.js';
-import type { Raw } from '../../core/template.js';
+import type { Content } from '../../core/dom.js';
 import { SnackbarElement, type NotifyOptions } from './snackbar.element.js';
 
 defineElement('a11y-snackbar', SnackbarElement);
@@ -30,7 +30,7 @@ function getRegion(): SnackbarElement {
  * `<a11y-snackbar>` element directly if you want explicit control over
  * where it lives in the DOM.
  */
-export function notify(message: string | Raw, options: NotifyOptions = {}): void {
+export function notify(message: Content, options: NotifyOptions = {}): void {
   getRegion().notify(message, options);
 }
 

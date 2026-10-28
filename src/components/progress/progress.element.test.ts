@@ -33,6 +33,26 @@ describe('a11y-progress', () => {
     expect(mount({ max: '50' }).querySelector('progress')!.getAttribute('max')).toBe('50');
   });
 
+  it('keeps the same <progress> across updates, patching its attributes', () => {
+    const el = mount({ value: '10', label: 'Uploading…' });
+    const bar = el.querySelector('progress')!;
+    const labelSpan = el.querySelector('.a11y-progress__label')!;
+    el.setAttribute('value', '60');
+    el.setAttribute('label', 'Almost done');
+    expect(el.querySelector('progress')).toBe(bar);
+    expect(el.querySelector('.a11y-progress__label')).toBe(labelSpan);
+    expect(bar.getAttribute('value')).toBe('60');
+    expect(labelSpan.textContent).toBe('Almost done');
+
+    el.removeAttribute('value');
+    el.removeAttribute('label');
+    expect(el.querySelector('progress')).toBe(bar);
+    expect(bar.hasAttribute('value')).toBe(false);
+    expect(bar.hasAttribute('aria-labelledby')).toBe(false);
+    expect(bar.getAttribute('aria-label')).toBe('Progress');
+    expect(el.querySelector('.a11y-progress__label')).toBeNull();
+  });
+
   it('renders a visible label and links it via aria-labelledby, not a wrapping <label>', () => {
     const el = mount({ label: 'Uploading…' });
     const labelSpan = el.querySelector('.a11y-progress__label')!;

@@ -281,8 +281,8 @@ export class FloatingElement extends A11yElement {
   }
 
   /** Unused — the consumer's content is kept as is, never generated from a template. */
-  protected override render(): string {
-    return '';
+  protected override render(): null {
+    return null;
   }
 
   // --- placement & stacking ---

@@ -1,12 +1,12 @@
 import { getString } from '../../core/strings.js';
-import { html, renderInto, type Raw } from '../../core/template.js';
+import { appendContent, h, type Content } from '../../core/dom.js';
 import type { ModalElement } from './modal.element.js';
 
 export interface ConfirmDialogOptions {
   /** The dialog's heading, which also names it. */
   title: string;
-  /** Text under the heading: escaped, or markup through `raw()`. */
-  message?: string | Raw;
+  /** Text under the heading: text, nodes, or markup through `raw()`. */
+  message?: Content;
   /** Defaults to `setStrings({ confirm })` ("OK"). */
   confirmLabel?: string;
   /** Defaults to `setStrings({ cancel })` ("Cancel"). */
@@ -33,14 +33,16 @@ export function confirmDialog(options: ConfirmDialogOptions): Promise<boolean> {
   const modal = document.createElement('a11y-modal') as ModalElement;
   modal.classList.add('a11y-confirm');
   modal.setAttribute('initial-focus', '.a11y-confirm__cancel');
-  renderInto(
+  appendContent(
     modal,
-    html`<h2 class="a11y-confirm__title">${title}</h2>
-      ${message ? html`<div class="a11y-confirm__message">${message}</div>` : ''}
-      <div class="a11y-modal-buttons">
-        <button type="button" class="a11y-confirm__cancel">${cancelLabel}</button>
-        <button type="button" class="${danger ? 'a11y-confirm__confirm a11y-confirm__confirm--danger' : 'a11y-confirm__confirm'}">${confirmLabel}</button>
-      </div>`,
+    h('h2', { class: 'a11y-confirm__title' }, title),
+    message ? h('div', { class: 'a11y-confirm__message' }, message) : null,
+    h(
+      'div',
+      { class: 'a11y-modal-buttons' },
+      h('button', { type: 'button', class: 'a11y-confirm__cancel' }, cancelLabel),
+      h('button', { type: 'button', class: danger ? 'a11y-confirm__confirm a11y-confirm__confirm--danger' : 'a11y-confirm__confirm' }, confirmLabel),
+    ),
   );
 
   return new Promise((resolve) => {

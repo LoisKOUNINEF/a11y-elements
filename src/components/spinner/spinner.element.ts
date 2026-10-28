@@ -1,6 +1,6 @@
 import { A11yElement } from '../../core/a11y-element.js';
 import { getString } from '../../core/strings.js';
-import { html, type Raw } from '../../core/template.js';
+import { h } from '../../core/dom.js';
 
 const CSS_VARS = {
   size: '--a11y-spinner-size',
@@ -17,6 +17,8 @@ export class SpinnerElement extends A11yElement {
   static get observedAttributes(): string[] {
     return ['label', 'size', 'color', 'duration', 'thickness'];
   }
+
+  private _ring = h('span', { class: 'a11y-spinner__ring', 'aria-hidden': 'true' });
 
   get label(): string {
     return this.stringAttr('label', getString('loading'));
@@ -68,7 +70,7 @@ export class SpinnerElement extends A11yElement {
     this.update();
   }
 
-  protected override render(): Raw {
-    return html`<span class="a11y-spinner__ring" aria-hidden="true"></span>`;
+  protected override render(): Node {
+    return this._ring;
   }
 }

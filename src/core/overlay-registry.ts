@@ -117,15 +117,17 @@ const GUTTER_CLASS = 'a11y-no-scroll--gutter';
  *
  * `overflow: hidden` removes a classic (non-overlay) scrollbar, which would
  * widen the page. The gutter class keeps that space reserved, but only when
- * the page had a scrollbar: reserving it on a page without one would narrow
- * the page instead.
+ * hiding overflow actually widened the root: reserving it on a page without
+ * a scrollbar would narrow the page instead. Comparing the root's width
+ * before and after (rather than against `innerWidth`) isn't fooled by
+ * fractional-zoom rounding or by a gutter the app already reserves.
  */
 export function lockScroll(): void {
   if (state.scrollLocks++ !== 0) return;
   const root = document.documentElement;
-  const scrollbarWidth = window.innerWidth - root.clientWidth;
+  const widthBefore = root.clientWidth;
   root.classList.add(NO_SCROLL_CLASS);
-  if (scrollbarWidth > 0) root.classList.add(GUTTER_CLASS);
+  if (root.clientWidth > widthBefore) root.classList.add(GUTTER_CLASS);
 }
 
 export function unlockScroll(): void {

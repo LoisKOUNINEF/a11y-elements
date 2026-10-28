@@ -6,8 +6,8 @@ import { A11yElement } from './a11y-element.js';
  * `<a11y-picture>` wrapping a real `<picture>`/`<img>`/`<figcaption>`, or
  * `<a11y-select>` wrapping a real `<select>`/`<option>`s.
  *
- * Unlike `A11yElement`, this never sets `innerHTML` from a `render()`
- * string — that would destroy the author's children — so it opts out of the
+ * Unlike `A11yElement`, this never replaces its children with what `render()`
+ * returns — that would destroy the author's children — so it opts out of the
  * normal render pipeline and instead re-syncs (`_sync()`) from two sources:
  *
  * - **This element's own observed attributes** (e.g. `label`, `legend`),
@@ -72,7 +72,7 @@ export abstract class A11yWrapperElement extends A11yElement {
   protected abstract _sync(): void;
 
   /** Unused — content is the author's own children, never replaced. */
-  protected override render(): string {
-    return '';
+  protected override render(): null {
+    return null;
   }
 }

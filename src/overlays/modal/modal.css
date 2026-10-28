@@ -110,18 +110,32 @@ a11y-modal {
 }
 
 /* A default look for plain `<button>`s only: `:where()` keeps it at zero
-   specificity, so any class on the consumer's own buttons wins. */
-:where(.a11y-modal-buttons button) {
-  background-color: inherit;
-  transition: background-color ease-in-out var(--a11y-modal-transition-duration, 0.3s);
-  padding: var(--a11y-modal-footer-button-padding, 0.5rem 1rem);
-  font-size: 1rem;
-  cursor: pointer;
-}
+   specificity, so any class on the consumer's own buttons wins. The layer
+   lets layered app CSS (e.g. Tailwind utilities) win too, once the app
+   declares `@layer a11y-elements` before its own layers. */
+@layer a11y-elements {
+  :where(.a11y-modal-buttons button) {
+    background-color: inherit;
+    transition: background-color ease-in-out var(--a11y-modal-transition-duration, 0.3s);
+    padding: var(--a11y-modal-footer-button-padding, 0.5rem 1rem);
+    font-size: 1rem;
+    cursor: pointer;
+  }
 
-:where(.a11y-modal-buttons button:hover) {
-  background-color: var(--a11y-modal-color-secondary-hover, var(--a11y-color-text-muted, #4b5563));
-  color: var(--a11y-modal-color-background, var(--a11y-color-surface, #ffffff));
+  :where(.a11y-modal-buttons button:hover) {
+    background-color: var(--a11y-modal-color-secondary-hover, var(--a11y-color-text-muted, #4b5563));
+    color: var(--a11y-modal-color-background, var(--a11y-color-surface, #ffffff));
+  }
+
+  /* `confirmDialog({ danger: true })`'s confirm button. */
+  :where(.a11y-modal-buttons .a11y-confirm__confirm--danger) {
+    color: var(--a11y-color-danger, #b91c1c);
+  }
+
+  :where(.a11y-modal-buttons .a11y-confirm__confirm--danger:hover) {
+    background-color: var(--a11y-color-danger, #b91c1c);
+    color: var(--a11y-modal-color-background, var(--a11y-color-surface, #ffffff));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -22,12 +22,16 @@ describe('confirmDialog', () => {
     expect(wrapper.querySelector('.a11y-confirm__message')!.textContent).toBe('This can’t be undone.');
   });
 
-  it('escapes a plain message and keeps raw() markup', () => {
+  it('escapes a plain message, keeps raw() markup and inserts a Node as is', () => {
     void confirmDialog({ title: 'A', message: '<b>x</b>' });
     expect(document.querySelector('.a11y-confirm__message b')).toBeNull();
     document.body.innerHTML = '';
     void confirmDialog({ title: 'B', message: raw('<b>x</b>') });
     expect(document.querySelector('.a11y-confirm__message b')).not.toBeNull();
+    document.body.innerHTML = '';
+    const em = document.createElement('em');
+    void confirmDialog({ title: 'C', message: em });
+    expect(document.querySelector('.a11y-confirm__message')!.firstChild).toBe(em);
   });
 
   it('starts focus on Cancel', () => {

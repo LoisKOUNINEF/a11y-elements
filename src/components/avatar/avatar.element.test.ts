@@ -73,6 +73,25 @@ describe('a11y-avatar', () => {
     expect(el.hasAttribute('role')).toBe(false);
   });
 
+  it('retries the same src when the image shows again after a failure', () => {
+    const el = mount({ alt: 'Jane Doe', src: 'broken.jpg', initials: 'JD' });
+    const img = el.querySelector<HTMLImageElement>('.a11y-avatar__img')!;
+    img.dispatchEvent(new Event('error'));
+    expect(img.hasAttribute('src')).toBe(false); // so setting it again starts a new load
+
+    el.setAttribute('src', 'other.jpg');
+    el.setAttribute('src', 'broken.jpg');
+    expect(el.querySelector('.a11y-avatar__img')?.getAttribute('src')).toBe('broken.jpg');
+  });
+
+  it('keeps the same <img> when alt changes, patching it instead of reloading', () => {
+    const el = mount({ alt: 'Jane', src: 'jane.jpg' });
+    const img = el.querySelector('img');
+    el.setAttribute('alt', 'Jane Doe');
+    expect(el.querySelector('img')).toBe(img);
+    expect(img?.getAttribute('alt')).toBe('Jane Doe');
+  });
+
   it('does not throw when the image fails and there are no initials to fall back to', () => {
     const el = mount({ alt: 'Jane Doe', src: 'broken.jpg' });
     const img = el.querySelector<HTMLImageElement>('.a11y-avatar__img')!;

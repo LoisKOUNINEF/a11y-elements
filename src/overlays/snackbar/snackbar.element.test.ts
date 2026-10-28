@@ -20,6 +20,15 @@ describe('a11y-snackbar element', () => {
     expect(rich.innerHTML).toBe('<b>bold</b><img src="x">');
   });
 
+  it('inserts a Node message as is', () => {
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    const link = document.createElement('a');
+    link.href = '/files';
+    el.notify(link);
+    expect(el.querySelector('.a11y-snackbar span').firstChild).toBe(link);
+  });
+
   it('portals itself to document.body and sets aria-live/region attributes', () => {
     const host = document.createElement('div');
     document.body.appendChild(host);

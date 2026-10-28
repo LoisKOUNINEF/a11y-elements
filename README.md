@@ -1407,7 +1407,7 @@ document.getElementById('open-settings').addEventListener('click', () => {
 
 Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-label`, `close-label`, `initial-focus`, `dismissible` and `onClose`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
-`.a11y-modal-buttons` is an optional footer-row class for your own buttons. It lays them out in a row, and gives plain `<button>`s a default look (padding, font size, hover colors). Those styles have zero specificity (`:where()`), so any class on your buttons overrides them.
+`.a11y-modal-buttons` is an optional footer-row class for your own buttons. It lays them out in a row, and gives plain `<button>`s a default look (padding, font size, hover colors). Those styles have zero specificity (`:where()`), so any class on your buttons overrides them. They also sit in the `a11y-elements` cascade layer, so any CSS of yours that isn't in a layer wins. If your own styles are layered (Tailwind's `@layer utilities`, for example), declare the order first so yours win: `@layer a11y-elements, base, components, utilities;`. With `danger: true`, `confirmDialog()`'s confirm button uses `--a11y-color-danger` for its text and hover background.
 
 ##### Confirmation dialogs: `confirmDialog()`
 
@@ -1424,7 +1424,7 @@ if (await confirmDialog({ title: 'Delete all notes?', message: 'This can’t be 
 | Option | Default | Description |
 | --- | --- | --- |
 | `title` | — | The heading, which also names the dialog. |
-| `message` | — | Text under the heading. Escaped; use `raw()` for markup. |
+| `message` | — | Text under the heading. A string is text; pass a node, or `raw()` for markup. |
 | `confirmLabel` | `OK` | Confirm button text, else `setStrings({ confirm })`. |
 | `cancelLabel` | `Cancel` | Cancel button text, else `setStrings({ cancel })`. |
 | `danger` | `false` | Adds `a11y-confirm__confirm--danger` to the confirm button. |
@@ -1579,12 +1579,13 @@ Toast notifications that dismiss themselves: after 3 s by default, or 10 s when 
 
 ```js
 import { notify } from 'a11y-elements/overlays/snackbar';
-import { raw } from 'a11y-elements/core';
+import { h, raw } from 'a11y-elements/core';
 
 notify('Saved');
 notify('Upload failed', { type: 'error', actionText: 'Retry', onAction: retryUpload });
 notify('Copied to clipboard', { position: 'top', duration: 1500 });
 notify(raw('Saved. <a href="/files">View files</a>')); // markup: sanitized, see below
+notify(h('span', null, 'Saved. ', h('a', { href: '/files' }, 'View files'))); // nodes, no parsing at all
 ```
 
 | Name | Kind | Default | Description |
@@ -1595,7 +1596,7 @@ notify(raw('Saved. <a href="/files">View files</a>')); // markup: sanitized, see
 
 It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
 
-A `message` is text: a string is escaped. For markup, pass `raw(markup)` from `a11y-elements/core`. It's sanitized (no scripts, styles, event handlers or `javascript:` URLs), so it's safe with user data in it. `trustedRaw(markup)` skips that, for markup you wrote yourself. The same goes for `<a11y-notification-banner>`.
+A `message` is text: a string is inserted as text, never parsed. A DOM node (e.g. built with `h()` from `a11y-elements/core`) is inserted as is. For markup, pass `raw(markup)` from `a11y-elements/core`. It's sanitized (no scripts, styles, event handlers or `javascript:` URLs), so it's safe with user data in it. `trustedRaw(markup)` skips that, for markup you wrote yourself. The same goes for `<a11y-notification-banner>`.
 
 `notify()` options (method and convenience export):
 

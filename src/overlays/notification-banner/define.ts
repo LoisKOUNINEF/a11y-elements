@@ -1,5 +1,5 @@
 import { defineElement } from '../../core/define-element.js';
-import type { Raw } from '../../core/template.js';
+import type { Content } from '../../core/dom.js';
 import { NotificationBannerElement, type NotificationBannerOptions } from './notification-banner.element.js';
 
 defineElement('a11y-notification-banner', NotificationBannerElement);
@@ -30,7 +30,7 @@ function getRegion(): NotificationBannerElement {
  * `<a11y-notification-banner>` element directly if you want explicit control
  * over where it lives in the DOM.
  */
-export function showNotificationBanner(message: string | Raw, options: NotificationBannerOptions = {}): void {
+export function showNotificationBanner(message: Content, options: NotificationBannerOptions = {}): void {
   getRegion().show(message, options);
 }
 

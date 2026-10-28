@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseSanitized, sanitizeAttributes, sanitizeMarkup } from './sanitize.js';
+import { parseInContext, parseSanitized, sanitizeMarkup } from './sanitize.js';
 
 describe('sanitizeMarkup()', () => {
   it('removes script, style, link, base and meta elements, including SVG ones', () => {
@@ -50,19 +50,11 @@ describe('parseSanitized()', () => {
   });
 });
 
-describe('sanitizeAttributes()', () => {
-  it('keeps bare names as is', () => {
-    expect(sanitizeAttributes('disabled')).toBe('disabled');
-    expect(sanitizeAttributes('')).toBe('');
-  });
-
-  it('drops handlers, srcdoc, script URLs and invalid names', () => {
-    expect(sanitizeAttributes('onclick')).toBe('');
-    expect(sanitizeAttributes('id="a" onclick="x" srcdoc="y" href="javascript:z"')).toBe('id="a"');
-    expect(sanitizeAttributes('title="a&quot;b"')).toBe('title="a&quot;b"');
-  });
-
-  it('keeps nothing from an unterminated quote', () => {
-    expect(sanitizeAttributes('title="x><img src=x onerror=y>')).toBe('');
+describe('parseInContext()', () => {
+  it('parses in the parent context without sanitizing', () => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const circle = parseInContext('<circle onclick="f()"/>', svg).firstChild as Element;
+    expect(circle.namespaceURI).toBe('http://www.w3.org/2000/svg');
+    expect(circle.getAttribute('onclick')).toBe('f()');
   });
 });

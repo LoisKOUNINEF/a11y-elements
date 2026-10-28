@@ -1,5 +1,4 @@
 import { STRINGS_CHANGE_EVENT } from './strings.js';
-import { renderInto, type Raw } from './template.js';
 
 type Listener = [target: EventTarget, type: string, handler: EventListener, options?: AddEventListenerOptions | boolean];
 
@@ -18,7 +17,7 @@ type Listener = [target: EventTarget, type: string, handler: EventListener, opti
  *   setStrings()             -> onStringsChange(), for subclasses that define it
  *
  * Subclasses list attributes to watch via `static observedAttributes` and
- * implement `render()` to return the markup for the element's children (or `null`
+ * implement `render()` to return the element's children as nodes (or `null`
  * to keep the consumer's own children as they are). Attribute/
  * property setters that need to reflect into the DOM should just mutate the
  * attribute — `attributeChangedCallback` re-renders synchronously while
@@ -97,8 +96,12 @@ export abstract class A11yElement extends HTMLElement {
     try {
       this._cleanupListeners();
       this.onBeforeRender?.();
-      const markup = this.render();
-      if (markup !== null) renderInto(this, markup);
+      const rendered = this.render();
+      if (rendered !== null) {
+        const nodes = Array.isArray(rendered) ? rendered : [rendered as Node];
+        // The same nodes already in place stay put: no removal for focus or assistive tech to lose track of.
+        if (!sameChildren(this, nodes)) this.replaceChildren(...nodes);
+      }
       this.onAfterRender?.();
     } finally {
       this._updating = false;
@@ -106,14 +109,12 @@ export abstract class A11yElement extends HTMLElement {
   }
 
   /**
-   * Returns the markup that replaces the children on every render — a plain
-   * (trusted) string, or an `html\`...\`` result, whose `raw()` parts are
-   * sanitized as nodes (see `renderInto()`) — or `null` to leave the children
-   * untouched. Never return `this.innerHTML`: assigning it back re-parses the
-   * consumer's markup (which can turn sanitized markup live again — mutation
-   * XSS) and drops listeners and state on their children.
+   * Returns the nodes that replace the children on every render (build them
+   * with `h()`), or `null` to leave the children untouched. Returning the
+   * same nodes as last time keeps them in place, so an element can create its
+   * nodes once and only patch their attributes and text on each render.
    */
-  protected abstract render(): string | Raw | null;
+  protected abstract render(): Node | readonly Node[] | null;
 
   /** Runs before `render()`. Typical use: set root-level classes/ARIA/CSS custom properties. */
   protected onBeforeRender?(): void;
@@ -199,4 +200,9 @@ export abstract class A11yElement extends HTMLElement {
     if (previous) this.style.setProperty(name, previous);
     else this.style.removeProperty(name);
   }
+}
+
+function sameChildren(parent: Node, nodes: readonly Node[]): boolean {
+  const current = parent.childNodes;
+  return current.length === nodes.length && nodes.every((node, i) => current[i] === node);
 }

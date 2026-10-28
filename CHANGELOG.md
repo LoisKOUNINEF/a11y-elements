@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Breaking changes
+
+- Elements render node by node (`createElement`, `setAttribute`, text nodes) instead of from HTML strings. `html`, `attr()`, `flag()`, `renderInto()` and `toFragment()` are removed from `a11y-elements/core`. Build nodes with the new `h(tag, attrs, ...children)` instead: `` html`<button class="x">${label}</button>` `` becomes `h('button', { class: 'x' }, label)`.
+
+- `A11yElement.render()` returns `Node | Node[] | null` instead of a string or `html` result. Return the same nodes as on the last render and they stay in place: no removal, so focus and the screen reader's position survive. A string returned from plain JavaScript is now inserted as text, not parsed.
+
+### Changes
+
+- Snackbar, notification-banner and `confirmDialog()` messages also take a DOM node, inserted as is. Strings are still text, and `raw()`/`trustedRaw()` are still markup (sanitized/as is).
+
+- `<a11y-progress>` keeps its `<progress>` and label across updates and patches their attributes, so a `value` change no longer replaces the bar under a screen reader. `<a11y-avatar>` keeps its `<img>` too: changing `alt` no longer reloads the image.
+
+- Without `raw()`, nothing is parsed as HTML any more, so the elements run under a Trusted Types CSP (`require-trusted-types-for 'script'`). `raw()` and `trustedRaw()` still parse markup.
+
+- New `h()`, `setAttrs()` and `appendContent()` in `a11y-elements/core`, and the `Content` type (`string | number | Node | Raw`).
+
+- Smaller bundles: about 1 KB less gzipped JavaScript for every entry (a page with only `<a11y-spinner>` loads 4.5 KB instead of 5.5 KB).
+
 ## 0.5.0
 
 ### Changes

@@ -18,6 +18,17 @@ describe('a11y-notification-banner element', () => {
     expect(el.querySelector('.a11y-notification-banner__message').innerHTML).toBe('<a>link</a>');
   });
 
+  it('escapes a plain-string message and inserts a Node one as is', () => {
+    const el = document.createElement('a11y-notification-banner') as any;
+    document.body.appendChild(el);
+    el.show('<b>text</b>');
+    const strong = document.createElement('strong');
+    el.show(strong);
+    const [plain, node] = el.querySelectorAll('.a11y-notification-banner__message');
+    expect(plain.innerHTML).toBe('&lt;b&gt;text&lt;/b&gt;');
+    expect(node.firstChild).toBe(strong);
+  });
+
   it('shows a banner with role=status in the top container by default', () => {
     const el = document.createElement('a11y-notification-banner') as any;
     document.body.appendChild(el);

@@ -16,10 +16,10 @@ import {
  * `<dialog open>` — with `show()`/`close()` as thin convenience wrappers
  * around that same attribute, not a separate imperative lifecycle.
  *
- * Unlike `A11yElement`, this base does **not** drive `innerHTML` from a
- * `render()` string on every attribute change: many overlays (modal, popover,
+ * Unlike `A11yElement`, this base does **not** replace its children with
+ * `render()`'s nodes on every attribute change: many overlays (modal, popover,
  * tooltip) wrap real consumer-authored light-DOM children as their content,
- * and blowing away `innerHTML` would destroy that content. Instead, each
+ * and replacing the children would destroy that content. Instead, each
  * concrete overlay is fully responsible for its own DOM in `_show()`/`_hide()`
  * — some build/replace generated markup (blocking-loader), some wrap existing
  * children in backdrop/wrapper chrome (modal), some manage a list of
@@ -201,11 +201,11 @@ export abstract class A11yOverlayElement extends A11yElement {
 
   /**
    * Unused by overlays — content is managed explicitly by each concrete
-   * overlay in `_show()`/`_hide()`, never auto-replaced from a template
-   * string, so that consumer-authored light-DOM children survive. Present
-   * only to satisfy `A11yElement`'s abstract contract.
+   * overlay in `_show()`/`_hide()`, never auto-replaced from `render()`,
+   * so that consumer-authored light-DOM children survive. Present only to
+   * satisfy `A11yElement`'s abstract contract.
    */
-  protected override render(): string {
-    return '';
+  protected override render(): null {
+    return null;
   }
 }

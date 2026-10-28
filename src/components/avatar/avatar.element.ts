@@ -1,6 +1,6 @@
 import { A11yElement } from '../../core/a11y-element.js';
 import { getString } from '../../core/strings.js';
-import { html, type Raw } from '../../core/template.js';
+import { h, setAttrs } from '../../core/dom.js';
 
 export type AvatarShape = 'circle' | 'square';
 
@@ -15,6 +15,9 @@ export class AvatarElement extends A11yElement {
 
   /** Set when the `src` image fails to load, until a new render (e.g. `src` changing) clears it. */
   private _imgFailed = false;
+  /** Created once and patched on every render, so a render that keeps the same `src` never reloads the image. */
+  private _img = h('img', { class: 'a11y-avatar__img', loading: 'lazy', decoding: 'async' });
+  private _initials = h('span', { class: 'a11y-avatar__initials', 'aria-hidden': 'true' });
 
   get alt(): string {
     return this.stringAttr('alt');
@@ -56,26 +59,25 @@ export class AvatarElement extends A11yElement {
     }
   }
 
-  /** The built-in name is only used without an image, and re-rendering would reload the <img>. */
+  /** The built-in name is only used without an image. */
   protected override onStringsChange(): void {
     if (!this._showsImg()) this.update();
   }
 
-  protected override render(): Raw {
+  protected override render(): Node {
     if (this._showsImg()) {
-      const src = this.optionalStringAttr('src')!;
       // No initials alongside the image: if it fails, onAfterRender re-renders to the initials branch.
-      return html`<img class="a11y-avatar__img" src="${src}" alt="${this.alt}" loading="lazy" decoding="async">`;
+      setAttrs(this._img, { src: this.optionalStringAttr('src')!, alt: this.alt });
+      return this._img;
     }
 
-    const initials = this.optionalStringAttr('initials');
-    return html`<span class="a11y-avatar__initials" aria-hidden="true">${initials}</span>`;
+    this._initials.textContent = this.optionalStringAttr('initials') ?? '';
+    return this._initials;
   }
 
   protected override onAfterRender(): void {
     if (!this._showsImg()) return;
-    const img = this.querySelector<HTMLImageElement>('.a11y-avatar__img');
-    if (!img) return;
+    const img = this._img;
 
     // A fresh render always starts with _imgFailed reset, so a new `src`
     // gets a clean attempt. On failure, flip the flag and do a real
@@ -83,6 +85,8 @@ export class AvatarElement extends A11yElement {
     // initials-fallback / role / aria-label all end up consistent.
     this.listen(img, 'error', () => {
       this._imgFailed = true;
+      // Setting the same `src` again on a later render then starts a new load, as a fresh <img> would.
+      img.removeAttribute('src');
       this.update();
     });
   }

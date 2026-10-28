@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { A11yElement } from './a11y-element.js';
-import { html, raw, type Raw } from './template.js';
+import { h } from './dom.js';
+import { raw } from './template.js';
 
 class TestElement extends A11yElement {
   static get observedAttributes(): string[] {
@@ -17,8 +18,8 @@ class TestElement extends A11yElement {
     this.classList.add('test-root');
   }
 
-  protected render(): string {
-    return `<button class="inner">${this.stringAttr('label', 'default')}</button>`;
+  protected render(): Node {
+    return h('button', { class: 'inner' }, this.stringAttr('label', 'default'));
   }
 
   protected onAfterRender(): void {
@@ -96,7 +97,7 @@ describe('A11yElement', () => {
     oldBtn.click();
     expect(el.lastClickHandlerCallCount).toBe(1);
 
-    // Re-render replaces innerHTML; onAfterRender wires a fresh listener on the new button.
+    // Re-render replaces the children; onAfterRender wires a fresh listener on the new button.
     el.setAttribute('flag', '');
     const newBtn = el.querySelector<HTMLButtonElement>('.inner')!;
     expect(newBtn).not.toBe(oldBtn);
@@ -154,35 +155,54 @@ describe('A11yElement', () => {
   });
 });
 
-class MarkupElement extends A11yElement {
+class NodesElement extends A11yElement {
   static get observedAttributes(): string[] {
-    return ['content', 'keep'];
+    return ['content', 'keep', 'label'];
   }
 
-  protected render(): Raw | null {
+  /** Returned on every render, patched in place. */
+  readonly kept = h('span');
+
+  protected render(): Node | Node[] | null {
     if (this.hasAttribute('keep')) return null;
-    return html`<p>${raw(this.getAttribute('content') ?? '')}</p>`;
+    if (this.hasAttribute('label')) {
+      this.kept.textContent = this.getAttribute('label');
+      return this.kept;
+    }
+    return [h('p', null, raw(this.getAttribute('content') ?? '')), h('i', null, '<b>text</b>')];
   }
 }
 
-customElements.define('test-a11y-markup-element', MarkupElement);
+customElements.define('test-a11y-nodes-element', NodesElement);
 
-describe('A11yElement rendering html', () => {
-  it('replaces the children with the markup, sanitizing raw() parts as nodes', () => {
-    const el = document.createElement('test-a11y-markup-element');
+describe('A11yElement rendering nodes', () => {
+  it('replaces the children with the nodes: strings as text, raw() sanitized', () => {
+    const el = document.createElement('test-a11y-nodes-element');
     el.setAttribute('content', '<b onclick="x">hi</b><script>x()</script>');
     document.body.appendChild(el);
-    expect(el.innerHTML).toBe('<p><b>hi</b></p>');
+    expect(el.innerHTML).toBe('<p><b>hi</b></p><i>&lt;b&gt;text&lt;/b&gt;</i>');
   });
 
   it('leaves the children alone when render() returns null', () => {
-    const el = document.createElement('test-a11y-markup-element');
+    const el = document.createElement('test-a11y-nodes-element');
     el.setAttribute('content', 'a');
     document.body.appendChild(el);
     const p = el.querySelector('p');
     el.setAttribute('keep', '');
     el.setAttribute('content', 'b');
     expect(el.querySelector('p')).toBe(p);
-    expect(el.textContent).toBe('a');
+    expect(el.textContent).toBe('a<b>text</b>');
+  });
+
+  it('keeps the same nodes in place without removing them', () => {
+    const el = document.createElement('test-a11y-nodes-element') as NodesElement;
+    el.setAttribute('label', 'a');
+    document.body.appendChild(el);
+    const removed: Node[] = [];
+    new MutationObserver((records) => records.forEach((r) => removed.push(...r.removedNodes))).observe(el, { childList: true });
+    el.setAttribute('label', 'b');
+    expect(el.firstChild).toBe(el.kept);
+    expect(el.textContent).toBe('b');
+    return Promise.resolve().then(() => expect(removed).not.toContain(el.kept));
   });
 });

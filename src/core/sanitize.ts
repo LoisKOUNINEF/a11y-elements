@@ -19,7 +19,6 @@ const ATTR_ANIMATION_TAGS = new Set(['animate', 'set']);
 
 const SCRIPT_URL = /^javascript:/i;
 const SCRIPT_OR_DATA_URL = /^(javascript|data):/i;
-const ATTR_NAME = /^[a-z_:][-a-z0-9_:.]*$/;
 
 /** Parses `source` as markup and returns it sanitized, as a string. Only for `String()` fallbacks: rendering inserts the nodes from `parseSanitized()` instead. */
 export function sanitizeMarkup(source: string): string {
@@ -35,37 +34,22 @@ export function sanitizeMarkup(source: string): string {
  * and returns the resulting nodes.
  */
 export function parseSanitized(source: string, parent: Node | null): Node[] {
-  const holder = document.createElement('template');
-  const parentEl = parent && parent.nodeType === Node.ELEMENT_NODE ? (parent as Element) : null;
-  let root: ParentNode = holder.content;
-  if (parentEl && !templateContent(parentEl)) {
-    const context = holder.content.ownerDocument.createElementNS(parentEl.namespaceURI, parentEl.localName);
-    context.innerHTML = source;
-    root = context;
-  } else {
-    holder.innerHTML = source;
-  }
+  const root = parseInContext(source, parent);
   sanitizeNode(root);
   return Array.from(root.childNodes);
 }
 
-/**
- * Untrusted text in tag position (`<input ${x}>`): parsed as attributes and
- * rebuilt from the safe ones — no event handlers, `srcdoc`, script URLs or
- * invalid names. Escaping alone would leave `onfocus=alert(1)` intact.
- */
-export function sanitizeAttributes(source: string): string {
-  // Fast path for the common case: one bare attribute name (`disabled`).
-  if (source === '' || (ATTR_NAME.test(source.toLowerCase()) && isAllowedAttribute(source.toLowerCase(), ''))) return source;
+/** Parses `source` as markup with an element like `parent` as context, unsanitized: the holder of the parsed nodes. */
+export function parseInContext(source: string, parent: Node | null): ParentNode {
   const holder = document.createElement('template');
-  holder.innerHTML = `<span ${source}></span>`;
-  // An unterminated quote makes the parser drop the whole tag: nothing to keep.
-  const el = holder.content.firstElementChild;
-  if (!el) return '';
-  return Array.from(el.attributes)
-    .filter((a) => ATTR_NAME.test(a.name.toLowerCase()) && isAllowedAttribute(a.name.toLowerCase(), a.value))
-    .map((a) => `${a.name}="${a.value.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`)
-    .join(' ');
+  const parentEl = parent && parent.nodeType === Node.ELEMENT_NODE ? (parent as Element) : null;
+  if (parentEl && !templateContent(parentEl)) {
+    const context = holder.content.ownerDocument.createElementNS(parentEl.namespaceURI, parentEl.localName);
+    context.innerHTML = source;
+    return context;
+  }
+  holder.innerHTML = source;
+  return holder.content;
 }
 
 function isAllowedAttribute(name: string, value: string): boolean {

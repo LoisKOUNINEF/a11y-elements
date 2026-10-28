@@ -1,4 +1,5 @@
 export * from './template.js';
+export * from './dom.js';
 export * from './a11y-element.js';
 export * from './a11y-wrapper-element.js';
 export * from './a11y-form-element.js';

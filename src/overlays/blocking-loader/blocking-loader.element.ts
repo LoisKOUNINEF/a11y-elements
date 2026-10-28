@@ -2,7 +2,7 @@ import { A11yOverlayElement } from '../../core/a11y-overlay-element.js';
 import { focusReturnTarget } from '../../core/focus-trap.js';
 import { lockScroll, unlockScroll } from '../../core/overlay-registry.js';
 import { getString } from '../../core/strings.js';
-import { html, renderInto } from '../../core/template.js';
+import { h } from '../../core/dom.js';
 
 /**
  * A full-screen, non-dismissible loading overlay — for blocking operations
@@ -65,7 +65,7 @@ export class BlockingLoaderElement extends A11yOverlayElement {
   protected override _hide(): void {
     if (!this._isShowing) return;
     unlockScroll();
-    this.innerHTML = '';
+    this.replaceChildren();
     this.classList.remove('a11y-blocking-loader-overlay');
     this.removeAttribute('role');
     this.removeAttribute('aria-live');
@@ -82,8 +82,7 @@ export class BlockingLoaderElement extends A11yOverlayElement {
 
   private _renderContent(): void {
     const message = this.message;
-    renderInto(this, html`<a11y-spinner size="3rem" label="${message ?? getString('loading')}"></a11y-spinner>${
-      message ? html`<p class="a11y-blocking-loader-overlay__message">${message}</p>` : ''
-    }`);
+    this.replaceChildren(h('a11y-spinner', { size: '3rem', label: message ?? getString('loading') }));
+    if (message) this.append(h('p', { class: 'a11y-blocking-loader-overlay__message' }, message));
   }
 }

@@ -3,9 +3,17 @@ import { lockScroll, unlockScroll } from './overlay-registry.js';
 
 const root = document.documentElement;
 
-/** jsdom does no layout: fake the viewport and root widths a scrollbar would leave. */
-function setScrollbarWidth(width: number): void {
-  Object.defineProperty(root, 'clientWidth', { configurable: true, get: () => window.innerWidth - width });
+/**
+ * jsdom does no layout: fake the root width a classic scrollbar leaves, which
+ * `overflow: hidden` (the `a11y-no-scroll` class) gives back. `offset` is a
+ * constant shortfall that hiding overflow doesn't free (zoom rounding, a
+ * gutter the app reserves itself).
+ */
+function setScrollbarWidth(width: number, offset = 0): void {
+  Object.defineProperty(root, 'clientWidth', {
+    configurable: true,
+    get: () => window.innerWidth - offset - (root.classList.contains('a11y-no-scroll') ? 0 : width),
+  });
 }
 
 afterEach(() => {
@@ -25,6 +33,18 @@ describe('lockScroll', () => {
     setScrollbarWidth(0);
     lockScroll();
     expect(root.classList.contains('a11y-no-scroll')).toBe(true);
+    expect(root.classList.contains('a11y-no-scroll--gutter')).toBe(false);
+  });
+
+  it("doesn't reserve a gutter when the width is off by rounding but nothing frees up", () => {
+    setScrollbarWidth(0, 1);
+    lockScroll();
+    expect(root.classList.contains('a11y-no-scroll--gutter')).toBe(false);
+  });
+
+  it("doesn't reserve a gutter when the app already reserves its own", () => {
+    setScrollbarWidth(0, 15);
+    lockScroll();
     expect(root.classList.contains('a11y-no-scroll--gutter')).toBe(false);
   });
 

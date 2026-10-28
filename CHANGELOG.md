@@ -18,6 +18,10 @@
 
 - New `h()`, `setAttrs()` and `appendContent()` in `a11y-elements/core`, and the `Content` type (`string | number | Node | Raw`).
 
+- `.a11y-modal-buttons` default button styles are now in the `a11y-elements` cascade layer, so layered app styles (e.g. a Tailwind `hover:` utility) override their hover once the app declares `@layer a11y-elements` first. `confirmDialog({ danger: true })`'s confirm button now hovers in `--a11y-color-danger`, not gray.
+
+- Scroll lock reserves the scrollbar gutter only when hiding overflow actually widens the page. It no longer adds an empty strip on pages with no scrollbar at fractional zoom or OS scaling, or when the app reserves its own gutter.
+
 - Smaller bundles: about 1 KB less gzipped JavaScript for every entry (a page with only `<a11y-spinner>` loads 4.5 KB instead of 5.5 KB).
 
 ## 0.5.0

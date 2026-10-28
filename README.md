@@ -1407,7 +1407,7 @@ document.getElementById('open-settings').addEventListener('click', () => {
 
 Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-label`, `close-label`, `initial-focus`, `dismissible` and `onClose`. See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `close()`, the open/close events and `dismissAllOverlays()`.
 
-`.a11y-modal-buttons` is an optional footer-row class for your own buttons. It lays them out in a row, and gives plain `<button>`s a default look (padding, font size, hover colors). Those styles have zero specificity (`:where()`), so any class on your buttons overrides them.
+`.a11y-modal-buttons` is an optional footer-row class for your own buttons. It lays them out in a row, and gives plain `<button>`s a default look (padding, font size, hover colors). Those styles have zero specificity (`:where()`), so any class on your buttons overrides them. They also sit in the `a11y-elements` cascade layer, so any CSS of yours that isn't in a layer wins. If your own styles are layered (Tailwind's `@layer utilities`, for example), declare the order first so yours win: `@layer a11y-elements, base, components, utilities;`. With `danger: true`, `confirmDialog()`'s confirm button uses `--a11y-color-danger` for its text and hover background.
 
 ##### Confirmation dialogs: `confirmDialog()`
 

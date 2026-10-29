@@ -1,5 +1,6 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr, syncClass, syncText } from '../../core/dom-sync.js';
+import type { ValueElement } from '../../core/value-element.js';
 
 /**
  * Enhances a set of real, consumer-authored `<input type="radio">` options
@@ -16,7 +17,7 @@ import { syncAttr, syncClass, syncText } from '../../core/dom-sync.js';
  * </a11y-radio-group>
  * ```
  */
-export class RadioGroupElement extends A11yWrapperElement {
+export class RadioGroupElement extends A11yWrapperElement implements ValueElement<string> {
   static get observedAttributes(): string[] {
     return ['legend', 'aria-label', 'disabled'];
   }

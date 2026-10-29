@@ -152,6 +152,38 @@ describe('a11y-anchor — internal same-page anchors', () => {
   });
 });
 
+describe('a11y-anchor — malformed fragments', () => {
+  it('leaves a link with a malformed escape sequence to the browser instead of throwing', () => {
+    const el = mount('<a href="#%E0%A4%A">Broken</a>');
+    const evt = new MouseEvent('click', { cancelable: true, bubbles: true });
+    expect(() => el.querySelector('a')!.dispatchEvent(evt)).not.toThrow();
+    expect(evt.defaultPrevented).toBe(false);
+  });
+});
+
+describe('a11y-anchor — URL and missing targets', () => {
+  it('adds the fragment to the URL and history', () => {
+    vi.useFakeTimers();
+    document.body.insertAdjacentHTML('beforeend', '<div id="section-9">Section 9</div>');
+    const el = mount('<a href="#section-9">Jump</a>');
+    const before = history.length;
+    el.querySelector('a')!.click();
+    expect(location.hash).toBe('#section-9');
+    expect(history.length).toBe(before + 1);
+    vi.runAllTimers();
+  });
+
+  it('leaves a link to a missing target to the browser, with no announcement', () => {
+    vi.useFakeTimers();
+    const el = mount('<a href="#nowhere">Jump</a>');
+    const evt = new MouseEvent('click', { cancelable: true, bubbles: true });
+    el.querySelector('a')!.dispatchEvent(evt);
+    expect(evt.defaultPrevented).toBe(false);
+    vi.advanceTimersByTime(200);
+    expect(document.querySelector('[role="status"]')).toBeNull();
+  });
+});
+
 describe('a11y-anchor — targets and reconnects', () => {
   it('only treats _blank / named targets as opening a new tab, not _self/_parent/_top', () => {
     const self = mount('<a href="https://example.com" target="_self">Home</a>').querySelector('a')!;

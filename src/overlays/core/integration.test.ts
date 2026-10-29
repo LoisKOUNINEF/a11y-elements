@@ -3,6 +3,7 @@ import '../modal/define.js';
 import '../snackbar/define.js';
 import '../dropdown/define.js';
 import '../blocking-loader/define.js';
+import '../tooltip/define.js';
 import { ModalElement } from '../modal/define.js';
 import { SpinnerElement } from '../../components/spinner/define.js';
 import { CheckboxElement } from '../../components/checkbox/define.js';
@@ -174,3 +175,36 @@ describe('focus returns to a clicked trigger that the browser did not focus (Saf
   });
 });
 
+describe('Escape with stacked overlays', () => {
+  const escape = (target: EventTarget): boolean =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+
+  it('closes a tooltip inside a modal, but not the modal', () => {
+    const modal = document.createElement('a11y-modal') as ModalElement;
+    modal.innerHTML = '<h2>Title</h2><button id="tip-anchor">Save</button><a11y-tooltip anchor="tip-anchor">Saves it</a11y-tooltip>';
+    document.body.appendChild(modal);
+    modal.open = true;
+    const tooltip = document.querySelector('a11y-tooltip') as HTMLElement & { open: boolean };
+    const button = document.getElementById('tip-anchor')!;
+    button.focus();
+    tooltip.open = true;
+
+    escape(button);
+    expect(tooltip.open).toBe(false);
+    expect(modal.open).toBe(true);
+
+    escape(button);
+    expect(modal.open).toBe(false);
+  });
+
+  it('leaves the modal open when a widget inside it already handled Escape', () => {
+    const modal = document.createElement('a11y-modal') as ModalElement;
+    modal.innerHTML = '<h2>Title</h2><input>';
+    document.body.appendChild(modal);
+    modal.open = true;
+    const input = modal.querySelector('input')!;
+    input.addEventListener('keydown', (e) => e.preventDefault());
+    escape(input);
+    expect(modal.open).toBe(true);
+  });
+});

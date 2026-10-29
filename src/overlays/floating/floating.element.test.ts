@@ -268,8 +268,18 @@ describe('a11y-floating — dismissible', () => {
     el.querySelector<HTMLButtonElement>('.a11y-floating-dismiss')!.click();
     expect(el.hidden).toBe(true);
     expect(onClose).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledWith('dismiss');
     el.show();
     expect(el.hidden).toBe(false);
+  });
+
+  it('reports collapse, then dismiss, when dismissed while expanded', () => {
+    const el = mount({ expandable: '', label: 'Help', dismissible: '' }, '<p>Hi</p>');
+    const onClose = vi.fn();
+    el.onClose = onClose;
+    el.expand();
+    el.dismiss();
+    expect(onClose.mock.calls).toEqual([['collapse'], ['dismiss']]);
   });
 
   it('can be cancelled', () => {

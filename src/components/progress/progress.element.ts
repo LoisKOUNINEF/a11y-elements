@@ -1,9 +1,7 @@
 import { A11yElement } from '../../core/a11y-element.js';
 import { getString } from '../../core/strings.js';
 import { h, setAttrs } from '../../core/dom.js';
-
-let uidCounter = 0;
-const nextLabelId = (): string => `a11y-progress-label-${++uidCounter}`;
+import { nextId } from '../../core/ids.js';
 
 /**
  * A progress bar. `<a11y-progress value="50" max="100" label="Uploading…"></a11y-progress>`
@@ -19,7 +17,7 @@ export class ProgressElement extends A11yElement {
     return ['value', 'max', 'label', 'aria-label'];
   }
 
-  private _labelId = nextLabelId();
+  private _labelId = nextId('a11y-progress-label');
   /** Created once and patched on every render: replacing the bar on each `value` change would make screen readers lose it. */
   private _label = h('span', { class: 'a11y-progress__label', id: this._labelId });
   private _bar = h('progress', { class: 'a11y-progress__bar' });

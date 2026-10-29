@@ -49,3 +49,18 @@ describe('a11y-drawer', () => {
     expect(document.querySelector('.a11y-drawer-backdrop')).not.toBeNull();
   });
 });
+
+describe('a11y-drawer — edge changed while open', () => {
+  it('moves it to the new edge', () => {
+    const el = document.createElement('a11y-drawer') as HTMLElement & { open: boolean };
+    el.innerHTML = '<h2>Filters</h2>';
+    document.body.appendChild(el);
+    el.open = true;
+    const wrapper = document.querySelector('.a11y-drawer-wrapper')!;
+    expect(wrapper.classList.contains('a11y-drawer-wrapper--right')).toBe(true);
+    el.setAttribute('edge', 'left');
+    expect(wrapper.classList.contains('a11y-drawer-wrapper--left')).toBe(true);
+    expect(wrapper.classList.contains('a11y-drawer-wrapper--right')).toBe(false);
+  });
+});
+

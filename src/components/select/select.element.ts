@@ -1,5 +1,6 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncClass, syncText } from '../../core/dom-sync.js';
+import type { ValueElement } from '../../core/value-element.js';
 
 /**
  * Enhances a real `<select>` (with real `<option>` children — the browser's
@@ -15,7 +16,7 @@ import { syncClass, syncText } from '../../core/dom-sync.js';
  * </a11y-select>
  * ```
  */
-export class SelectElement extends A11yWrapperElement {
+export class SelectElement extends A11yWrapperElement implements ValueElement<string> {
   static get observedAttributes(): string[] {
     return ['label'];
   }

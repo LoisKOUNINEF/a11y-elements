@@ -4,7 +4,7 @@ Framework-agnostic accessibility Custom Elements (Web Components). A behavior la
 
 Every element is Light DOM only (no Shadow DOM), so you always style real markup with your own CSS.
 
-See a [demo of the elements](https://nutin.dev/a11y-elements/elements) - See a [demo of the overlays](https://nutin.org/a11y-elements/overlays)
+See a [demo of the elements](https://nutin.dev/a11y-elements/elements) - See a [demo of the overlays](https://nutin.dev/a11y-elements/overlays)
 
 ## Usage
 
@@ -104,6 +104,8 @@ Behavior shared by overlays is described once, in [Common to all overlays](#comm
 
 Import paths follow the folder names: `a11y-elements/components/<name>` or `a11y-elements/overlays/<name>` (add `/element` for the class), and `dist/browser/<group>/<name>/define.js` for zero-build.
 
+Elements that hold a value (checkbox, switch, select, radio-group, checkbox-group, input, textarea, file-input) share one contract, typed as `ValueElement<V>` in `a11y-elements/core`: `getValue()` reads it, `setValue(value)` writes it silently (no events, no `onChange`), and `onChange(value)` is called when the user changes it. The native controls inside stay the source of truth and the ones that submit.
+
 Attributes that set a CSS variable (spinner `size`/`color`/…, avatar `size`, skeleton `width`/`height`) win over your own inline value for that variable only while they're set. See [Scope to one instance](#scope-to-one-instance).
 
 ### Accessibility components
@@ -112,7 +114,7 @@ Attributes that set a CSS variable (spinner `size`/`color`/…, avatar `size`, s
 
 Enhances a real `<a href>`:
 
-* **Same-page links** (`href="#id"`) smooth-scroll to the target (instantly under `prefers-reduced-motion: reduce`), move focus to it, and announce the navigation to screen readers by the target's `aria-label`, `aria-labelledby` or heading, falling back to its `id`. The target is made focusable with `tabindex="-1"` while focused; a `tabindex` it already had is restored on blur. Space activates too.
+* **Same-page links** (`href="#id"`) smooth-scroll to the target (instantly under `prefers-reduced-motion: reduce`), move focus to it, and announce the navigation to screen readers by the target's `aria-label`, `aria-labelledby` or heading, falling back to its `id`. The target is made focusable with `tabindex="-1"` while focused; a `tabindex` it already had is restored on blur. The fragment is still added to the URL and history (with `history.pushState()`, so no `hashchange` event and no `:target` update). A link whose target doesn't exist, or whose fragment is malformed, is left to the browser. Space activates too.
 * **New-tab links** (`target="_blank"` or a named target) get `rel="noopener noreferrer"` and "(opens in new tab)" appended to their accessible name.
 
 Both strings can be [translated](#translating-built-in-strings).
@@ -1076,7 +1078,10 @@ Framework template bindings (event directives, declarative listeners) usually ru
 They also share:
 
 * A focus trap (Tab stays inside, focus returns to the trigger on close) and a page scroll lock (`html.a11y-no-scroll`, `overflow: hidden`). If the page had a classic scrollbar, the lock also adds `html.a11y-no-scroll--gutter` (`scrollbar-gutter: stable`), so the page keeps its width while the scrollbar is gone.
-* Escape, a click on the backdrop, or the × close button close it, unless it's `non-dismissible`.
+* While open, the rest of `<body>` is made `inert`, so keyboard and screen reader users can't reach the page behind it. Toast and banner regions (`<a11y-snackbar>`, `<a11y-notification-banner>`) are left out, so their messages are still announced. Elements that were already `inert` stay that way.
+* Tab also reaches controls inside other web components' open shadow roots. Closed shadow roots can't be seen into.
+* Escape, a click on the backdrop, or the × close button close it, unless it's `non-dismissible`. An Escape that something inside already handled (`preventDefault()`, e.g. a combobox closing its list, or a tooltip) doesn't close it.
+* `non-dismissible`, `dialog-label` (and `fullscreen` / `edge`) also apply when changed while it's open.
 * On open, focus moves to `initial-focus` if set, else to a descendant with `autofocus`, else to the first focusable element. That's the × close button when it's dismissible.
 * The dialog is named after its first heading (`aria-labelledby`), or `dialog-label`.
 
@@ -1337,7 +1342,7 @@ It works in one of two modes:
 | `scroll-threshold` | attribute | `16` | Pixels of scrolling before `hide-on-scroll` reacts. |
 | `dismiss()` | method | — | Fires a cancelable `a11y-floating-dismiss` event, then animates out and sets `hidden`. Focus goes back to where it was before it entered. |
 | `show()` | method | — | Shows it again (`hidden = false`). |
-| `onClose` | callback | — | Called when the panel collapses or the element is dismissed. |
+| `onClose` | callback | — | Called with `'collapse'` when the panel collapses, and `'dismiss'` when the element is dismissed (both, in that order, when it's dismissed while expanded). |
 
 Events on the element: `a11y-floating-expand`, `a11y-floating-collapse`, `a11y-floating-dismiss` (cancelable). The panel also fires `a11y-overlay-open` / `a11y-overlay-close` on `document`, and `dismissAllOverlays()` collapses it but leaves the element showing. Like every overlay it moves itself out of where it was authored (into `.a11y-floating-stack[data-position]` on `<body>`); see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`. Being last in `<body>`, it comes last in the Tab order.
 
@@ -1548,6 +1553,7 @@ document.getElementById('info-btn').addEventListener('click', () => {
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
 | `interactive` | attribute | absent | `role="dialog"` and a focus trap. |
+| `label` | attribute | — | Accessible name (`aria-label`). Without it, it's named by its first heading, else by its anchor (`aria-labelledby`). |
 | `trap-focus` | attribute | follows `interactive` | Force the focus trap on (`trap-focus`) or off (`trap-focus="false"`). |
 | `onClose` | callback | — | Called once it has closed. |
 
@@ -1596,7 +1602,7 @@ notify(h('span', null, 'Saved. ', h('a', { href: '/files' }, 'View files'))); //
 
 It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
 
-A `message` is text: a string is inserted as text, never parsed. A DOM node (e.g. built with `h()` from `a11y-elements/core`) is inserted as is. For markup, pass `raw(markup)` from `a11y-elements/core`. It's sanitized (no scripts, styles, event handlers or `javascript:` URLs), so it's safe with user data in it. `trustedRaw(markup)` skips that, for markup you wrote yourself. The same goes for `<a11y-notification-banner>`.
+A `message` is text: a string is inserted as text, never parsed. A DOM node (e.g. built with `h()` from `a11y-elements/core`) is inserted as is. For markup, pass `raw(markup)` from `a11y-elements/core`. It's sanitized against script injection (no scripts, `<style>`, event handlers or `javascript:` URLs). That's a basic XSS filter, not a full sanitizer like DOMPurify: forms, links, images and `style` attributes still pass, so untrusted markup can still look like your UI (phishing). Pass user data as text, or run it through DOMPurify first. `trustedRaw(markup)` skips that, for markup you wrote yourself. The same goes for `<a11y-notification-banner>`.
 
 `notify()` options (method and convenience export):
 

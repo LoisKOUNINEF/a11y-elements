@@ -264,10 +264,15 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     }, 0);
 
     if (!this.wantsFocusTrap()) {
+      // Capture phase, before a focus trap's own document listener: Escape
+      // dismisses this overlay only (e.g. a tooltip on a button inside a
+      // modal), and `preventDefault()` tells every other handler it's taken.
       this._boundKeyDown = (e: KeyboardEvent): void => {
-        if (e.key === 'Escape') this.close('escape');
+        if (e.key !== 'Escape' || e.defaultPrevented) return;
+        e.preventDefault();
+        this.close('escape');
       };
-      document.addEventListener('keydown', this._boundKeyDown);
+      document.addEventListener('keydown', this._boundKeyDown, true);
     }
   }
 
@@ -281,7 +286,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
       this._boundOutsideClick = null;
     }
     if (this._boundKeyDown) {
-      document.removeEventListener('keydown', this._boundKeyDown);
+      document.removeEventListener('keydown', this._boundKeyDown, true);
       this._boundKeyDown = null;
     }
   }

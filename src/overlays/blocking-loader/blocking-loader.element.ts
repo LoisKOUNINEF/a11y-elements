@@ -1,6 +1,6 @@
 import { A11yOverlayElement } from '../../core/a11y-overlay-element.js';
 import { focusReturnTarget } from '../../core/focus-trap.js';
-import { lockScroll, unlockScroll } from '../../core/overlay-registry.js';
+import { inertOutside, lockScroll, unlockScroll } from '../../core/overlay-registry.js';
 import { getString } from '../../core/strings.js';
 import { h } from '../../core/dom.js';
 
@@ -31,7 +31,7 @@ export class BlockingLoaderElement extends A11yOverlayElement {
     return this.optionalStringAttr('message');
   }
 
-  private _inerted: Element[] = [];
+  private _restoreInert: (() => void) | null = null;
   private _returnFocusTo: HTMLElement | null = null;
 
   protected override onAttributeChanged(name: string): void {
@@ -51,11 +51,7 @@ export class BlockingLoaderElement extends A11yOverlayElement {
     this.classList.add('a11y-blocking-loader-overlay');
     this._renderContent();
 
-    for (const child of Array.from(document.body.children)) {
-      if (child === this || child.hasAttribute('inert')) continue;
-      child.setAttribute('inert', '');
-      this._inerted.push(child);
-    }
+    this._restoreInert = inertOutside(this);
     this._returnFocusTo = focusReturnTarget();
     this.focus({ preventScroll: true });
 
@@ -71,8 +67,8 @@ export class BlockingLoaderElement extends A11yOverlayElement {
     this.removeAttribute('aria-live');
     this.removeAttribute('tabindex');
 
-    for (const el of this._inerted) el.removeAttribute('inert');
-    this._inerted = [];
+    this._restoreInert?.();
+    this._restoreInert = null;
     const returnTo = this._returnFocusTo;
     this._returnFocusTo = null;
     if (returnTo?.isConnected && !this._detaching) returnTo.focus({ preventScroll: true });

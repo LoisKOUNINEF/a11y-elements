@@ -1,6 +1,7 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr, syncClass, syncText } from '../../core/dom-sync.js';
 import { getString } from '../../core/strings.js';
+import type { ValueElement } from '../../core/value-element.js';
 
 const SELECT_ALL_INPUT_CLASS = 'a11y-checkbox-group__select-all-input';
 
@@ -25,7 +26,7 @@ const SELECT_ALL_INPUT_CLASS = 'a11y-checkbox-group__select-all-input';
  *
  * The select-all label: `select-all-label="…"`, else `setStrings({ selectAll })`.
  */
-export class CheckboxGroupElement extends A11yWrapperElement {
+export class CheckboxGroupElement extends A11yWrapperElement implements ValueElement<string[]> {
   static get observedAttributes(): string[] {
     return ['legend', 'aria-label', 'disabled', 'select-all', 'select-all-label'];
   }
@@ -178,7 +179,8 @@ export class CheckboxGroupElement extends A11yWrapperElement {
     // IDL-only properties (never reflected) — safe to write unguarded.
     selectAll.checked = enabled.length > 0 && checkedCount === enabled.length;
     selectAll.indeterminate = checkedCount > 0 && checkedCount < enabled.length;
-    selectAll.disabled = enabled.length === 0;
+    // `disabled` reflects to the attribute, so an unguarded write would retrigger the observer forever.
+    syncAttr(selectAll, 'disabled', enabled.length === 0 ? '' : null);
   }
 
   private _setAllEnabled(checked: boolean): HTMLInputElement[] {

@@ -106,6 +106,26 @@ export function removeOverlaysWithin(host: Node): number {
   return removed;
 }
 
+/**
+ * Makes every child of `<body>` except `keep` (and those `exempt` keeps)
+ * `inert`, so keyboard and assistive-tech users can't reach the page behind a
+ * modal overlay — a dimmed backdrop only blocks the mouse, and `aria-modal`
+ * alone still lets some screen readers wander out. Children that were already
+ * `inert` (e.g. behind a modal below this one) are left as they are. Returns
+ * a function that undoes exactly what this call did.
+ */
+export function inertOutside(keep: Element, exempt?: (el: Element) => boolean): () => void {
+  const inerted: Element[] = [];
+  for (const child of Array.from(document.body.children)) {
+    if (child === keep || child.contains(keep) || child.hasAttribute('inert') || exempt?.(child)) continue;
+    child.setAttribute('inert', '');
+    inerted.push(child);
+  }
+  return () => {
+    for (const el of inerted) el.removeAttribute('inert');
+  };
+}
+
 const NO_SCROLL_CLASS = 'a11y-no-scroll';
 const GUTTER_CLASS = 'a11y-no-scroll--gutter';
 

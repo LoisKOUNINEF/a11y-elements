@@ -35,6 +35,14 @@ export class DrawerElement extends A11yModalOverlayElement {
     return el;
   }
 
+  protected override onAttributeChanged(name: string): void {
+    super.onAttributeChanged(name);
+    const wrapper = this._wrapper;
+    if (name !== 'edge' || !wrapper) return;
+    for (const edge of ['left', 'right', 'top', 'bottom']) wrapper.classList.remove(`a11y-drawer-wrapper--${edge}`);
+    wrapper.classList.add(`a11y-drawer-wrapper--${this.edge}`);
+  }
+
   protected override getContentClass(): string {
     return 'a11y-drawer-content';
   }

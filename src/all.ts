@@ -29,7 +29,7 @@ export { ContextMenuElement } from './overlays/context-menu/define.js';
 export { DrawerElement } from './overlays/drawer/define.js';
 export { DropdownElement } from './overlays/dropdown/define.js';
 export { EmergencyDialogElement } from './overlays/emergency-dialog/define.js';
-export { FloatingElement } from './overlays/floating/define.js';
+export { FloatingElement, type FloatingCloseReason, type FloatingPosition } from './overlays/floating/define.js';
 export { ModalElement, confirmDialog, type ConfirmDialogOptions } from './overlays/modal/define.js';
 export { NotificationBannerElement, type NotificationBannerOptions, showNotificationBanner } from './overlays/notification-banner/define.js';
 export { PopoverElement } from './overlays/popover/define.js';

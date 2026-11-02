@@ -6,7 +6,7 @@
 
 - `A11yFormElement` is removed from `a11y-elements/core`. No element extended it. Elements that hold a value now share the `ValueElement<V>` interface instead (see below).
 
-- `<a11y-modal non-dismissible>` no longer closes on Escape, as documented. It used to: only the close button and the backdrop click were turned off.
+- `<a11y-modal non-dismissible>` no longer closes on Escape: only the close button and the backdrop click were turned off.
 
 - Escape that something already handled (`preventDefault()`) no longer closes a dialog, a `trap-focus` popover or an expanded `<a11y-floating>`. A widget inside one (e.g. a combobox closing its list) can now keep it open.
 

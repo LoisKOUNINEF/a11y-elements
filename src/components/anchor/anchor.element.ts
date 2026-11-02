@@ -10,11 +10,11 @@ function opensNewContext(target: string | null): boolean {
 const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
 
 /** The target's name for the navigation announcement — its label or heading, never its whole content. */
-function targetName(target: HTMLElement | null, id: string): string {
-  const label = target?.getAttribute('aria-label')?.trim();
+function targetName(target: HTMLElement, id: string): string {
+  const label = target.getAttribute('aria-label')?.trim();
   if (label) return label;
 
-  const labelledBy = (target?.getAttribute('aria-labelledby') ?? '')
+  const labelledBy = (target.getAttribute('aria-labelledby') ?? '')
     .split(/\s+/)
     .filter(Boolean)
     .map((ref) => document.getElementById(ref)?.textContent?.trim() ?? '')
@@ -22,8 +22,17 @@ function targetName(target: HTMLElement | null, id: string): string {
     .join(' ');
   if (labelledBy) return labelledBy;
 
-  const heading = target?.matches(HEADING_SELECTOR) ? target : target?.querySelector(HEADING_SELECTOR);
+  const heading = target.matches(HEADING_SELECTOR) ? target : target.querySelector(HEADING_SELECTOR);
   return heading?.textContent?.trim() || id;
+}
+
+/** A fragment's percent-decoded id, or `null` when it holds a malformed escape sequence. */
+function decodeFragment(fragment: string): string | null {
+  try {
+    return decodeURIComponent(fragment);
+  } catch {
+    return null;
+  }
 }
 
 function prefersReducedMotion(): boolean {
@@ -48,8 +57,10 @@ const pendingTabindexRestores = new WeakMap<HTMLElement, string | null>();
  *   `prefers-reduced-motion: reduce`), moves focus to it (temporarily made
  *   focusable via `tabindex="-1"`, its own `tabindex` restored on blur), and
  *   announces the navigation — by the target's label or heading — through a
- *   live region for screen-reader users. Space also activates (native anchors
- *   only activate on Enter).
+ *   live region for screen-reader users. The fragment is still added to the
+ *   URL and history (`history.pushState`, so no `hashchange` and no
+ *   `:target` update). A link whose target doesn't exist is left to the
+ *   browser. Space also activates (native anchors only activate on Enter).
  *
  * Both built-in strings can be translated: `new-tab-label="…"` /
  * `navigated-label="… {name}"` on this element, else `setStrings({
@@ -92,8 +103,13 @@ export class AnchorElement extends A11yWrapperElement {
       const activate = (e: Event): void => {
         const href = anchor.getAttribute('href') ?? '';
         if (!href.startsWith('#') || href.length < 2) return; // not a same-page anchor: native behavior
+        const id = decodeFragment(href.slice(1));
+        const target = id === null ? null : document.getElementById(id);
+        if (!id || !target) return; // malformed, or nothing to jump to: leave it to the browser
         e.preventDefault();
-        this._activateInternalAnchor(decodeURIComponent(href.slice(1)));
+        // The URL and history still get the fragment, as on a native jump (back returns here).
+        if (location.hash !== href) history.pushState(history.state, '', href);
+        this._activateInternalAnchor(target, id);
       };
       this.listen(anchor, 'click', activate);
       this.listen(anchor, 'keydown', (e) => {
@@ -106,12 +122,10 @@ export class AnchorElement extends A11yWrapperElement {
     this._sync();
   }
 
-  private _activateInternalAnchor(id: string): void {
-    const target = document.getElementById(id);
-    target?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+  private _activateInternalAnchor(target: HTMLElement, id: string): void {
+    target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
 
     setTimeout(() => {
-      if (!target) return;
       // A jump before the previous one's blur must not record our own -1 as the original.
       if (!pendingTabindexRestores.has(target)) {
         pendingTabindexRestores.set(target, target.getAttribute('tabindex'));

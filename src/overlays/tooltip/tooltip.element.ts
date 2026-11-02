@@ -1,7 +1,6 @@
 import { syncIdRef } from '../../core/dom-sync.js';
 import { A11yAnchoredOverlayElement } from '../core/a11y-anchored-overlay-element.js';
-
-let idCounter = 0;
+import { nextId } from '../../core/ids.js';
 
 /**
  * A hover/focus-triggered tooltip anchored to a trigger element. Never
@@ -41,7 +40,7 @@ export class TooltipElement extends A11yAnchoredOverlayElement {
   }
 
   protected override onConnect(): void {
-    if (!this.id) this.id = `a11y-tooltip-${++idCounter}`;
+    if (!this.id) this.id = nextId('a11y-tooltip');
     this._bindAnchorListeners();
     // Anchor not parsed yet (tooltip authored before it, define script loaded synchronously).
     if (!this._boundAnchorEl) this.afterParse(() => this._bindAnchorListeners());

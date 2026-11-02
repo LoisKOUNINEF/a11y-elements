@@ -11,8 +11,12 @@ import {
 import { getString } from '../../core/strings.js';
 import { whenTransitionDone } from '../../core/transition.js';
 import type { PassiveOverlayPosition } from '../core/a11y-passive-overlay-element.js';
+import { nextId } from '../../core/ids.js';
 
 export type FloatingPosition = PassiveOverlayPosition;
+
+/** What `onClose` reports: the expanded panel `'collapse'`d, or the element was `'dismiss'`ed. */
+export type FloatingCloseReason = 'collapse' | 'dismiss';
 
 const POSITIONS: readonly FloatingPosition[] = ['top', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right'];
 const DEFAULT_POSITION: FloatingPosition = 'bottom-right';
@@ -33,8 +37,6 @@ interface ControllableOverlay extends HTMLElement {
   open: boolean;
   anchorElement?: HTMLElement | null;
 }
-
-let idCounter = 0;
 
 /**
  * Content pinned to a corner/edge of the viewport — a floating "Menu" button
@@ -84,7 +86,8 @@ export class FloatingElement extends A11yElement {
     ];
   }
 
-  declare onClose?: () => void;
+  /** Called when the panel collapses, and when the element is dismissed — both, in that order, when dismissing it expanded. */
+  declare onClose?: (reason: FloatingCloseReason) => void;
 
   private _internalMove = false;
   private _stack: HTMLElement | null = null;
@@ -276,7 +279,7 @@ export class FloatingElement extends A11yElement {
       this.classList.remove('a11y-is-dismissing');
       this.hidden = true;
       if (hadFocus) this._returnFocusFromDismiss();
-      this.onClose?.();
+      this.onClose?.('dismiss');
     });
   }
 
@@ -384,7 +387,7 @@ export class FloatingElement extends A11yElement {
     // A dropdown wires its own anchor as a toggling trigger — don't toggle twice.
     if (tag === 'a11y-dropdown' && target.anchorElement === trigger) return;
 
-    if (!target.id) target.id = `a11y-floating-target-${++idCounter}`;
+    if (!target.id) target.id = nextId('a11y-floating-target');
     trigger.setAttribute('aria-controls', target.id);
     const haspopup = HASPOPUP[tag] ?? (tag === 'a11y-popover' && target.hasAttribute('interactive') ? 'dialog' : null);
     if (haspopup) trigger.setAttribute('aria-haspopup', haspopup);
@@ -430,7 +433,7 @@ export class FloatingElement extends A11yElement {
 
     const panel = document.createElement('div');
     panel.className = 'a11y-floating-panel';
-    panel.id = `a11y-floating-panel-${++idCounter}`;
+    panel.id = nextId('a11y-floating-panel');
     panel.setAttribute('role', 'dialog');
     panel.hidden = true;
 
@@ -502,7 +505,7 @@ export class FloatingElement extends A11yElement {
     panel.removeAttribute('aria-labelledby');
     if (panelLabel) panel.setAttribute('aria-label', panelLabel);
     else if (heading) {
-      if (!heading.id) heading.id = `a11y-floating-title-${++idCounter}`;
+      if (!heading.id) heading.id = nextId('a11y-floating-title');
       panel.setAttribute('aria-labelledby', heading.id);
     } else if (label) panel.setAttribute('aria-label', label);
   }
@@ -569,7 +572,7 @@ export class FloatingElement extends A11yElement {
     unregisterOpenOverlay(this._registryHandle);
     emitOverlayClose('a11y-floating', { element: this });
     this.emit('a11y-floating-collapse');
-    this.onClose?.();
+    this.onClose?.('collapse');
   }
 
   /** First focusable content in the panel (its × last resort), else the panel itself. */
@@ -588,7 +591,7 @@ export class FloatingElement extends A11yElement {
   }
 
   private _onKeyDown = (e: KeyboardEvent): void => {
-    if (e.key !== 'Escape') return;
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
     const active = document.activeElement;
     if (active && active !== document.body && !this.contains(active)) return; // Escape meant for something else
     this.collapse();

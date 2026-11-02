@@ -1,5 +1,4 @@
 import { A11yModalOverlayElement } from '../core/a11y-modal-overlay-element.js';
-import type { IFocusTrapOptions } from '../../core/focus-trap.js';
 import type { OverlayCloseReason } from '../../core/overlay-registry.js';
 
 /**
@@ -20,10 +19,6 @@ export class EmergencyDialogElement extends A11yModalOverlayElement {
 
   override get dismissible(): boolean {
     return false;
-  }
-
-  protected override focusTrapOptions(): IFocusTrapOptions {
-    return { ...super.focusTrapOptions(), escapeDeactivates: false };
   }
 
   protected override createBackdrop(): HTMLElement {

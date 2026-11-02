@@ -1,6 +1,5 @@
 import { A11yMenuOverlayElement } from '../core/a11y-menu-overlay-element.js';
-
-let idCounter = 0;
+import { nextId } from '../../core/ids.js';
 
 /**
  * A menu anchored to a trigger element (e.g. a "more actions" button).
@@ -20,12 +19,23 @@ let idCounter = 0;
  */
 export class DropdownElement extends A11yMenuOverlayElement {
   private _trigger: HTMLElement | null = null;
+  /**
+   * Whether the menu was open when the trigger was pressed. Where pressing a
+   * button focuses it (Chrome, Firefox on Windows), that focus move closes the
+   * menu (`focus-out`) before the click, which must then not reopen it.
+   */
+  private _openAtPress: boolean | null = null;
+  private _onTriggerPointerDown = (): void => {
+    this._openAtPress = this.open;
+  };
   private _onTriggerClick = (): void => {
-    this.open = !this.open;
+    const wasOpen = this._openAtPress ?? this.open; // no press for a keyboard click
+    this._openAtPress = null;
+    this.open = !wasOpen;
   };
 
   protected override onConnect(): void {
-    if (!this.id) this.id = `a11y-dropdown-${++idCounter}`;
+    if (!this.id) this.id = nextId('a11y-dropdown');
     this._bindTrigger();
     // Anchor not parsed yet (dropdown authored before it, define script loaded synchronously).
     if (!this._trigger) this.afterParse(() => this._bindTrigger());
@@ -69,6 +79,7 @@ export class DropdownElement extends A11yMenuOverlayElement {
     anchor.setAttribute('aria-haspopup', 'menu');
     anchor.setAttribute('aria-controls', this.id);
     anchor.setAttribute('aria-expanded', String(this._isShowing));
+    anchor.addEventListener('pointerdown', this._onTriggerPointerDown);
     anchor.addEventListener('click', this._onTriggerClick);
     this._trigger = anchor;
   }
@@ -76,6 +87,7 @@ export class DropdownElement extends A11yMenuOverlayElement {
   private _unbindTrigger(): void {
     const trigger = this._trigger;
     if (!trigger) return;
+    trigger.removeEventListener('pointerdown', this._onTriggerPointerDown);
     trigger.removeEventListener('click', this._onTriggerClick);
     trigger.removeAttribute('aria-haspopup');
     trigger.removeAttribute('aria-controls');

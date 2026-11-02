@@ -1,5 +1,6 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr, syncClass, syncText } from '../../core/dom-sync.js';
+import type { ValueElement } from '../../core/value-element.js';
 
 /**
  * Enhances a real `<input type="checkbox">` with `role="switch"` and a
@@ -12,7 +13,7 @@ import { syncAttr, syncClass, syncText } from '../../core/dom-sync.js';
  * </a11y-switch>
  * ```
  */
-export class SwitchElement extends A11yWrapperElement {
+export class SwitchElement extends A11yWrapperElement implements ValueElement<boolean> {
   static get observedAttributes(): string[] {
     return ['label'];
   }

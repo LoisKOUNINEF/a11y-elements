@@ -140,6 +140,104 @@ describe('a11y-modal initial focus', () => {
   });
 });
 
+describe('a11y-modal — page behind it', () => {
+  it('makes the rest of <body> inert while open, and restores it on close', () => {
+    const page = document.body.appendChild(document.createElement('main'));
+    const trigger = page.appendChild(document.createElement('button'));
+    const alreadyInert = document.body.appendChild(document.createElement('aside'));
+    alreadyInert.setAttribute('inert', '');
+    trigger.focus();
+
+    const el = mount('<h2>Title</h2><button>OK</button>') as HTMLElement & { open: boolean };
+    el.open = true;
+    expect(page.hasAttribute('inert')).toBe(true);
+    expect(document.querySelector('.a11y-modal-overlay')!.hasAttribute('inert')).toBe(false);
+
+    el.open = false;
+    expect(page.hasAttribute('inert')).toBe(false);
+    expect(alreadyInert.hasAttribute('inert')).toBe(true); // not ours to undo
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('keeps toast/banner regions reachable', () => {
+    const region = document.body.appendChild(document.createElement('div'));
+    region.className = 'a11y-passive-overlay-region';
+    const el = mount() as HTMLElement & { open: boolean };
+    el.open = true;
+    expect(region.hasAttribute('inert')).toBe(false);
+  });
+
+  it('a modal opened from a modal inerts the first, and only gives back what it took', () => {
+    const page = document.body.appendChild(document.createElement('main'));
+    const first = mount('<h2>First</h2><button>OK</button>') as HTMLElement & { open: boolean };
+    first.open = true;
+    const second = mount('<h2>Second</h2><button>OK</button>') as HTMLElement & { open: boolean };
+    second.open = true;
+    const firstBackdrop = first.closest('.a11y-modal-overlay')!;
+    expect(firstBackdrop.hasAttribute('inert')).toBe(true);
+
+    second.open = false;
+    expect(firstBackdrop.hasAttribute('inert')).toBe(false);
+    expect(page.hasAttribute('inert')).toBe(true);
+    first.open = false;
+    expect(page.hasAttribute('inert')).toBe(false);
+  });
+});
+
+describe('a11y-modal non-dismissible', () => {
+  it('ignores Escape, like the backdrop and the missing close button', () => {
+    const el = mount('<h2>Title</h2><button>OK</button>') as HTMLElement & { open: boolean };
+    el.setAttribute('non-dismissible', '');
+    el.open = true;
+    document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(el.open).toBe(true);
+    expect(document.querySelector('.a11y-modal-close-button')).toBeNull();
+  });
+});
+
+describe('a11y-modal — attributes changed while open', () => {
+  const escape = () =>
+    document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+
+  it('non-dismissible removes the × button and stops Escape and backdrop clicks; removing it restores them', () => {
+    const el = mount('<h2>Title</h2><button>OK</button>') as HTMLElement & { open: boolean };
+    el.open = true;
+    expect(document.activeElement).toBe(document.querySelector('.a11y-modal-close-button'));
+
+    el.setAttribute('non-dismissible', '');
+    expect(document.querySelector('.a11y-modal-close-button')).toBeNull();
+    expect(document.activeElement).toBe(document.querySelector('.a11y-modal-wrapper')); // not dropped to <body>
+    escape();
+    document.querySelector<HTMLElement>('.a11y-modal-overlay')!.click();
+    expect(el.open).toBe(true);
+
+    el.removeAttribute('non-dismissible');
+    expect(document.querySelector('.a11y-modal-close-button')).not.toBeNull();
+    escape();
+    expect(el.open).toBe(false);
+  });
+
+  it('dialog-label renames it', () => {
+    const el = mount('<h2 id="t">Title</h2>') as HTMLElement & { open: boolean };
+    el.open = true;
+    const wrapper = document.querySelector('.a11y-modal-wrapper')!;
+    expect(wrapper.getAttribute('aria-labelledby')).toBe('t');
+    el.setAttribute('dialog-label', 'Settings');
+    expect(wrapper.getAttribute('aria-label')).toBe('Settings');
+    expect(wrapper.hasAttribute('aria-labelledby')).toBe(false);
+  });
+
+  it('fullscreen toggles the fullscreen chrome', () => {
+    const el = mount() as HTMLElement & { open: boolean };
+    el.open = true;
+    el.setAttribute('fullscreen', '');
+    expect(document.querySelector('.a11y-modal-wrapper')!.classList.contains('a11y-modal-wrapper--fullscreen')).toBe(true);
+    expect(document.querySelector('.a11y-modal-overlay')!.classList.contains('a11y-modal-overlay--fullscreen')).toBe(true);
+    el.removeAttribute('fullscreen');
+    expect(document.querySelector('.a11y-modal-wrapper')!.classList.contains('a11y-modal-wrapper--fullscreen')).toBe(false);
+  });
+});
+
 describe('a11y-modal close reason', () => {
   function openModal(): HTMLElement & { open: boolean; onClose?: (reason: string) => void } {
     const el = mount('<h2>Title</h2><button>OK</button>') as HTMLElement & {

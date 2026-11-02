@@ -38,6 +38,14 @@ export class ModalElement extends A11yModalOverlayElement {
     return el;
   }
 
+  protected override onAttributeChanged(name: string): void {
+    super.onAttributeChanged(name);
+    if (name !== 'fullscreen') return;
+    const fullscreen = this.boolAttr('fullscreen');
+    this._backdrop?.classList.toggle('a11y-modal-overlay--fullscreen', fullscreen);
+    this._wrapper?.classList.toggle('a11y-modal-wrapper--fullscreen', fullscreen);
+  }
+
   protected override _onHidden(name?: string): void {
     const reason = this._closeReason;
     super._onHidden(name);

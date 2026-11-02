@@ -1,5 +1,6 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncClass, syncText } from '../../core/dom-sync.js';
+import type { ValueElement } from '../../core/value-element.js';
 
 /**
  * Enhances a real `<input type="checkbox">` authored by the consumer with a
@@ -25,7 +26,7 @@ import { syncClass, syncText } from '../../core/dom-sync.js';
  * `MutationObserver` callback watching this subtree — an unguarded write
  * would retrigger the observer forever.
  */
-export class CheckboxElement extends A11yWrapperElement {
+export class CheckboxElement extends A11yWrapperElement implements ValueElement<boolean> {
   static get observedAttributes(): string[] {
     return ['label', 'indeterminate'];
   }

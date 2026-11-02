@@ -2,7 +2,7 @@ export * from './template.js';
 export * from './dom.js';
 export * from './a11y-element.js';
 export * from './a11y-wrapper-element.js';
-export * from './a11y-form-element.js';
+export * from './value-element.js';
 export * from './a11y-field-element.js';
 export * from './field.js';
 export * from './ids.js';

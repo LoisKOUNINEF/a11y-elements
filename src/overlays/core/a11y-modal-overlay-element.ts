@@ -1,10 +1,9 @@
 import { A11yOverlayElement } from '../../core/a11y-overlay-element.js';
 import { FocusTrapHelper, type IFocusTrapOptions } from '../../core/focus-trap.js';
-import { lockScroll, unlockScroll } from '../../core/overlay-registry.js';
+import { inertOutside, lockScroll, unlockScroll } from '../../core/overlay-registry.js';
 import { getString } from '../../core/strings.js';
 import { whenTransitionDone } from '../../core/transition.js';
-
-let titleIdCounter = 0;
+import { nextId } from '../../core/ids.js';
 
 /**
  * Base for centered/backdrop overlays that always trap focus and lock page
@@ -12,7 +11,9 @@ let titleIdCounter = 0;
  * own dialog content) is moved into a `.a11y-modal-content` wrapper inside a
  * `.a11y-modal-wrapper`/`.a11y-modal-overlay` backdrop pair on show, and moved back
  * out before that chrome is torn down on hide — same portal dance as
- * `A11yAnchoredOverlayElement`.
+ * `A11yAnchoredOverlayElement`. While open, the rest of `<body>` is `inert`
+ * (except toast/banner regions), so nothing behind it can be reached by
+ * keyboard or assistive tech.
  *
  * `dismissible` defaults to true when absent, so it's expressed as the
  * inverse presence-attribute `non-dismissible` (booleans read more naturally
@@ -39,6 +40,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
   protected _wrapper: HTMLElement | null = null;
   private _focusTrap: FocusTrapHelper | null = null;
   private _closeButton: HTMLButtonElement | null = null;
+  private _restoreInert: (() => void) | null = null;
   /** Completes a close whose transition is still running — see `_flushPendingHide()`. */
   private _pendingHide: (() => void) | null = null;
   private _cancelHideWait: (() => void) | null = null;
@@ -63,6 +65,9 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
 
   protected override onAttributeChanged(name: string): void {
     if (name === 'close-label') this._relabelCloseButton();
+    if (!this._wrapper) return;
+    if (name === 'dialog-label') this._labelWrapper(this._wrapper);
+    else if (name === 'non-dismissible') this._syncCloseButton();
   }
 
   protected override onStringsChange(): void {
@@ -88,7 +93,11 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
   }
 
   protected focusTrapOptions(): IFocusTrapOptions {
-    return { onDeactivate: () => this.close('escape'), initialFocus: () => this._initialFocusTarget() };
+    return {
+      escapeDeactivates: () => this.dismissible, // asked on each press: `non-dismissible` can change while open
+      onDeactivate: () => this.close('escape'),
+      initialFocus: () => this._initialFocusTarget(),
+    };
   }
 
   private _initialFocusTarget(): HTMLElement | null {
@@ -122,14 +131,15 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
 
     this._labelWrapper(wrapper);
 
-    if (this.dismissible) {
-      backdrop.addEventListener('click', (e: MouseEvent) => {
-        if (e.target === backdrop) this.close('backdrop');
-      });
-    }
+    backdrop.addEventListener('click', (e: MouseEvent) => {
+      if (e.target === backdrop && this.dismissible) this.close('backdrop');
+    });
 
     this._focusTrap = new FocusTrapHelper({ container: wrapper, options: this.focusTrapOptions() });
     this._focusTrap.activate();
+    // After the trap took focus inside: inerting the focused trigger first would blur it.
+    // Toast/banner regions stay reachable, so their announcements and buttons still work.
+    this._restoreInert = inertOutside(backdrop, (el) => el.classList.contains('a11y-passive-overlay-region'));
 
     requestAnimationFrame(() => {
       backdrop.classList.add('a11y-is-open');
@@ -148,6 +158,9 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
       return;
     }
 
+    // Before the trap returns focus, which an inert trigger can't take.
+    this._restoreInert?.();
+    this._restoreInert = null;
     this._focusTrap?.deactivate();
     this._focusTrap = null;
     this._backdrop = null;
@@ -197,6 +210,24 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
     this._closeButton = btn;
   }
 
+  /** Adds or removes the × button after `non-dismissible` changed while open. */
+  private _syncCloseButton(): void {
+    if (this.dismissible && !this._closeButton) {
+      this._prependCloseButton();
+      return;
+    }
+    const button = this._closeButton;
+    if (this.dismissible || !button) return;
+    const hadFocus = document.activeElement === button;
+    button.remove();
+    this._closeButton = null;
+    if (hadFocus && this._wrapper) {
+      // Never drop focus to <body>; the trap removes this tabindex on close.
+      this._wrapper.setAttribute('tabindex', '-1');
+      this._wrapper.focus();
+    }
+  }
+
   private _relabelCloseButton(): void {
     this._closeButton?.setAttribute('aria-label', this.closeLabel);
   }
@@ -212,13 +243,15 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
   }
 
   private _labelWrapper(wrapper: HTMLElement): void {
+    wrapper.removeAttribute('aria-label');
+    wrapper.removeAttribute('aria-labelledby');
     if (this.dialogLabel) {
       wrapper.setAttribute('aria-label', this.dialogLabel);
       return;
     }
     const heading = this.querySelector<HTMLElement>('h1, h2, h3, h4, h5, h6');
     if (!heading) return;
-    if (!heading.id) heading.id = `a11y-dialog-title-${++titleIdCounter}`;
+    if (!heading.id) heading.id = nextId('a11y-dialog-title');
     wrapper.setAttribute('aria-labelledby', heading.id);
   }
 }

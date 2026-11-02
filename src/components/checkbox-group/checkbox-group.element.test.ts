@@ -206,4 +206,17 @@ describe('a11y-checkbox-group', () => {
     expect(extra.classList.contains('a11y-checkbox')).toBe(true);
     expect(selectAllInput(el)!.indeterminate).toBe(true);
   });
+
+  it('settles when every option is disabled (no observer loop)', async () => {
+    const el = mount('<label><input type="checkbox" value="a" disabled> A</label>', { 'select-all': '' });
+    expect(selectAllInput(el)!.disabled).toBe(true);
+    let records = 0;
+    const observer = new MutationObserver((list) => (records += list.length));
+    observer.observe(el, { subtree: true, attributes: true, childList: true });
+    el.querySelector('label')!.append(' more'); // any mutation re-syncs
+    await flush();
+    await flush();
+    observer.disconnect();
+    expect(records).toBeLessThan(10);
+  });
 });

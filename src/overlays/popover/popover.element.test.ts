@@ -71,3 +71,28 @@ describe('a11y-popover', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('a11y-popover — accessible name', () => {
+  const wrapper = () => document.querySelector('.a11y-popover-wrapper')!;
+
+  it('is named by its anchor by default', () => {
+    const el = mount();
+    el.open = true;
+    expect(wrapper().getAttribute('aria-labelledby')).toBe('trigger');
+  });
+
+  it('prefers its first heading', () => {
+    const el = mount();
+    el.innerHTML = '<h3 id="pop-title">Details</h3><p>…</p>';
+    el.open = true;
+    expect(wrapper().getAttribute('aria-labelledby')).toBe('pop-title');
+  });
+
+  it('prefers label over both, also when set while open', () => {
+    const el = mount();
+    el.open = true;
+    el.setAttribute('label', 'More info');
+    expect(wrapper().getAttribute('aria-label')).toBe('More info');
+    expect(wrapper().hasAttribute('aria-labelledby')).toBe(false);
+  });
+});

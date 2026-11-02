@@ -126,3 +126,29 @@ describe('a11y-dropdown close reason', () => {
     expect(closeReason(el, () => outside.click())).toBe('outside-click');
   });
 });
+
+describe('a11y-dropdown — clicking the trigger of an open menu', () => {
+  /** A mouse click as Chrome delivers it: press, focus moves to the button, click. */
+  function pressAndClick(button: HTMLElement): void {
+    button.dispatchEvent(new Event('pointerdown', { bubbles: true })); // jsdom has no PointerEvent
+    button.focus();
+    button.click();
+  }
+
+  it('closes it, even when pressing focused the trigger first', () => {
+    const el = mount();
+    pressAndClick(anchor);
+    expect(el.open).toBe(true);
+    pressAndClick(anchor);
+    expect(el.open).toBe(false);
+  });
+
+  it('still toggles from a click with no press (keyboard activation)', () => {
+    const el = mount();
+    anchor.click();
+    expect(el.open).toBe(true);
+    anchor.click();
+    expect(el.open).toBe(false);
+  });
+});
+

@@ -1,6 +1,44 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
+
+### Breaking changes
+
+- `A11yFormElement` is removed from `a11y-elements/core`. No element extended it. Elements that hold a value now share the `ValueElement<V>` interface instead (see below).
+
+- `<a11y-modal non-dismissible>` no longer closes on Escape: only the close button and the backdrop click were turned off.
+
+- Escape that something already handled (`preventDefault()`) no longer closes a dialog, a `trap-focus` popover or an expanded `<a11y-floating>`. A widget inside one (e.g. a combobox closing its list) can now keep it open.
+
+- While a modal, drawer or emergency dialog is open, the rest of `<body>` is `inert`, like behind `<a11y-blocking-loader>`. Toast and banner regions stay reachable. Content you add to `<body>` while it's open isn't made inert.
+
+### Changes
+
+- New `ValueElement<V>` type in `a11y-elements/core`: `getValue()`, `setValue(value)` (silent) and `onChange(value)`, implemented by checkbox, switch, select, radio-group, checkbox-group, input, textarea and file-input.
+
+- `non-dismissible`, `dialog-label` and `fullscreen` take effect while a modal is open, and so does a drawer's `edge`. They used to wait for the next open.
+
+- `<a11y-popover>` is named: by its new `label` attribute, else its first heading, else its anchor. Its `region`/`dialog` role used to have no name.
+
+- `<a11y-floating>`'s `onClose` gets a reason: `'collapse'` or `'dismiss'`. New `FloatingCloseReason` type.
+
+- `<a11y-anchor>` adds the fragment to the URL and history on a same-page jump. A link to a missing target is left to the browser, instead of announcing a jump that didn't happen.
+
+- Focus traps reach controls inside open shadow roots: Tab no longer skips a third-party web component's inputs in a modal. `FocusTrapHelper`'s `escapeDeactivates` also takes a function, asked on each press.
+
+- Generated ids (progress label, dialog title, tooltip, dropdown, floating panel) come from `nextId()`, so they're unique across bundles and never reuse an id already on the page.
+
+### Fixes
+
+- `<a11y-checkbox-group select-all>` froze the page once every option was disabled: writing the select-all's `disabled` retriggered its own MutationObserver forever.
+
+- Escape on a tooltip's anchor inside a modal closed the modal too. It now closes only the tooltip (WCAG 1.4.13).
+
+- Clicking an open `<a11y-dropdown>`'s trigger reopened it where pressing a button focuses it (Chrome, Firefox on Windows). It now closes it.
+
+- `<a11y-anchor>` threw a `URIError` on a malformed fragment (`#%E0%A4%A`) and left the link dead.
+
+## 0.6.0
 
 ### Breaking changes
 

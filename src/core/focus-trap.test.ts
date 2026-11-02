@@ -23,7 +23,7 @@ afterEach(() => {
 });
 
 function tab(target: HTMLElement, shiftKey = false): void {
-  const evt = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
+  const evt = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true, composed: true }) // composed like a real key press;
   target.dispatchEvent(evt);
 }
 
@@ -377,6 +377,30 @@ describe('FocusTrapHelper — radio groups are one Tab stop', () => {
     (container.querySelector('#r2') as HTMLElement).focus();
     tab(document.activeElement as HTMLElement);
     expect(document.activeElement!.id).toBe('b');
+    trap.deactivate();
+  });
+});
+
+describe('FocusTrapHelper — open shadow roots', () => {
+  it('Tabs into and out of controls inside a web component, in tree order', () => {
+    const host = document.createElement('div');
+    host.attachShadow({ mode: 'open' }).innerHTML = '<input id="inner-a"><input id="inner-b">';
+    container.querySelector('#middle')!.after(host);
+    const [innerA, innerB] = [...host.shadowRoot!.querySelectorAll('input')];
+
+    const trap = new FocusTrapHelper({ container });
+    trap.activate();
+    const middle = container.querySelector<HTMLElement>('#middle')!;
+    middle.focus();
+
+    tab(middle);
+    expect(host.shadowRoot!.activeElement).toBe(innerA);
+    tab(innerA!); // retargeted: the document sees the host
+    expect(host.shadowRoot!.activeElement).toBe(innerB);
+    tab(innerB!);
+    expect(document.activeElement).toBe(container.querySelector('#last'));
+    tab(container.querySelector<HTMLElement>('#last')!, true);
+    expect(host.shadowRoot!.activeElement).toBe(innerB);
     trap.deactivate();
   });
 });

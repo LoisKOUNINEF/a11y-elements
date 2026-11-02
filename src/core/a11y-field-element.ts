@@ -9,6 +9,7 @@ import {
   type FieldState,
   type FieldValidator,
 } from './field.js';
+import type { ValueElement } from './value-element.js';
 
 /** `value-missing-message` → `valueMissing`, and so on for every native constraint. */
 const MESSAGE_ATTRIBUTES: Record<string, FieldConstraint> = {
@@ -60,7 +61,7 @@ const FIELD_TAGS = 'a11y-input, a11y-textarea, a11y-file-input';
  * the control's `value` string by default; a subclass with another value
  * (e.g. `File[]`) overrides `readValue()`/`writeValue()`.
  */
-export abstract class A11yFieldElement<V = string> extends A11yWrapperElement {
+export abstract class A11yFieldElement<V = string> extends A11yWrapperElement implements ValueElement<V> {
   static formAssociated = true;
 
   static get observedAttributes(): string[] {

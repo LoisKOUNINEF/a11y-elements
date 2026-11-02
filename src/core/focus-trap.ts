@@ -17,7 +17,8 @@ const FOCUSABLE_SELECTOR = [
 ].join(', ');
 
 export interface IFocusTrapOptions {
-  escapeDeactivates?: boolean;
+  /** Whether Escape calls `onDeactivate`; a function is asked on each press. Default `true`. */
+  escapeDeactivates?: boolean | (() => boolean);
   returnFocusOnDeactivate?: boolean;
   onDeactivate?: () => void;
   /**
@@ -55,6 +56,28 @@ function isTabbable(el: HTMLElement): boolean {
   if (el.closest('[hidden], [inert]')) return false;
   if (typeof el.checkVisibility === 'function') return el.checkVisibility({ visibilityProperty: true });
   return true;
+}
+
+/**
+ * Every selector-matched element under `root` in tree order, including those
+ * inside open shadow roots (at their host's position) — a trap that drives
+ * every Tab press itself would otherwise skip a third-party web component's
+ * own controls. Closed shadow roots can't be seen into.
+ */
+function queryFocusable(root: ParentNode): HTMLElement[] {
+  const found: HTMLElement[] = [];
+  for (const el of Array.from(root.querySelectorAll<HTMLElement>('*'))) {
+    if (el.matches(FOCUSABLE_SELECTOR)) found.push(el);
+    if (el.shadowRoot) found.push(...queryFocusable(el.shadowRoot));
+  }
+  return found;
+}
+
+/** The focused element itself, not the shadow host `document.activeElement` stops at. */
+function deepActiveElement(): HTMLElement | null {
+  let active = document.activeElement;
+  while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+  return active as HTMLElement | null;
 }
 
 function isNamedRadio(el: Element | null): el is HTMLInputElement {
@@ -164,7 +187,7 @@ export class FocusTrapHelper {
 
   private _getFocusableElements(): HTMLElement[] {
     return collapseRadioGroups(
-      Array.from(this._container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(isTabbable),
+      queryFocusable(this._container).filter(isTabbable),
     );
   }
 
@@ -233,6 +256,11 @@ export class FocusTrapHelper {
     this._isActive = false;
   }
 
+  private _escapeDeactivates(): boolean {
+    const option = this._options.escapeDeactivates;
+    return typeof option === 'function' ? option() : option !== false;
+  }
+
   public getIsActive(): boolean {
     return this._isActive;
   }
@@ -273,7 +301,8 @@ export class FocusTrapHelper {
         this._handleTabKey(event);
         break;
       case 'Escape':
-        if (this._options.escapeDeactivates) {
+        // Already handled — by an overlay above this one, or a widget inside it (e.g. a combobox closing its list).
+        if (!event.defaultPrevented && this._escapeDeactivates()) {
           event.preventDefault();
           this._options.onDeactivate?.();
         }
@@ -304,7 +333,7 @@ export class FocusTrapHelper {
     event.preventDefault();
 
     const elements = this._focusableElements;
-    const active = document.activeElement as HTMLElement | null;
+    const active = deepActiveElement();
     let currentIndex = active ? elements.indexOf(active) : -1;
     // A focused radio that isn't its group's stop (e.g. focused from script) stands for its group
     if (currentIndex === -1 && isNamedRadio(active)) {

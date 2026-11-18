@@ -440,3 +440,28 @@ describe('focusReturnTarget — triggers the browser did not focus (Safari)', ()
   });
 });
 
+
+describe('FocusTrapHelper — closing a lower trap first', () => {
+  it("doesn't pull focus out of the trap still on top, which later returns where the lower one would have", () => {
+    const trigger = document.createElement('button');
+    const a = document.createElement('div');
+    a.innerHTML = '<button id="open-b">Open B</button>';
+    const b = document.createElement('div');
+    b.innerHTML = '<button id="in-b">In B</button>';
+    document.body.append(trigger, a, b);
+
+    trigger.focus();
+    const trapA = new FocusTrapHelper({ container: a });
+    trapA.activate();
+    const trapB = new FocusTrapHelper({ container: b });
+    trapB.activate();
+    expect(document.activeElement?.id).toBe('in-b');
+
+    trapA.deactivate();
+    a.remove();
+    expect(document.activeElement?.id).toBe('in-b');
+
+    trapB.deactivate();
+    expect(document.activeElement).toBe(trigger);
+  });
+});

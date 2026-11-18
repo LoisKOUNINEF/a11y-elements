@@ -31,7 +31,7 @@ export class FocusableElement extends A11yElement {
 
   protected override onBeforeRender(): void {
     this.setAttribute('role', 'button');
-    this.setAttribute('tabindex', '0');
+    if (!this.hasAttribute('tabindex')) this.setAttribute('tabindex', '0'); // keep a consumer's own (e.g. -1 for roving focus)
 
     if (!this._warnedEmptyLabel && !this.getAttribute('aria-label') && !this.textContent?.trim()) {
       this._warnedEmptyLabel = true;
@@ -49,6 +49,8 @@ export class FocusableElement extends A11yElement {
     this.listen(this, 'keydown', (e) => {
       const ke = e as KeyboardEvent;
       if (ke.key !== 'Enter' && ke.key !== ' ') return;
+      // Only presses on the element itself: Enter/Space in a nested field or button are theirs.
+      if (ke.target !== this || this.getAttribute('aria-disabled') === 'true') return;
       ke.preventDefault();
       this.click();
     });

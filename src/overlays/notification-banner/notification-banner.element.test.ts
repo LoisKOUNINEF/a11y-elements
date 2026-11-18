@@ -134,6 +134,27 @@ describe('a11y-notification-banner element', () => {
     expect(onCloseActive).toHaveBeenCalledTimes(1);
     expect(onCloseQueued).not.toHaveBeenCalled(); // never shown, dropped silently
   });
+
+  it.each([
+    ['onAction', (el: any) => ({ actionText: 'Clear', onAction: () => el.dismissAll() })],
+    ['onClose', (el: any) => ({ onClose: () => el.dismissAll() })],
+  ])('an %s that calls dismissAll() closes once and keeps the stack count right', (_, options) => {
+    const el = document.createElement('a11y-notification-banner') as any;
+    el.setAttribute('max-stack', '1');
+    document.body.appendChild(el);
+    const onClose = vi.fn();
+    const opts = options(el);
+    const userOnClose = opts.onClose;
+    el.show('First', { ...opts, onClose: () => { onClose(); userOnClose?.(); } });
+
+    const button = el.querySelector(opts.actionText ? '.a11y-notification-banner__action' : '.a11y-notification-banner__close');
+    button.click();
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    el.show('a');
+    el.show('b');
+    expect(el.querySelectorAll('.a11y-notification-banner')).toHaveLength(1); // max-stack 1 still holds
+  });
 });
 
 describe('showNotificationBanner() convenience function', () => {

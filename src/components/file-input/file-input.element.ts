@@ -289,7 +289,7 @@ export class FileInputElement extends A11yFieldElement<File[]> {
    */
   private _intake(control: HTMLInputElement, incoming: File[], current: File[]): { files: File[]; added: File[]; rejected: string[] } {
     const multiple = control.multiple;
-    const maxFiles = multiple ? this.numberAttr('max-files', Infinity) : 1;
+    const maxFiles = multiple ? Math.max(1, Math.floor(this.numberAttr('max-files', Infinity))) : 1;
     const maxSize = parseSize(this.getAttribute('max-size'));
     const values = {
       max: String(maxFiles),

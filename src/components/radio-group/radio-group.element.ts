@@ -64,7 +64,11 @@ export class RadioGroupElement extends A11yWrapperElement implements ValueElemen
 
   private _ensureFieldset(): HTMLFieldSetElement {
     const existing = this._fieldset();
-    if (existing) return existing;
+    if (existing) {
+      // Options appended to the host after the first sync (e.g. loaded later) belong in it too.
+      for (const node of Array.from(this.childNodes)) if (node !== existing) existing.appendChild(node);
+      return existing;
+    }
 
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'a11y-radio-group';

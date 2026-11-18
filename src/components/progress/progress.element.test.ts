@@ -33,6 +33,18 @@ describe('a11y-progress', () => {
     expect(mount({ max: '50' }).querySelector('progress')!.getAttribute('max')).toBe('50');
   });
 
+  it.each(['abc', '', '  ', 'NaN', 'Infinity'])('treats value=%j as indeterminate, not 0', (value) => {
+    const el = mount({ value }) as HTMLElement & { value?: number };
+    expect(el.value).toBeUndefined();
+    expect(el.querySelector('progress')!.hasAttribute('value')).toBe(false);
+  });
+
+  it.each(['0', '-5', 'abc', ''])('falls back to max=100 for max=%j', (max) => {
+    const el = mount({ value: '50', max }) as HTMLElement & { max: number };
+    expect(el.max).toBe(100);
+    expect(el.querySelector('progress')!.getAttribute('max')).toBe('100');
+  });
+
   it('keeps the same <progress> across updates, patching its attributes', () => {
     const el = mount({ value: '10', label: 'Uploading…' });
     const bar = el.querySelector('progress')!;

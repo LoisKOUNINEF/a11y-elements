@@ -30,6 +30,7 @@
 }
 
 .a11y-snackbar {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -64,12 +65,42 @@
   color: var(--a11y-color-text-on-warning, #111827);
 }
 
-.a11y-snackbar button {
+.a11y-snackbar__action {
   background: transparent;
   border: none;
   color: inherit;
   font-weight: bold;
   cursor: pointer;
+}
+
+/* Round × badge overhanging the top-right corner. Inherits the toast's type
+   color pair (already contrast-checked); the ring separates it from the page. */
+.a11y-snackbar__close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(40%, -40%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--a11y-snackbar-close-size, 1.5rem);
+  height: var(--a11y-snackbar-close-size, 1.5rem);
+  padding: 0;
+  border: var(--a11y-snackbar-close-border-width, 2px) solid currentColor;
+  border-radius: 50%;
+  background: inherit;
+  color: inherit;
+  font: inherit;
+  font-size: var(--a11y-snackbar-close-font-size, 1rem);
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.a11y-snackbar__close:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 
 @keyframes a11y-snackbar-fade-in {

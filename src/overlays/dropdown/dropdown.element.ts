@@ -28,8 +28,13 @@ export class DropdownElement extends A11yMenuOverlayElement {
   private _onTriggerPointerDown = (): void => {
     this._openAtPress = this.open;
   };
-  private _onTriggerClick = (): void => {
-    const wasOpen = this._openAtPress ?? this.open; // no press for a keyboard click
+  private _onTriggerPointerCancel = (): void => {
+    this._openAtPress = null; // the press never became a click
+  };
+  private _onTriggerClick = (e: MouseEvent): void => {
+    // A keyboard or scripted click (`detail` 0) has no press of its own: a press left over from a
+    // pointer that was dragged off the trigger must not decide it.
+    const wasOpen = e.detail > 0 && this._openAtPress !== null ? this._openAtPress : this.open;
     this._openAtPress = null;
     this.open = !wasOpen;
   };
@@ -80,6 +85,7 @@ export class DropdownElement extends A11yMenuOverlayElement {
     anchor.setAttribute('aria-controls', this.id);
     anchor.setAttribute('aria-expanded', String(this._isShowing));
     anchor.addEventListener('pointerdown', this._onTriggerPointerDown);
+    anchor.addEventListener('pointercancel', this._onTriggerPointerCancel);
     anchor.addEventListener('click', this._onTriggerClick);
     this._trigger = anchor;
   }
@@ -88,6 +94,7 @@ export class DropdownElement extends A11yMenuOverlayElement {
     const trigger = this._trigger;
     if (!trigger) return;
     trigger.removeEventListener('pointerdown', this._onTriggerPointerDown);
+    trigger.removeEventListener('pointercancel', this._onTriggerPointerCancel);
     trigger.removeEventListener('click', this._onTriggerClick);
     trigger.removeAttribute('aria-haspopup');
     trigger.removeAttribute('aria-controls');

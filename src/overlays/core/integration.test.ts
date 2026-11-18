@@ -4,6 +4,7 @@ import '../snackbar/define.js';
 import '../dropdown/define.js';
 import '../blocking-loader/define.js';
 import '../tooltip/define.js';
+import '../popover/define.js';
 import { ModalElement } from '../modal/define.js';
 import { SpinnerElement } from '../../components/spinner/define.js';
 import { CheckboxElement } from '../../components/checkbox/define.js';
@@ -90,6 +91,15 @@ describe('removeOverlaysWithin', () => {
     expect(document.getElementById('s')).toBeNull();
     expect(document.getElementById('keep')).not.toBeNull();
     expect(removeOverlaysWithin(h)).toBe(0);
+  });
+
+  it.each([false, true])('also removes overlays authored inside a removed overlay (modal open: %s)', (open) => {
+    const h = host();
+    h.innerHTML = '<a11y-modal id="m"><h2>M</h2><button id="b">b</button><a11y-tooltip id="t" anchor="b">Tip</a11y-tooltip></a11y-modal>';
+    if (open) (document.getElementById('m') as HTMLElement & { open: boolean }).open = true;
+    expect(removeOverlaysWithin(h)).toBe(2);
+    expect(document.getElementById('m')).toBeNull();
+    expect(document.getElementById('t')).toBeNull();
   });
 
   it('works after the host has left the document', () => {
@@ -206,5 +216,113 @@ describe('Escape with stacked overlays', () => {
     input.addEventListener('keydown', (e) => e.preventDefault());
     escape(input);
     expect(modal.open).toBe(true);
+  });
+});
+
+describe('nested anchored overlays', () => {
+  type Openable = HTMLElement & { open: boolean };
+
+  function popoverWithDropdown(interactive = false): { popover: Openable; dropdown: Openable } {
+    document.body.innerHTML = `
+      <button id="p-trigger">Info</button>
+      <a11y-popover id="p" anchor="p-trigger"${interactive ? ' interactive' : ''}>
+        <button id="d-trigger">Actions</button>
+        <a11y-dropdown id="d" anchor="d-trigger"><button role="menuitem">Edit</button></a11y-dropdown>
+      </a11y-popover>
+      <input id="elsewhere">`;
+    return { popover: document.getElementById('p') as Openable, dropdown: document.getElementById('d') as Openable };
+  }
+
+  it('a click inside a dropdown opened from a popover does not close the popover', () => {
+    vi.useFakeTimers();
+    try {
+      const { popover, dropdown } = popoverWithDropdown();
+      popover.open = true;
+      vi.advanceTimersByTime(0); // outside-click listener is bound on the next tick
+      dropdown.open = true;
+      vi.advanceTimersByTime(0);
+      dropdown.querySelector<HTMLElement>('[role="menuitem"]')!.click();
+      expect(popover.open).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('Escape closes the most recently opened overlay first', () => {
+    const { popover, dropdown } = popoverWithDropdown();
+    popover.open = true;
+    dropdown.open = true;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(dropdown.open).toBe(false);
+    expect(popover.open).toBe(true);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    expect(popover.open).toBe(false);
+  });
+
+  it('an interactive popover leaves focus where an outside click put it', () => {
+    vi.useFakeTimers();
+    try {
+      const { popover } = popoverWithDropdown(true);
+      const trigger = document.getElementById('p-trigger')!;
+      trigger.focus();
+      popover.open = true;
+      vi.advanceTimersByTime(0);
+      expect(popover.contains(document.activeElement)).toBe(true);
+      const input = document.getElementById('elsewhere') as HTMLInputElement;
+      input.focus(); // what the mousedown does in a browser
+      input.click();
+      expect(popover.open).toBe(false);
+      expect(document.activeElement).toBe(input);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('closing before the first frame', () => {
+  it.each([
+    ['a11y-modal', '.a11y-modal-wrapper'],
+    ['a11y-popover', '.a11y-popover-wrapper'],
+  ])('%s does not animate its closing chrome back in', (tag, wrapperSel) => {
+    const frames: FrameRequestCallback[] = [];
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => (frames.push(cb), frames.length));
+    const style = document.createElement('style');
+    style.textContent = `${wrapperSel} { transition-duration: 1s; }`;
+    document.head.appendChild(style);
+    try {
+      document.body.innerHTML = `<button id="t">t</button><${tag} anchor="t"><h2>Hi</h2><button>x</button></${tag}>`;
+      const el = document.querySelector(tag) as HTMLElement & { open: boolean };
+      el.open = true;
+      const wrapper = document.querySelector(wrapperSel)!;
+      el.open = false; // still in its close transition
+      frames.forEach((cb) => cb(0));
+      expect(wrapper.classList.contains('a11y-is-open')).toBe(false);
+    } finally {
+      raf.mockRestore();
+      style.remove();
+    }
+  });
+});
+
+describe('a modal opened from a menu item', () => {
+  it("gives focus back to the menu's trigger when it closes, not to the hidden item", () => {
+    document.body.innerHTML = `
+      <button id="actions">Actions</button>
+      <a11y-dropdown id="d" anchor="actions"><button role="menuitem" id="settings">Settings…</button></a11y-dropdown>
+      <a11y-modal id="m"><h2>Settings</h2><button>OK</button></a11y-modal>`;
+    const dropdown = document.getElementById('d') as HTMLElement & { open: boolean };
+    const modal = document.getElementById('m') as HTMLElement & { open: boolean };
+    const trigger = document.getElementById('actions')!;
+    document.getElementById('settings')!.addEventListener('click', () => {
+      modal.open = true;
+    });
+    trigger.focus();
+    dropdown.open = true;
+    expect(document.activeElement?.id).toBe('settings');
+    document.getElementById('settings')!.click(); // opens the modal, then the menu closes ('item')
+    expect(dropdown.open).toBe(false);
+    expect(modal.contains(document.activeElement)).toBe(true);
+    modal.open = false;
+    expect(document.activeElement).toBe(trigger);
   });
 });

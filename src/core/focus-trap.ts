@@ -143,6 +143,17 @@ export function focusReturnTarget(): HTMLElement | null {
 }
 
 /**
+ * Points every active trap that would return focus into `container` (which is
+ * closing) at `target` instead. E.g. a modal opened from a menu item would
+ * otherwise give focus back to that item, hidden by then, and lose it to
+ * `<body>`; the menu hands over its own trigger.
+ */
+export function retargetFocusReturn(container: Element, target: HTMLElement): void {
+  // `?.`: the stack is shared page-wide, and a trap from an older bundle may lack the method.
+  for (const trap of activeTraps) trap._retargetReturnFrom?.(container, target);
+}
+
+/**
  * Moves focus in response to a key press, asking for a visible focus ring.
  * WebKit copies `:focus-visible` from the previously focused element for
  * script-driven focus, and a `preventDefault()`ed key press doesn't turn it
@@ -208,6 +219,9 @@ export class FocusTrapHelper {
     if (this._isActive) return;
 
     this._previousActiveElement = focusReturnTarget();
+    // On the stack before focus moves: moving it can close whatever had it (a menu losing focus),
+    // and that close may retarget where this trap returns focus (see `retargetFocusReturn()`).
+    activeTraps.push(this);
     this._focusableElements = this._getFocusableElements();
 
     if (this._focusableElements.length > 0) {
@@ -223,7 +237,6 @@ export class FocusTrapHelper {
     // the trap (text, padding) moves focus to <body>, and a container
     // listener would then never see Escape/Tab again.
     document.addEventListener('keydown', this._boundKeyDown);
-    activeTraps.push(this);
 
     this._inertTarget = this._resolveInertTarget();
     if (this._inertTarget) this._inertTarget.inert = true;
@@ -231,11 +244,13 @@ export class FocusTrapHelper {
     this._isActive = true;
   }
 
-  public deactivate(): void {
+  /** `returnFocus: false` skips giving focus back, e.g. when the user already moved it elsewhere. */
+  public deactivate({ returnFocus = true }: { returnFocus?: boolean } = {}): void {
     if (!this._isActive) return;
 
     document.removeEventListener('keydown', this._boundKeyDown);
     const index = activeTraps.indexOf(this);
+    const wasTop = index === activeTraps.length - 1;
     if (index !== -1) activeTraps.splice(index, 1);
 
     if (this._inertTarget) this._inertTarget.inert = false;
@@ -245,7 +260,14 @@ export class FocusTrapHelper {
       this._container.removeAttribute('tabindex');
     }
 
-    if (this._options.returnFocusOnDeactivate && this._previousActiveElement?.focus) {
+    if (!wasTop && index !== -1) {
+      // A trap above this one is still active (e.g. modal A closed while modal B, opened from it,
+      // stays open): focus must not leave B. Where B would return to probably lives in this
+      // container and is about to go, so B returns to where this trap would have instead.
+      const above = activeTraps[index];
+      const aboveTarget = above?._previousActiveElement;
+      if (above && (!aboveTarget || this._container.contains(aboveTarget))) above._previousActiveElement = this._previousActiveElement;
+    } else if (returnFocus && this._options.returnFocusOnDeactivate && this._previousActiveElement?.focus) {
       this._previousActiveElement.focus();
     }
 
@@ -259,6 +281,11 @@ export class FocusTrapHelper {
   private _escapeDeactivates(): boolean {
     const option = this._options.escapeDeactivates;
     return typeof option === 'function' ? option() : option !== false;
+  }
+
+  /** @internal — see `retargetFocusReturn()`. */
+  public _retargetReturnFrom(container: Element, target: HTMLElement): void {
+    if (this._previousActiveElement && container.contains(this._previousActiveElement)) this._previousActiveElement = target;
   }
 
   public getIsActive(): boolean {

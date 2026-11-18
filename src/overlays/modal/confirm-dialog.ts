@@ -48,6 +48,8 @@ export function confirmDialog(options: ConfirmDialogOptions): Promise<boolean> {
   return new Promise((resolve) => {
     let confirmed = false;
     modal.addEventListener('click', (e) => {
+      // Already closing (Cancel, Escape…): a click during the fade-out must not turn it into a confirm.
+      if (!modal.open) return;
       const button = (e.target as Element).closest('button');
       if (button?.classList.contains('a11y-confirm__confirm')) {
         confirmed = true;

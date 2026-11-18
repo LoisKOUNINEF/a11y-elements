@@ -2,9 +2,60 @@
 
 Framework-agnostic accessibility Custom Elements (Web Components). A behavior layer, not a themed UI kit. 
 
-Every element is Light DOM only (no Shadow DOM), so you always style real markup with your own CSS.
+- See a [demo of the elements](https://nutin.dev/a11y-elements/elements)
+- See a [demo of the overlays](https://nutin.dev/a11y-elements/overlays)
 
-See a [demo of the elements](https://nutin.dev/a11y-elements/elements) - See a [demo of the overlays](https://nutin.dev/a11y-elements/overlays)
+## Elements
+
+### Accessibility components
+
+- [`<a11y-anchor>`](#a11y-anchor) ·
+- [`<a11y-avatar>`](#a11y-avatar) ·
+- [`<a11y-card-link>`](#a11y-card-link) ·
+- [`<a11y-checkbox>`](#a11y-checkbox) ·
+- [`<a11y-checkbox-group>`](#a11y-checkbox-group) ·
+- [`<a11y-file-input>`](#a11y-file-input) ·
+- [`<a11y-focusable>`](#a11y-focusable) ·
+- [`<a11y-input>`](#a11y-input) ·
+- [`<a11y-label>`](#a11y-label) ·
+- [`<a11y-picture>`](#a11y-picture) ·
+- [`<a11y-progress>`](#a11y-progress) ·
+- [`<a11y-radio-group>`](#a11y-radio-group) ·
+- [`<a11y-select>`](#a11y-select) ·
+- [`<a11y-skeleton>`](#a11y-skeleton) ·
+- [`<a11y-spinner>`](#a11y-spinner) ·
+- [`<a11y-switch>`](#a11y-switch) ·
+- [`<a11y-tabs>`](#a11y-tabs) ·
+- [`<a11y-textarea>`](#a11y-textarea) ·
+- [`<a11y-visually-hidden>`](#a11y-visually-hidden)
+
+### Overlays
+
+Behavior shared by overlays is described once, in [Common to all overlays](#common-to-all-overlays).
+
+- [`<a11y-blocking-loader>`](#a11y-blocking-loader)
+- [`<a11y-context-menu>`](#a11y-context-menu)
+- [`<a11y-drawer>`](#a11y-drawer)
+- [`<a11y-dropdown>`](#a11y-dropdown)
+- [`<a11y-emergency-dialog>`](#a11y-emergency-dialog)
+- [`<a11y-floating>`](#a11y-floating)
+- [`<a11y-modal>`](#a11y-modal)
+- [`<a11y-notification-banner>`](#a11y-notification-banner)
+- [`<a11y-popover>`](#a11y-popover)
+- [`<a11y-snackbar>`](#a11y-snackbar)
+- [`<a11y-tooltip>`](#a11y-toolti
+
+### Import paths
+
+Import paths follow the folder names: `a11y-elements/components/<name>` or `a11y-elements/overlays/<name>` (add `/element` for the class), and `dist/browser/<group>/<name>/define.js` for zero-build.
+
+### Values
+
+Elements that hold a value (checkbox, switch, select, radio-group, checkbox-group, input, textarea, file-input) share one contract, typed as `ValueElement<V>` in `a11y-elements/core`: `getValue()` reads it, `setValue(value)` writes it silently (no events, no `onChange`), and `onChange(value)` is called when the user changes it. The native controls inside stay the source of truth and the ones that submit.
+
+### CSS attributes
+
+Attributes that set a CSS variable (spinner `size`/`color`/…, avatar `size`, skeleton `width`/`height`) win over your own inline value for that variable only while they're set. See [Scope to one instance](#scope-to-one-instance).
 
 ## Usage
 
@@ -70,7 +121,7 @@ setStrings({
 | `navigatedTo` | `Navigated to {name}` | `<a11y-anchor>` jump announcement (`{name}` is the target's name) | `navigated-label` |
 | `closeDialog` | `Close dialog` | the × button of `<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`, an expandable `<a11y-floating>`'s panel | `close-label` |
 | `confirm` / `cancel` | `OK` / `Cancel` | the buttons of `confirmDialog()` | `confirmLabel` / `cancelLabel` |
-| `dismiss` | `Dismiss` | the × button of each `<a11y-notification-banner>` item and of a `dismissible` `<a11y-floating>` | `dismiss-label` |
+| `dismiss` | `Dismiss` | the × button of each `<a11y-notification-banner>` item, of each `<a11y-snackbar>` toast, and of a `dismissible` `<a11y-floating>` | `dismiss-label` |
 | `loading` | `Loading` | `<a11y-spinner>`, `<a11y-blocking-loader>` | `label` / `message` |
 | `progress` | `Progress` | `<a11y-progress>` without a label | `label` / `aria-label` |
 | `avatar` | `Avatar` | `<a11y-avatar>` with no `alt` or `initials` | `alt` / `initials` |
@@ -92,25 +143,9 @@ setStrings({
 * Elements already on the page update right away, so calling it again on a language switch is enough.
 * `resetStrings()` restores the English defaults.
 
-## Elements
+## Accessibility components
 
-Each section shows an example, the element's own attributes/properties/methods, and its CSS variables (collapsed). 
-
-Behavior shared by overlays is described once, in [Common to all overlays](#common-to-all-overlays).
-
-**Accessibility components:** [`<a11y-anchor>`](#a11y-anchor) · [`<a11y-avatar>`](#a11y-avatar) · [`<a11y-card-link>`](#a11y-card-link) · [`<a11y-checkbox>`](#a11y-checkbox) · [`<a11y-checkbox-group>`](#a11y-checkbox-group) · [`<a11y-file-input>`](#a11y-file-input) · [`<a11y-focusable>`](#a11y-focusable) · [`<a11y-input>`](#a11y-input) · [`<a11y-label>`](#a11y-label) · [`<a11y-picture>`](#a11y-picture) · [`<a11y-progress>`](#a11y-progress) · [`<a11y-radio-group>`](#a11y-radio-group) · [`<a11y-select>`](#a11y-select) · [`<a11y-skeleton>`](#a11y-skeleton) · [`<a11y-spinner>`](#a11y-spinner) · [`<a11y-switch>`](#a11y-switch) · [`<a11y-tabs>`](#a11y-tabs) · [`<a11y-textarea>`](#a11y-textarea) · [`<a11y-visually-hidden>`](#a11y-visually-hidden)
-
-**Overlays:** [`<a11y-blocking-loader>`](#a11y-blocking-loader) · [`<a11y-context-menu>`](#a11y-context-menu) · [`<a11y-drawer>`](#a11y-drawer) · [`<a11y-dropdown>`](#a11y-dropdown) · [`<a11y-emergency-dialog>`](#a11y-emergency-dialog) · [`<a11y-floating>`](#a11y-floating) · [`<a11y-modal>`](#a11y-modal) · [`<a11y-notification-banner>`](#a11y-notification-banner) · [`<a11y-popover>`](#a11y-popover) · [`<a11y-snackbar>`](#a11y-snackbar) · [`<a11y-tooltip>`](#a11y-tooltip)
-
-Import paths follow the folder names: `a11y-elements/components/<name>` or `a11y-elements/overlays/<name>` (add `/element` for the class), and `dist/browser/<group>/<name>/define.js` for zero-build.
-
-Elements that hold a value (checkbox, switch, select, radio-group, checkbox-group, input, textarea, file-input) share one contract, typed as `ValueElement<V>` in `a11y-elements/core`: `getValue()` reads it, `setValue(value)` writes it silently (no events, no `onChange`), and `onChange(value)` is called when the user changes it. The native controls inside stay the source of truth and the ones that submit.
-
-Attributes that set a CSS variable (spinner `size`/`color`/…, avatar `size`, skeleton `width`/`height`) win over your own inline value for that variable only while they're set. See [Scope to one instance](#scope-to-one-instance).
-
-### Accessibility components
-
-#### `a11y-anchor`
+### `a11y-anchor`
 
 Enhances a real `<a href>`:
 
@@ -131,7 +166,7 @@ Both strings can be [translated](#translating-built-in-strings).
 
 No CSS variables of its own: style the `<a>` directly.
 
-#### `a11y-avatar`
+### `a11y-avatar`
 
 An avatar image with an initials fallback. When the image is missing or fails to load, the initials show instead and the element gets `role="img"` with an `aria-label`.
 
@@ -167,7 +202,7 @@ The initials are set in Arial rather than the page font, so they fit the circle 
 
 </details>
 
-#### `a11y-card-link`
+### `a11y-card-link`
 
 Makes a whole card go to one page through a real `<a href>` inside it (usually around the title). The link stays the card's only tab stop and its accessible name, so screen readers announce a link named by the title, Enter follows it, Space scrolls the page, and middle-click, "Open in new tab" and "Copy link address" work on it.
 
@@ -205,7 +240,7 @@ The whole card is outlined while its link has keyboard focus (`:has(:focus-visib
 
 </details>
 
-#### `a11y-checkbox`
+### `a11y-checkbox`
 
 Wraps a real `<input type="checkbox">` in a `<label>` with a visible label text. The input stays yours: `name`, `checked`, `disabled`, `required` are plain HTML attributes on it.
 
@@ -255,7 +290,7 @@ checkbox.onChange = (checked) => console.log('accepted:', checked);
 
 </details>
 
-#### `a11y-checkbox-group`
+### `a11y-checkbox-group`
 
 Wraps your checkboxes in a `<fieldset>` with a `<legend>`, styled like `<a11y-checkbox>`. Add `select-all` for a "Select all" checkbox: it's checked when every option is, partly checked when some are, and checks or unchecks them all. It has no `name`, so it's never submitted, and disabled options keep their own state.
 
@@ -304,7 +339,7 @@ Options use the `--a11y-checkbox-*` variables above.
 
 </details>
 
-#### `a11y-file-input`
+### `a11y-file-input`
 
 A file picker built from a real `<input type="file">`, with the same parts as [`a11y-input`](#a11y-input). Files can be browsed for or dropped onto the element. It only picks files: the input keeps its `name` and submits them with the form, or you read `getValue()` and upload them yourself.
 
@@ -390,9 +425,9 @@ The hint and error use the [shared field variables](#a11y-input).
 
 </details>
 
-#### `a11y-focusable`
+### `a11y-focusable`
 
-Makes a non-button element behave like a button: `role="button"`, `tabindex="0"`, and Enter/Space fire a real `click`, so one `click` listener covers mouse and keyboard. Prefer a real `<button>` whenever you can.
+Makes a non-button element behave like a button: `role="button"`, `tabindex="0"` (unless you set your own), and Enter/Space on the element itself fire a real `click`, so one `click` listener covers mouse and keyboard. Keys pressed in a control nested inside are left to that control, and nothing fires while `aria-disabled="true"`. Prefer a real `<button>` whenever you can.
 
 It's for **actions**. Cards that go to another page should use [`<a11y-card-link>`](#a11y-card-link) or a plain `<a href>`: a button role, Space activation and no `href` mislead screen-reader users and break "Open in new tab".
 
@@ -408,7 +443,7 @@ It's for **actions**. Cards that go to another page should use [`<a11y-card-link
 
 No CSS variables.
 
-#### `a11y-input`
+### `a11y-input`
 
 A text field built from a real `<input>` and optional parts, wired together for you:
 
@@ -541,7 +576,7 @@ Shared by the parts of every field:
 
 </details>
 
-##### Building your own field: `bindField()`
+#### Building your own field: `bindField()`
 
 The same wiring, without the custom elements: `bindField()` takes the control and its parts as any elements you like, for example from a framework component. It's exported from `a11y-elements/core`, and from the input and textarea `define.js` bundles.
 
@@ -565,7 +600,7 @@ field.destroy(); // on unmount: removes its listeners and the ARIA it added
 
 A real `<label>` is linked with `for`; any other element with `aria-labelledby`. Tokens you put in `aria-describedby` / `aria-labelledby` yourself are kept.
 
-#### `a11y-label`
+### `a11y-label`
 
 Renders a real `<label class="a11y-label">` around its content. A custom element can't itself be a `<label>`, and only a real one gives click-to-focus and native naming. Inside `<a11y-input>` / `<a11y-textarea>` it's linked automatically; on its own, `for` is forwarded:
 
@@ -597,7 +632,7 @@ A `*` marks a required field. It's CSS only and hidden from screen readers, whic
 
 </details>
 
-#### `a11y-picture`
+### `a11y-picture`
 
 Wraps a `<picture>`/`<img>` and optional `<figcaption>`, yours or generated from attributes, as `role="figure"`. An image with `alt=""` and no caption is treated as decorative and hidden from assistive tech (`aria-hidden="true"`).
 
@@ -666,7 +701,7 @@ The `PictureSource` and `PictureImage` types are exported with the element.
 
 </details>
 
-#### `a11y-progress`
+### `a11y-progress`
 
 A labelled progress bar around a native `<progress>`. Without `value`, it shows an indeterminate animation.
 
@@ -676,8 +711,8 @@ A labelled progress bar around a native `<progress>`. Without `value`, it shows 
 
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
-| `value` | attribute / property | — | Current value; absent means indeterminate. |
-| `max` | attribute / property | `100` | Maximum value. |
+| `value` | attribute / property | — | Current value; absent, empty or not a number means indeterminate. |
+| `max` | attribute / property | `100` | Maximum value; `100` unless it's a positive number. |
 | `label` | attribute | — | Visible label, used as the accessible name. |
 | `aria-label` | attribute | `Progress` | Accessible name when there's no visible `label`. The default can be [translated](#translating-built-in-strings). |
 
@@ -699,7 +734,7 @@ A labelled progress bar around a native `<progress>`. Without `value`, it shows 
 
 </details>
 
-#### `a11y-radio-group`
+### `a11y-radio-group`
 
 Wraps your radios in a `<fieldset>` with a `<legend>`. Give every radio the same `name`; that's what makes them one native group.
 
@@ -747,7 +782,7 @@ Wraps your radios in a `<fieldset>` with a `<legend>`. Give every radio the same
 
 </details>
 
-#### `a11y-select`
+### `a11y-select`
 
 Wraps a real `<select>` in a `<label>` with a visible label text. Options and keyboard handling stay native.
 
@@ -797,7 +832,7 @@ The native `<select>` inside stays the source of truth: its `change` events and 
 
 </details>
 
-#### `a11y-skeleton`
+### `a11y-skeleton`
 
 A loading placeholder, hidden from assistive tech.
 
@@ -835,7 +870,7 @@ A loading placeholder, hidden from assistive tech.
 
 </details>
 
-#### `a11y-spinner`
+### `a11y-spinner`
 
 A loading spinner with `role="status"`. No JS needed beyond the define.
 
@@ -873,7 +908,7 @@ Size presets: add `a11y-spinner--sm`, `a11y-spinner--lg` or `a11y-spinner--xl` t
 
 </details>
 
-#### `a11y-switch`
+### `a11y-switch`
 
 Like `<a11y-checkbox>`, but the input gets `role="switch"`.
 
@@ -918,7 +953,7 @@ Like `<a11y-checkbox>`, but the input gets `role="switch"`.
 
 </details>
 
-#### `a11y-tabs`
+### `a11y-tabs`
 
 Turns your own tab buttons and panels into the WAI-ARIA Tabs pattern (automatic activation). Tabs are the `[data-tab]` elements inside the `[data-tablist]` child, each one showing the `[data-panel]` with the same name.
 
@@ -973,7 +1008,7 @@ Turns your own tab buttons and panels into the WAI-ARIA Tabs pattern (automatic 
 
 </details>
 
-#### `a11y-textarea`
+### `a11y-textarea`
 
 `<a11y-input>` for a real `<textarea>`: same parts, attributes, properties, validation and states.
 
@@ -1002,7 +1037,7 @@ The same as [`a11y-input`](#a11y-input), prefixed `--a11y-textarea-` instead of 
 
 </details>
 
-#### `a11y-visually-hidden`
+### `a11y-visually-hidden`
 
 Content for screen readers only, hidden visually.
 
@@ -1015,9 +1050,9 @@ Content for screen readers only, hidden visually.
 
 No attributes or CSS variables. The class `a11y-visually-hidden` is also usable on its own.
 
-### Overlays
+## Overlays
 
-#### Common to all overlays
+### Common to all overlays
 
 * **Open/close** with the `open` attribute or property, or `show()` / `close()`.
 * **Before the element is defined** (lazy-loaded bundles), setting `.open = true`, `onClose` or any other property works: it's applied once the element upgrades. `setAttribute('open', '')` works too.
@@ -1040,11 +1075,11 @@ No attributes or CSS variables. The class `a11y-visually-hidden` is also usable 
 * **Except `<a11y-floating>`**, which is visible by default and has no `open`: `dismissAllOverlays()` only collapses its expanded panel. See [`a11y-floating`](#a11y-floating).
 * **Body mounting:** every overlay (including the snackbar and notification-banner regions) moves itself to `<body>` when connected, so a `position: fixed` layer isn't clipped by an ancestor. See [Overlays in a framework](#overlays-in-a-framework) below.
 
-##### Overlays in a framework
+#### Overlays in a framework
 
-###### Removing them is up to you. 
+##### Removing them is up to you.
 
-An overlay authored inside a component isn't inside that component's DOM any more, so when your framework removes the component's subtree (an unmount, a SPA navigation), the overlay stays in `<body>`, and the next render adds a second copy with the same `id`. Call `removeOverlaysWithin(host)` on unmount. It removes every overlay authored inside `host`, even after `host` has left the document, and returns how many it removed. It's exported from `a11y-elements/core` and from every overlay's `define.js`.
+An overlay authored inside a component isn't inside that component's DOM any more, so when your framework removes the component's subtree (an unmount, a SPA navigation), the overlay stays in `<body>`, and the next render adds a second copy with the same `id`. Call `removeOverlaysWithin(host)` on unmount. It removes every overlay authored inside `host`, and any overlay authored inside one of those (a tooltip in a modal), even after `host` has left the document, and returns how many it removed. It's exported from `a11y-elements/core` and from every overlay's `define.js`.
 
 ```js
 import { removeOverlaysWithin } from 'a11y-elements/core';
@@ -1055,7 +1090,7 @@ onUnmount(() => removeOverlaysWithin(hostElement)); // your framework's unmount 
 
 Nothing is removed automatically, so subtrees your framework detaches and reattaches later (keep-alive caches, keyed moves) keep their overlays.
 
-##### Don't reach overlay content through the host. 
+#### Don't reach overlay content through the host.
 
 If the overlay's bundle is already loaded, `host.innerHTML = '…<a11y-modal>…'` upgrades the overlay and moves it to `<body>` during that same assignment, so a later `host.querySelectorAll(...)` finds nothing inside it. 
 
@@ -1067,13 +1102,13 @@ If the bundle loads after rendering, the same query does find it, so the result 
 * bind events on the overlay element itself, or delegate from it;
 * put final text into the markup before injecting it, rather than in a pass after rendering.
 
-##### Bind overlay events yourself.
+#### Bind overlay events yourself.
 
 Framework template bindings (event directives, declarative listeners) usually run over the component's subtree after it's inserted. By then the overlay has already moved to `<body>`, so its bindings never attach. Get the overlay with `getElementById`, call `addEventListener` on it (or delegate from it) after each render, and remove the listener on unmount.
 
 <a id="dialogs"></a>
 
-##### Dialogs (`<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`)
+#### Dialogs (`<a11y-modal>`, `<a11y-drawer>`, `<a11y-emergency-dialog>`)
 
 They also share:
 
@@ -1096,7 +1131,7 @@ They also share:
 
 <a id="anchored-overlays"></a>
 
-##### Anchored overlays (`<a11y-popover>`, `<a11y-tooltip>`, `<a11y-dropdown>`, `<a11y-context-menu>`)
+#### Anchored overlays (`<a11y-popover>`, `<a11y-tooltip>`, `<a11y-dropdown>`, `<a11y-context-menu>`)
 
 They are positioned next to an anchor. They flip to the opposite side when there isn't room, and close on a click outside or Escape.
 
@@ -1110,9 +1145,9 @@ They are positioned next to an anchor. They flip to the opposite side when there
 
 <a id="menus"></a>
 
-##### Menus (`<a11y-dropdown>`, `<a11y-context-menu>`)
+#### Menus (`<a11y-dropdown>`, `<a11y-context-menu>`)
 
-Items are your own children with `role="menuitem"`. Arrow keys, Home and End move between them, and Enter/Space fire a real `click`. The menu closes after an item is clicked or when focus leaves it. Mark an item `aria-disabled="true"` to skip it.
+Items are your own children with `role="menuitem"`. Arrow keys, Home and End move between them, and Enter/Space fire a real `click`. The menu closes after an item is clicked or when focus leaves it. Mark an item `aria-disabled="true"` (or, on a `<button>`, `disabled`) to skip it.
 
 <details>
 <summary>CSS variables shared by anchored overlays and menus</summary>
@@ -1129,7 +1164,7 @@ Items are your own children with `role="menuitem"`. Arrow keys, Home and End mov
 
 </details>
 
-#### `a11y-blocking-loader`
+### `a11y-blocking-loader`
 
 A full-screen loading overlay that can't be dismissed. While open, the rest of the page is `inert` and focus moves onto the loader; both are restored on close. Contains an `<a11y-spinner>` (registered automatically).
 
@@ -1163,7 +1198,7 @@ See [Common to all overlays](#common-to-all-overlays) for `open`, `show()` / `cl
 
 </details>
 
-#### `a11y-context-menu`
+### `a11y-context-menu`
 
 A menu that opens at the pointer on right-click of a trigger element, replacing the browser's own menu there. See [Menus](#menus) and [Anchored overlays](#anchored-overlays).
 
@@ -1199,7 +1234,7 @@ Also takes the shared [anchored-overlay](#anchored-overlays) options `placement`
 
 </details>
 
-#### `a11y-drawer`
+### `a11y-drawer`
 
 A panel that slides in from a screen edge. Behaves like `<a11y-modal>` (see [Dialogs](#dialogs)).
 
@@ -1236,7 +1271,7 @@ The close button uses the modal's `--a11y-modal-close-button-size` and `--a11y-m
 
 </details>
 
-#### `a11y-dropdown`
+### `a11y-dropdown`
 
 A menu attached to a trigger button. The anchor is the trigger: clicking it toggles the menu, and it gets `aria-haspopup`, `aria-controls` and `aria-expanded`. See [Anchored overlays](#anchored-overlays) and [Menus](#menus).
 
@@ -1267,7 +1302,7 @@ No attributes of its own. It takes the shared [anchored-overlay](#anchored-overl
 
 </details>
 
-#### `a11y-emergency-dialog`
+### `a11y-emergency-dialog`
 
 A modal the user can't dismiss: no close button, no Escape, no backdrop click, whatever its attributes say. For things that must be resolved on purpose, e.g. "your session is about to expire". Close it from code.
 
@@ -1298,7 +1333,7 @@ From the shared [dialog](#dialogs) options, only `dialog-label` and `onClose` ap
 
 </details>
 
-#### `a11y-floating`
+### `a11y-floating`
 
 Content pinned to a corner or edge of the viewport: a floating button that opens a drawer, an info bubble, a help launcher. It's visible by default: there's no `open` attribute. Hide it with `hidden` or `dismiss()`. Several in the same position stack instead of overlapping.
 
@@ -1381,7 +1416,7 @@ Offsets add the device's safe-area inset (`env(safe-area-inset-*)`). The stackin
 
 </details>
 
-#### `a11y-modal`
+### `a11y-modal`
 
 A centered dialog. Your content is its children. See [Dialogs](#dialogs).
 
@@ -1414,9 +1449,9 @@ Also takes the shared [dialog](#dialogs) options: `non-dismissible`, `dialog-lab
 
 `.a11y-modal-buttons` is an optional footer-row class for your own buttons. It lays them out in a row, and gives plain `<button>`s a default look (padding, font size, hover colors). Those styles have zero specificity (`:where()`), so any class on your buttons overrides them. They also sit in the `a11y-elements` cascade layer, so any CSS of yours that isn't in a layer wins. If your own styles are layered (Tailwind's `@layer utilities`, for example), declare the order first so yours win: `@layer a11y-elements, base, components, utilities;`. With `danger: true`, `confirmDialog()`'s confirm button uses `--a11y-color-danger` for its text and hover background.
 
-##### Confirmation dialogs: `confirmDialog()`
+#### Confirmation dialogs: `confirmDialog()`
 
-`confirmDialog()` asks a yes/no question in a temporary modal, and resolves `true` only when the confirm button is pressed. Every other close (Cancel, Escape, the backdrop, ×, `dismissAllOverlays()`) resolves `false`. Focus starts on Cancel, so a stray Enter doesn't confirm. The modal is removed once closed.
+`confirmDialog()` asks a yes/no question in a temporary modal, and resolves `true` only when the confirm button is pressed. Every other close (Cancel, Escape, the backdrop, ×, `dismissAllOverlays()`) resolves `false`. Focus starts on Cancel, so a stray Enter doesn't confirm. The modal is removed once closed. It isn't authored inside any component, so `removeOverlaysWithin()` doesn't see it: on a SPA navigation, close it with `dismissAllOverlays()` (which resolves it `false`), or remove `a11y-modal.a11y-confirm` yourself.
 
 ```js
 import { confirmDialog } from 'a11y-elements/overlays/modal';
@@ -1475,7 +1510,7 @@ modal.open = true;
 
 </details>
 
-#### `a11y-notification-banner`
+### `a11y-notification-banner`
 
 Full-width banners that stay until the user dismisses them (or you call `dismissAll()`). Place one region in the page, or skip it and use `showNotificationBanner()`, which finds or creates one.
 
@@ -1533,7 +1568,7 @@ Colors come from the shared `--a11y-color-*` tokens (see [Shared tokens](#shared
 
 </details>
 
-#### `a11y-popover`
+### `a11y-popover`
 
 Content attached to an anchor, opened from code. With `interactive` it's a `role="dialog"` that traps focus; without it, a `role="region"`. See [Anchored overlays](#anchored-overlays).
 
@@ -1575,9 +1610,9 @@ Also takes the shared [anchored-overlay](#anchored-overlays) options: `anchor` /
 
 </details>
 
-#### `a11y-snackbar`
+### `a11y-snackbar`
 
-Toast notifications that dismiss themselves: after 3 s by default, or 10 s when the toast has an action button. The countdown pauses while the toast is hovered or focused. Place one region in the page, or skip it and use `notify()`, which finds or creates one.
+Toast notifications that dismiss themselves: after 3 s by default, or 10 s when the toast has an action button. The countdown pauses while the toast is hovered or focused. A round × button in each toast's top-right corner dismisses it early (without running `onAction`). Place one region in the page, or skip it and use `notify()`, which finds or creates one.
 
 ```html
 <a11y-snackbar max-stack="5"></a11y-snackbar>
@@ -1596,11 +1631,13 @@ notify(h('span', null, 'Saved. ', h('a', { href: '/files' }, 'View files'))); //
 
 | Name | Kind | Default | Description |
 | --- | --- | --- | --- |
+| `dismiss-label` | attribute | `Dismiss` | Accessible name of each toast's × button. See [Translating built-in strings](#translating-built-in-strings). |
 | `max-stack` | attribute | `3` | How many toasts show at once; the rest wait in a queue and show as earlier ones are dismissed. |
 | `maxStack` | property | `3` | Same as `max-stack`. `setMaxStack(n)` is an alias. |
 | `notify(message, options)` | method | — | Shows a toast (or queues it). |
+| `dismissAll()` | method | — | Removes every showing toast and drops queued ones, without running `onAction`. |
 
-It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
+It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone, so toasts outlive a SPA navigation while the region stays in the page. Call `dismissAll()` to clear them. Removing the region from the document (e.g. with `removeOverlaysWithin()`) drops its toasts, queued ones included, and cancels their timers; re-adding it starts empty. A toast enqueued while the region is detached waits until it's back in the page. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
 
 A `message` is text: a string is inserted as text, never parsed. A DOM node (e.g. built with `h()` from `a11y-elements/core`) is inserted as is. For markup, pass `raw(markup)` from `a11y-elements/core`. It's sanitized against script injection (no scripts, `<style>`, event handlers or `javascript:` URLs). That's a basic XSS filter, not a full sanitizer like DOMPurify: forms, links, images and `style` attributes still pass, so untrusted markup can still look like your UI (phishing). Pass user data as text, or run it through DOMPurify first. `trustedRaw(markup)` skips that, for markup you wrote yourself. The same goes for `<a11y-notification-banner>`.
 
@@ -1610,7 +1647,7 @@ A `message` is text: a string is inserted as text, never parsed. A DOM node (e.g
 | --- | --- | --- |
 | `type` | `info` | `info`, `success`, `warning` or `error` (`error` uses `role="alert"`). |
 | `position` | `bottom` | `bottom` or `top`. |
-| `duration` | `3000` (`10000` with an action) | Time on screen, in ms, not counting hover/focus. |
+| `duration` | `3000` (`10000` with an action) | Time on screen, in ms, not counting hover/focus. `Infinity` keeps the toast until it's dismissed. |
 | `actionText` / `onAction` | — | Adds an action button; clicking it dismisses the toast and runs `onAction`. |
 | `maxStack` | — | Sets `max-stack` on the region (sticky for later toasts). |
 
@@ -1625,6 +1662,9 @@ Colors come from the shared `--a11y-color-*` tokens (see [Shared tokens](#shared
 | --- | --- |
 | `--a11y-snackbar-animation-duration` | `0.3s` |
 | `--a11y-snackbar-border-radius` | `0.5rem` |
+| `--a11y-snackbar-close-border-width` | `2px` |
+| `--a11y-snackbar-close-font-size` | `1rem` |
+| `--a11y-snackbar-close-size` | `1.5rem` |
 | `--a11y-snackbar-container-width` | `350px` |
 | `--a11y-snackbar-gap` | `1rem` |
 | `--a11y-snackbar-offset` | `1rem` |
@@ -1636,7 +1676,7 @@ Colors come from the shared `--a11y-color-*` tokens (see [Shared tokens](#shared
 
 </details>
 
-#### `a11y-tooltip`
+### `a11y-tooltip`
 
 A short description shown on hover or focus of its anchor, which gets `aria-describedby`. It stays open while the pointer is over it, and Escape hides it. Never traps focus. See [Anchored overlays](#anchored-overlays).
 
@@ -1667,7 +1707,7 @@ Also takes the shared [anchored-overlay](#anchored-overlays) options: `anchor` /
 
 </details>
 
-### Shared tokens
+## Shared tokens
 
 Status colors and the z-index scale, defined on `:root` (in `overlays/core/overlay-variables.css`). Override them globally, or override a component's own token instead.
 

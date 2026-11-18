@@ -29,10 +29,10 @@ interface NotificationBannerItem extends PassiveOverlayItem {
  * `dismissAll()` is the framework-agnostic replacement for the old
  * `Lifecycle.onViewUnmount` auto-wiring (which assumed a specific SPA-router
  * service) — if you want banners cleared on navigation, call it yourself
- * from your own router's navigation hook. Unlike `<a11y-snackbar>` (which
- * deliberately finishes its own timer regardless of navigation), this
- * asymmetry is intentional, not an oversight — a banner is scoped to the
- * page that raised it, a toast isn't.
+ * from your own router's navigation hook. Unlike `<a11y-snackbar>` (whose
+ * toasts finish their own timers regardless of navigation while the region
+ * stays in the page), this asymmetry is intentional, not an oversight — a
+ * banner is scoped to the page that raised it, a toast isn't.
  *
  * Each item's close button is named by `dismiss-label="…"`, else
  * `setStrings({ dismiss })`.
@@ -76,6 +76,7 @@ export class NotificationBannerElement extends A11yPassiveOverlayElement<Notific
       this._bottomContainer.className = 'a11y-notification-banner-region__bottom';
       this.append(this._topContainer, this._bottomContainer);
     }
+    this._drainQueue();
   }
 
   show(message: Content, options: NotificationBannerOptions = {}): void {
@@ -127,10 +128,13 @@ export class NotificationBannerElement extends A11yPassiveOverlayElement<Notific
     this._active.push(entry);
 
     const dismiss = (): void => {
+      // Already gone: e.g. `onAction` called `dismissAll()`, which closed it and reset the count.
+      if (!this._active.includes(entry)) return;
       el.remove();
       this._active = this._active.filter((a) => a !== entry);
-      item.onClose?.();
+      // Count it out before `onClose` runs: a `dismissAll()` from there resets the count itself.
       this._onItemDismissed();
+      item.onClose?.();
     };
 
     if (item.actionText && item.onAction) {

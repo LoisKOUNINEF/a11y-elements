@@ -139,4 +139,18 @@ describe('a11y-radio-group', () => {
     pro.dispatchEvent(new Event('change', { bubbles: true }));
     expect(onChange).toHaveBeenCalledTimes(1);
   });
+
+  it('takes in options appended to the host after the first sync', async () => {
+    const el = mount();
+    el.setAttribute('disabled', '');
+    el.insertAdjacentHTML('beforeend', '<label><input type="radio" name="plan" value="team"> Team</label>');
+    await flush();
+    const team = el.querySelector<HTMLInputElement>('input[value="team"]')!;
+    expect(el.querySelector('fieldset.a11y-radio-group')!.contains(team)).toBe(true);
+    expect(team.matches(':disabled')).toBe(true); // the group's disabled reaches it
+    el.removeAttribute('disabled');
+    await flush();
+    el.setValue('team');
+    expect(el.getValue()).toBe('team');
+  });
 });

@@ -206,3 +206,29 @@ describe('A11yElement rendering nodes', () => {
     return Promise.resolve().then(() => expect(removed).not.toContain(el.kept));
   });
 });
+
+describe('A11yElement.numberAttr()', () => {
+  class NumberElement extends A11yElement {
+    read(): number {
+      return this.numberAttr('n', 7);
+    }
+    protected render(): null {
+      return null;
+    }
+  }
+  customElements.define('test-number-attr', NumberElement);
+
+  it.each([
+    [null, 7],
+    ['', 7],
+    ['  ', 7],
+    ['abc', 7],
+    ['0', 0],
+    ['2.5', 2.5],
+    ['-3', -3],
+  ])('reads %j as %d', (value, expected) => {
+    const el = document.createElement('test-number-attr') as NumberElement;
+    if (value != null) el.setAttribute('n', value);
+    expect(el.read()).toBe(expected);
+  });
+});

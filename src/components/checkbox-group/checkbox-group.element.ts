@@ -112,7 +112,11 @@ export class CheckboxGroupElement extends A11yWrapperElement implements ValueEle
 
   private _ensureFieldset(): HTMLFieldSetElement {
     const existing = this._fieldset();
-    if (existing) return existing;
+    if (existing) {
+      // Options appended to the host after the first sync (e.g. loaded later) belong in it too.
+      for (const node of Array.from(this.childNodes)) if (node !== existing) existing.appendChild(node);
+      return existing;
+    }
 
     const fieldset = document.createElement('fieldset');
     fieldset.className = 'a11y-checkbox-group';
@@ -175,10 +179,12 @@ export class CheckboxGroupElement extends A11yWrapperElement implements ValueEle
     const selectAll = this._selectAllInput();
     if (!selectAll) return;
     const enabled = this._enabledOptions();
-    const checkedCount = enabled.filter((input) => input.checked).length;
+    // Nothing enabled (the group or every option disabled): still show the options' state.
+    const mirrored = enabled.length > 0 ? enabled : this._options();
+    const checkedCount = mirrored.filter((input) => input.checked).length;
     // IDL-only properties (never reflected) — safe to write unguarded.
-    selectAll.checked = enabled.length > 0 && checkedCount === enabled.length;
-    selectAll.indeterminate = checkedCount > 0 && checkedCount < enabled.length;
+    selectAll.checked = mirrored.length > 0 && checkedCount === mirrored.length;
+    selectAll.indeterminate = checkedCount > 0 && checkedCount < mirrored.length;
     // `disabled` reflects to the attribute, so an unguarded write would retrigger the observer forever.
     syncAttr(selectAll, 'disabled', enabled.length === 0 ? '' : null);
   }

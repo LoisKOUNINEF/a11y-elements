@@ -78,12 +78,17 @@ export class AnchorElement extends A11yWrapperElement {
 
   /** Each link's own `aria-label` before this element touched it, so the new-tab suffix is never applied twice and can be undone. */
   private _originalLabels = new WeakMap<HTMLAnchorElement, string | null>();
+  /** The `aria-label` this element last left on each link: a different one means the consumer changed it since. */
+  private _writtenLabels = new WeakMap<HTMLAnchorElement, string | null>();
 
   protected override _sync(): void {
     const anchor = this.querySelector<HTMLAnchorElement>('a[href]');
     if (!anchor) return;
 
-    if (!this._originalLabels.has(anchor)) this._originalLabels.set(anchor, anchor.getAttribute('aria-label'));
+    const currentLabel = anchor.getAttribute('aria-label');
+    if (!this._originalLabels.has(anchor) || currentLabel !== this._writtenLabels.get(anchor)) {
+      this._originalLabels.set(anchor, currentLabel); // first sight, or the consumer set a new label
+    }
     const originalLabel = this._originalLabels.get(anchor) ?? null;
 
     if (opensNewContext(anchor.getAttribute('target'))) {
@@ -96,6 +101,7 @@ export class AnchorElement extends A11yWrapperElement {
     } else {
       syncAttr(anchor, 'aria-label', originalLabel);
     }
+    this._writtenLabels.set(anchor, anchor.getAttribute('aria-label'));
 
     // `href` is read at activation time, not captured here, so a link
     // whose href changes later is handled according to its current value.

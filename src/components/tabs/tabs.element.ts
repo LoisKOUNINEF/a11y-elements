@@ -60,6 +60,8 @@ export class TabsElement extends A11yWrapperElement {
 
   /** The initial `location.hash`, until its target shows up somewhere in the document. */
   private _pendingHash = '';
+  /** The page's hash is honoured on the first connect only: a later move/re-insert must not undo the user's choice. */
+  private _hashCaptured = false;
 
   get selected(): string {
     return this._current()?.dataset.tab ?? '';
@@ -85,7 +87,10 @@ export class TabsElement extends A11yWrapperElement {
   }
 
   override connectedCallback(): void {
-    this._pendingHash = location.hash;
+    if (!this._hashCaptured) {
+      this._hashCaptured = true;
+      this._pendingHash = location.hash;
+    }
     super.connectedCallback();
   }
 
@@ -155,6 +160,8 @@ export class TabsElement extends A11yWrapperElement {
 
       this.wireOnce(tab, () =>
         this.listen(tab, 'click', () => {
+          // Read now, not when wired: a framework may reuse this button for another tab.
+          const name = tab.dataset.tab;
           if (name && !isDisabled(tab)) this._choose(name);
         }),
       );

@@ -3,6 +3,8 @@ import { forgetPortalOrigin, recordPortalOrigin } from '../../core/overlay-regis
 import type { Content } from '../../core/dom.js';
 
 const DEFAULT_MAX_STACK = 3;
+/** setTimeout's limit: longer (or `Infinity`) delays overflow to 0 and fire at once. */
+const MAX_TIMEOUT_MS = 2_147_483_647;
 
 export type PassiveOverlayPosition = 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
@@ -22,6 +24,12 @@ export interface PassiveOverlayItem {
  * HTML, and items are shown/dismissed inside it continuously via `enqueue()`
  * (bounded-concurrency FIFO: at most `max-stack` items — default 3 — shown
  * at once, the rest queued), not toggled as a whole.
+ *
+ * Items only show while the region is in the document: one enqueued while
+ * it's detached waits in the queue. When the region is removed (and not
+ * just moved: the check runs a microtask later), every pending auto-dismiss
+ * timer is cancelled and `_onRemoved()` runs, so nothing keeps firing for a
+ * page that's gone.
  */
 export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem = PassiveOverlayItem> extends A11yElement {
   static get observedAttributes(): string[] {
@@ -30,6 +38,8 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
 
   protected _queue: TItem[] = [];
   protected _activeCount = 0;
+  /** Cancel functions of every running `_autoDismiss()` countdown. */
+  private _autoDismissCancels = new Set<() => void>();
 
   override connectedCallback(): void {
     this._initConnect();
@@ -49,6 +59,25 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
   override disconnectedCallback(): void {
     forgetPortalOrigin(this);
     super.disconnectedCallback();
+    // A move (including our own portal to <body> above) disconnects and
+    // reconnects synchronously; only tear down if we're still out afterwards.
+    queueMicrotask(() => {
+      if (!this.isConnected) this._onRemoved();
+    });
+  }
+
+  /**
+   * Runs once the region has been removed from the document (not just moved).
+   * The base cancels every pending auto-dismiss timer; subclasses may also
+   * drop their items.
+   */
+  protected _onRemoved(): void {
+    this._cancelAutoDismissTimers();
+  }
+
+  /** Stops every pending `_autoDismiss()` countdown without dismissing anything. */
+  protected _cancelAutoDismissTimers(): void {
+    for (const cancel of Array.from(this._autoDismissCancels)) cancel();
   }
 
   /** Never re-renders (that would wipe the item containers) — a raised `max-stack` just shows queued items. */
@@ -81,7 +110,9 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
     this._drainQueue();
   }
 
-  private _drainQueue(): void {
+  /** Shows queued items up to `maxStack` — only while connected (subclasses call this once their containers exist). */
+  protected _drainQueue(): void {
+    if (!this.isConnected) return;
     while (this._queue.length > 0 && this._activeCount < this.maxStack) {
       const next = this._queue.shift()!;
       this._activeCount++;
@@ -107,6 +138,7 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
     let focused = false;
 
     const run = (): void => {
+      if (remaining > MAX_TIMEOUT_MS) return; // `Infinity` or longer than a timer can wait: never auto-dismiss
       startedAt = Date.now();
       timer = setTimeout(() => {
         cancel();
@@ -133,6 +165,7 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
       refresh();
     };
     const cancel = (): void => {
+      this._autoDismissCancels.delete(cancel);
       if (timer) clearTimeout(timer);
       timer = null;
       element.removeEventListener('mouseenter', onEnter);
@@ -145,6 +178,7 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
     element.addEventListener('mouseleave', onLeave);
     element.addEventListener('focusin', onFocusIn);
     element.addEventListener('focusout', onFocusOut);
+    this._autoDismissCancels.add(cancel);
     run();
     return cancel;
   }

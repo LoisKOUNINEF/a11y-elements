@@ -6,6 +6,7 @@ import {
   emitOverlayClose,
   recordPortalOrigin,
   forgetPortalOrigin,
+  releaseInert,
   type OverlayCloseReason,
 } from './overlay-registry.js';
 
@@ -163,6 +164,9 @@ export abstract class A11yOverlayElement extends A11yElement {
    * building or tearing down wrapper/backdrop chrome.
    */
   protected _moveSelfTo(newParent: Node): void {
+    // Moving into its open chrome (or back to <body>): drop any `inert` a modal
+    // opened earlier put on this element while it sat closed in <body>.
+    releaseInert(this);
     this._internalMove = true;
     try {
       newParent.appendChild(this);

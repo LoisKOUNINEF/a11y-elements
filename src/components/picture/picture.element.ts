@@ -170,7 +170,14 @@ export class PictureElement extends A11yWrapperElement {
     const img = generated
       ? this.querySelector<HTMLImageElement>(`:scope > picture[${GENERATED}] > img`)
       : this.querySelector('img');
-    if (!img) return;
+    if (!img) {
+      // The image went away (src removed, authored <img> taken out): drop what it set, so
+      // aria-hidden can't hide whatever is put in here later.
+      syncClass(this, 'a11y-picture', false);
+      syncAttr(this, 'role', null);
+      syncAttr(this, 'aria-hidden', null);
+      return;
+    }
 
     // Guarded writes: this runs inside a MutationObserver callback watching
     // this subtree, and setAttribute/classList.add queue a mutation record

@@ -1,4 +1,5 @@
 import { A11yPassiveOverlayElement, type PassiveOverlayItem } from '../core/a11y-passive-overlay-element.js';
+import { getString } from '../../core/strings.js';
 import { h, type Content } from '../../core/dom.js';
 
 export type SnackbarType = 'info' | 'success' | 'error' | 'warning';
@@ -24,10 +25,41 @@ interface SnackbarItem extends PassiveOverlayItem {
  * (it portals itself to `document.body`), then call `.notify(message, options)`
  * on it — or skip placing one entirely and use the `notify()` convenience
  * export from this module, which finds-or-creates one automatically.
+ *
+ * Every toast has a round × close button in its top-right corner that
+ * dismisses it early (without calling `onAction`). It's named by
+ * `dismiss-label="…"`, else `setStrings({ dismiss })`.
+ *
+ * While the region stays in the page, toasts finish their own timers
+ * regardless of navigation (call `dismissAll()` to clear them). Removing the
+ * region from the document drops its toasts, queued ones included, and
+ * cancels their timers; re-adding it starts empty.
  */
 export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
   private _bottomContainer!: HTMLElement;
   private _topContainer!: HTMLElement;
+
+  static override get observedAttributes(): string[] {
+    return [...super.observedAttributes, 'dismiss-label'];
+  }
+
+  /** The accessible name of each toast's close button. */
+  get dismissLabel(): string {
+    return this.stringAttr('dismiss-label', getString('dismiss'));
+  }
+
+  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+    super.attributeChangedCallback(name, oldValue, newValue);
+    if (name === 'dismiss-label' && oldValue !== newValue) this._relabelDismissButtons();
+  }
+
+  protected override onStringsChange(): void {
+    this._relabelDismissButtons();
+  }
+
+  private _relabelDismissButtons(): void {
+    for (const btn of this.querySelectorAll('.a11y-snackbar__close')) btn.setAttribute('aria-label', this.dismissLabel);
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -39,6 +71,19 @@ export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
       this._topContainer.className = 'a11y-snackbar-region__top';
       this.append(this._bottomContainer, this._topContainer);
     }
+    this._drainQueue();
+  }
+
+  /** Removes every showing toast and drops queued ones, without calling `onAction`. */
+  dismissAll(): void {
+    this._queue = [];
+    this._cancelAutoDismissTimers();
+    this.querySelectorAll('.a11y-snackbar').forEach((toast) => toast.remove());
+    this._activeCount = 0;
+  }
+
+  protected override _onRemoved(): void {
+    this.dismissAll();
   }
 
   notify(message: Content, options: NotifyOptions = {}): void {
@@ -64,18 +109,24 @@ export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
     el.setAttribute('role', type === 'error' ? 'alert' : 'status');
     el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
     el.setAttribute('aria-atomic', 'true');
-    el.append(h('span', null, item.message));
-    if (item.actionText) el.append(h('button', { type: 'button' }, item.actionText));
+    el.append(h('span', { class: 'a11y-snackbar__message' }, item.message));
+    if (item.actionText) el.append(h('button', { type: 'button', class: 'a11y-snackbar__action' }, item.actionText));
+    el.append(h('button', { type: 'button', class: 'a11y-snackbar__close', 'aria-label': this.dismissLabel }, '\u00d7'));
 
     container.appendChild(el);
 
     const cancelAutoDismiss = this._autoDismiss(el, duration, () => this._onItemDismissed());
 
-    el.querySelector<HTMLButtonElement>('button')?.addEventListener('click', () => {
+    const dismiss = (): void => {
       cancelAutoDismiss();
       el.remove();
       this._onItemDismissed();
+    };
+
+    el.querySelector<HTMLButtonElement>('.a11y-snackbar__action')?.addEventListener('click', () => {
+      dismiss();
       item.onAction?.();
     });
+    el.querySelector<HTMLButtonElement>('.a11y-snackbar__close')?.addEventListener('click', dismiss);
   }
 }

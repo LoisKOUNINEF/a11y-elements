@@ -132,8 +132,27 @@ describe('a11y-dropdown — clicking the trigger of an open menu', () => {
   function pressAndClick(button: HTMLElement): void {
     button.dispatchEvent(new Event('pointerdown', { bubbles: true })); // jsdom has no PointerEvent
     button.focus();
-    button.click();
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })); // a real click counts 1+
   }
+
+  it("a press dragged off the trigger (no click) doesn't swallow the next keyboard toggle", () => {
+    const el = mount();
+    el.open = true;
+    anchor.dispatchEvent(new Event('pointerdown', { bubbles: true })); // pressed while open…
+    el.open = false; // …focus-out closed it, then the pointer left: no click
+    anchor.click(); // later: Enter on the trigger
+    expect(el.open).toBe(true);
+  });
+
+  it('pointercancel forgets the press', () => {
+    const el = mount();
+    el.open = true;
+    anchor.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    anchor.dispatchEvent(new Event('pointercancel', { bubbles: true }));
+    el.open = false;
+    anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+    expect(el.open).toBe(true);
+  });
 
   it('closes it, even when pressing focused the trigger first', () => {
     const el = mount();

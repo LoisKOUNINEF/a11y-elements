@@ -157,3 +157,120 @@ test.describe('file-input', () => {
     expect(await page.evaluate(() => document.querySelector<HTMLInputElement>('input[type="file"]')!.files?.[0]?.name)).toBe('notes.txt');
   });
 });
+
+test.describe('raw() sanitizer', () => {
+  // Form named properties shadow built-ins (`form.children`, `form.attributes`, …) in real
+  // browsers only — jsdom doesn't implement them, so this has to run here.
+  const payloads = [
+    '<form><img name="children" src="x" onerror="window.__xss = 1"></form>',
+    '<form onclick="window.__xss = 2"><input name="attributes"></form>',
+    '<form onclick="window.__xss = 3"><input name="localName"><img src="x" onerror="window.__xss = 3"></form>',
+    '<form onclick="window.__xss = 4"><input name="removeAttribute"></form>',
+    '<form onclick="window.__xss = 5"><input name="content"><img src="x" onerror="window.__xss = 5"></form>',
+  ];
+
+  for (const payload of payloads) {
+    test(`strips handlers despite DOM clobbering: ${payload}`, async ({ page }) => {
+      await setUp(page, '');
+      await page.evaluate(async (markup) => {
+        const { notify } = (await import('/dist/browser/all.js')) as typeof import('../src/all.js');
+        // raw() brands through Symbol.for, so the core module's raw() works with the bundle's notify().
+        const { raw } = (await import('/dist/core/template.js')) as typeof import('../src/core/template.js');
+        notify(raw(markup), { duration: 60_000 });
+      }, payload);
+      const toast = page.locator('.a11y-snackbar');
+      await expect(toast).toHaveCount(1);
+      await page.evaluate(() => document.querySelector<HTMLElement>('.a11y-snackbar form')?.click());
+      await page.waitForTimeout(200); // let the broken <img> fire its error event
+      expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined();
+      expect(await toast.evaluate((el) => [...el.querySelectorAll('*')].some((n) => n.getAttributeNames().some((a) => a.startsWith('on'))))).toBe(false);
+    });
+  }
+});
+
+test.describe('stacked modal layers', () => {
+  type Openable = HTMLElement & { open: boolean };
+  const open = (page: Page, id: string, value = true) =>
+    page.evaluate(([el, v]) => ((document.getElementById(el as string) as Openable).open = v as boolean), [id, value] as const);
+
+  const html = `
+    <main><button id="trigger">Open A</button></main>
+    <a11y-modal id="a"><h2>A</h2><button id="open-b">Open B</button>
+      <button id="more">More</button>
+      <a11y-dropdown anchor="more"><button role="menuitem">Edit</button><button role="menuitem">Delete</button></a11y-dropdown>
+    </a11y-modal>
+    <a11y-modal id="b"><h2>B</h2><button id="in-b">In B</button></a11y-modal>
+    <a11y-blocking-loader id="loader"></a11y-blocking-loader>`;
+
+  test('a modal declared in the page and opened from another one is usable', async ({ page }) => {
+    await setUp(page, html);
+    await page.locator('#trigger').focus();
+    await open(page, 'a');
+    await expect(page.getByRole('dialog', { name: 'A' })).toBeVisible();
+    await open(page, 'b');
+    await expect(page.getByRole('dialog', { name: 'B' })).toBeVisible();
+    expect(await page.evaluate(() => !!document.getElementById('in-b')!.closest('[inert]'))).toBe(false);
+    expect(await focusInside(page, '#b')).toBe(true);
+    // Inert content can't take focus (WebKit doesn't focus clicked buttons, so focus it directly).
+    expect(await page.evaluate(() => (document.getElementById('in-b')!.focus(), document.activeElement?.id))).toBe('in-b');
+  });
+
+  test('a dropdown inside a modal can be used from the keyboard', async ({ page }) => {
+    await setUp(page, html);
+    await open(page, 'a');
+    await page.locator('#more').click();
+    await expect(page.getByRole('menuitem', { name: 'Edit' })).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('menuitem', { name: 'Delete' })).toBeFocused();
+  });
+
+  test('closing the lower modal first keeps the page inert and focus in the top one', async ({ page }) => {
+    await setUp(page, html);
+    await page.locator('#trigger').focus();
+    await open(page, 'a');
+    await open(page, 'b');
+    await open(page, 'a', false);
+    await expect(page.getByRole('dialog', { name: 'A' })).toBeHidden();
+    await expect(page.locator('main')).toHaveAttribute('inert', '');
+    expect(await focusInside(page, '#b')).toBe(true);
+
+    await open(page, 'b', false);
+    await expect(page.locator('main')).not.toHaveAttribute('inert', '');
+    await expect(page.locator('#trigger')).toBeFocused();
+  });
+
+  test('a blocking loader over a modal keeps blocking after the modal closes', async ({ page }) => {
+    await setUp(page, html);
+    await open(page, 'a');
+    await open(page, 'loader');
+    await expect(page.locator('#loader')).toBeFocused();
+    await open(page, 'a', false);
+    await expect(page.getByRole('dialog', { name: 'A' })).toBeHidden();
+    await expect(page.locator('main')).toHaveAttribute('inert', '');
+    await expect(page.locator('#loader')).toBeFocused();
+    await open(page, 'loader', false);
+    await expect(page.locator('main')).not.toHaveAttribute('inert', '');
+  });
+});
+
+test.describe('modal opened from a menu item', () => {
+  test("focus comes back to the dropdown's trigger, not the hidden item", async ({ page }) => {
+    await setUp(
+      page,
+      `<button id="actions">Actions</button>
+      <a11y-dropdown anchor="actions"><button role="menuitem" id="settings">Settings…</button></a11y-dropdown>
+      <a11y-modal id="m"><h2>Settings</h2><button>OK</button></a11y-modal>`,
+    );
+    await page.evaluate(() => {
+      document.getElementById('settings')!.addEventListener('click', () => ((document.getElementById('m') as HTMLElement & { open: boolean }).open = true));
+    });
+    await page.locator('#actions').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('menuitem', { name: 'Settings…' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: 'Settings' })).toBeHidden();
+    await expect(page.locator('#actions')).toBeFocused();
+  });
+});

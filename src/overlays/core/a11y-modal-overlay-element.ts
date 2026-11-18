@@ -142,6 +142,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
     this._restoreInert = inertOutside(backdrop, (el) => el.classList.contains('a11y-passive-overlay-region'));
 
     requestAnimationFrame(() => {
+      if (this._wrapper !== wrapper) return; // closed before this frame: don't animate it back in
       backdrop.classList.add('a11y-is-open');
       wrapper.classList.add('a11y-is-open');
     });

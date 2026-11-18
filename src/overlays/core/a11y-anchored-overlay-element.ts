@@ -1,4 +1,5 @@
 import { A11yOverlayElement } from '../../core/a11y-overlay-element.js';
+import { hasOverlayOpenedAfter, isInsideOverlayOpenedAfter } from '../../core/overlay-registry.js';
 import { FocusTrapHelper, type IFocusTrapOptions } from '../../core/focus-trap.js';
 import { whenTransitionDone } from '../../core/transition.js';
 
@@ -115,12 +116,19 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
       this._focusTrap.activate();
     }
 
-    requestAnimationFrame(() => wrapper.classList.add('a11y-is-open'));
+    // Skipped if closed before the frame: adding it then would animate a closing overlay back in.
+    requestAnimationFrame(() => {
+      if (this._wrapper === wrapper) wrapper.classList.add('a11y-is-open');
+    });
     if (!this._isShowing) this._onShown();
   }
 
   protected override _hide(opts?: { immediate?: boolean }): void {
-    this._unbindActiveListeners();
+    // Focus already moved elsewhere on the page (e.g. the outside click that closes this landed
+    // on a text field): leave it there rather than pulling it back to the trigger.
+    const active = document.activeElement;
+    const focusMovedAway = !!this._wrapper && !!active && active !== document.body && !this._wrapper.contains(active);
+    this._unbindActiveListeners({ returnFocus: !focusMovedAway });
 
     const wrapper = this._wrapper;
     if (!wrapper) {
@@ -160,8 +168,8 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     finish();
   }
 
-  private _unbindActiveListeners(): void {
-    this._focusTrap?.deactivate();
+  private _unbindActiveListeners(opts?: { returnFocus?: boolean }): void {
+    this._focusTrap?.deactivate(opts);
     this._focusTrap = null;
     this._unbindDismissListeners();
     this._unbindRepositionListeners();
@@ -256,11 +264,14 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     this._boundOutsideClick = (e: MouseEvent): void => {
       const target = e.target as Node;
       if (wrapper.contains(target) || this.anchorElement?.contains(target)) return;
+      if (isInsideOverlayOpenedAfter(this, target)) return; // e.g. a dropdown opened from inside this popover
       this.close('outside-click');
     };
     // Deferred so the same click/tap that opened the overlay doesn't immediately close it.
+    // Capture phase: decided before the click's own handlers run — a menu item's handler closes
+    // its dropdown, and once closed the dropdown no longer counts as "opened on top of this one".
     this._outsideClickTimer = setTimeout(() => {
-      document.addEventListener('click', this._boundOutsideClick!);
+      document.addEventListener('click', this._boundOutsideClick!, true);
     }, 0);
 
     if (!this.wantsFocusTrap()) {
@@ -269,6 +280,9 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
       // modal), and `preventDefault()` tells every other handler it's taken.
       this._boundKeyDown = (e: KeyboardEvent): void => {
         if (e.key !== 'Escape' || e.defaultPrevented) return;
+        // Capture listeners run in the order they were added, i.e. oldest overlay first:
+        // leave Escape to whatever was opened on top of this one.
+        if (hasOverlayOpenedAfter(this)) return;
         e.preventDefault();
         this.close('escape');
       };
@@ -282,7 +296,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
       this._outsideClickTimer = null;
     }
     if (this._boundOutsideClick) {
-      document.removeEventListener('click', this._boundOutsideClick);
+      document.removeEventListener('click', this._boundOutsideClick, true);
       this._boundOutsideClick = null;
     }
     if (this._boundKeyDown) {

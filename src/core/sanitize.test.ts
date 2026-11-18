@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { parseInContext, parseSanitized, sanitizeMarkup } from './sanitize.js';
 
 describe('sanitizeMarkup()', () => {
@@ -56,5 +56,62 @@ describe('parseInContext()', () => {
     const circle = parseInContext('<circle onclick="f()"/>', svg).firstChild as Element;
     expect(circle.namespaceURI).toBe('http://www.w3.org/2000/svg');
     expect(circle.getAttribute('onclick')).toBe('f()');
+  });
+});
+
+describe('DOM clobbering (form named properties)', () => {
+  // jsdom doesn't implement `[LegacyOverrideBuiltIns]` on <form>: emulate it, so a
+  // descendant named like a built-in shadows that built-in, as in real browsers.
+  const CLOBBERED = ['children', 'attributes', 'localName', 'remove', 'removeAttribute', 'getAttribute', 'content', 'childNodes'];
+  const saved = new Map<string, PropertyDescriptor | undefined>();
+
+  beforeAll(() => {
+    for (const name of CLOBBERED) {
+      saved.set(name, Object.getOwnPropertyDescriptor(HTMLFormElement.prototype, name));
+      Object.defineProperty(HTMLFormElement.prototype, name, {
+        configurable: true,
+        get(this: HTMLFormElement) {
+          const named = Element.prototype.querySelector.call(this, `[name="${name}"]`);
+          if (named) return named;
+          const proto = Object.getPrototypeOf(HTMLFormElement.prototype);
+          const desc = Object.getOwnPropertyDescriptor(Element.prototype, name) ?? Object.getOwnPropertyDescriptor(Node.prototype, name)
+            ?? Object.getOwnPropertyDescriptor(proto, name);
+          return desc?.get ? desc.get.call(this) : desc?.value;
+        },
+      });
+    }
+  });
+
+  afterAll(() => {
+    for (const [name, desc] of saved) {
+      if (desc) Object.defineProperty(HTMLFormElement.prototype, name, desc);
+      else delete (HTMLFormElement.prototype as unknown as Record<string, unknown>)[name];
+    }
+  });
+
+  it('the emulation really clobbers (sanity check)', () => {
+    const t = document.createElement('template');
+    t.innerHTML = '<form><img name="children"></form>';
+    expect((t.content.firstElementChild as HTMLFormElement).children).toBeInstanceOf(HTMLImageElement);
+  });
+
+  it.each([
+    ['children', '<form><img name="children" src="x" onerror="x"></form>'],
+    ['attributes', '<form onclick="x"><input name="attributes"></form>'],
+    ['localName', '<form onclick="x"><input name="localName"><img src="x" onerror="x"></form>'],
+    ['remove', '<form><input name="remove"><script>x</script></form><script>x</script>'],
+    ['removeAttribute', '<form onclick="x"><input name="removeAttribute"></form>'],
+    ['content', '<form onclick="x"><input name="content"><img src="x" onerror="x"></form>'],
+  ])('a descendant named "%s" cannot hide anything from the sanitizer', (_name, markup) => {
+    const out = sanitizeMarkup(markup);
+    expect(out).not.toMatch(/\son\w+=/i);
+    expect(out).not.toMatch(/<script/i);
+  });
+
+  it('parseSanitized() returns the real child nodes of a clobbered form context', () => {
+    const form = document.createElement('form');
+    const nodes = parseSanitized('<input name="childNodes"><img src="x" onerror="x">', form);
+    expect(nodes).toHaveLength(2);
+    expect((nodes[1] as Element).hasAttribute('onerror')).toBe(false);
   });
 });

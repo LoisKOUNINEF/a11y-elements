@@ -169,9 +169,10 @@ export abstract class A11yElement extends HTMLElement {
     return this.hasAttribute(name);
   }
 
+  /** The attribute as a number; `fallback` when it's missing, empty/blank (`Number('')` would be 0) or not a number. */
   protected numberAttr(name: string, fallback: number): number {
     const value = this.getAttribute(name);
-    if (value == null) return fallback;
+    if (value == null || value.trim() === '') return fallback;
     const parsed = Number(value);
     return Number.isNaN(parsed) ? fallback : parsed;
   }

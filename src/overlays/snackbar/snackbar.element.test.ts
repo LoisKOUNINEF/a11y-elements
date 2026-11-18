@@ -15,7 +15,7 @@ describe('a11y-snackbar element', () => {
     el.notify('<b>text</b>');
     el.notify(raw('<b onclick="x">bold</b><img src=x onerror=alert(1)>'));
 
-    const [plain, rich] = el.querySelectorAll('.a11y-snackbar span');
+    const [plain, rich] = el.querySelectorAll('.a11y-snackbar__message');
     expect(plain.innerHTML).toBe('&lt;b&gt;text&lt;/b&gt;');
     expect(rich.innerHTML).toBe('<b>bold</b><img src="x">');
   });
@@ -26,7 +26,7 @@ describe('a11y-snackbar element', () => {
     const link = document.createElement('a');
     link.href = '/files';
     el.notify(link);
-    expect(el.querySelector('.a11y-snackbar span').firstChild).toBe(link);
+    expect(el.querySelector('.a11y-snackbar__message').firstChild).toBe(link);
   });
 
   it('portals itself to document.body and sets aria-live/region attributes', () => {
@@ -111,13 +111,47 @@ describe('a11y-snackbar element', () => {
     const onAction = vi.fn();
     el.notify('Undo?', { actionText: 'Undo', onAction, duration: 5000 });
 
-    const btn = el.querySelector('button')!;
+    const btn = el.querySelector('.a11y-snackbar__action')!;
     btn.click();
     expect(onAction).toHaveBeenCalledTimes(1);
     expect(el.querySelector('.a11y-snackbar')).toBeNull();
 
     // The cleared auto-dismiss timer must not fire a second (phantom) dismissal later.
     vi.advanceTimersByTime(5000);
+  });
+
+  it('the × close button dismisses without calling onAction, and the next queued toast shows exactly once', () => {
+    vi.useFakeTimers();
+    const el = document.createElement('a11y-snackbar') as any;
+    el.setAttribute('max-stack', '1');
+    document.body.appendChild(el);
+    const onAction = vi.fn();
+    el.notify('First', { actionText: 'Undo', onAction, duration: 5000 });
+    el.notify('Second', { duration: 5000 });
+    el.notify('Third', { duration: 5000 });
+
+    el.querySelector('.a11y-snackbar__close')!.click();
+    expect(onAction).not.toHaveBeenCalled();
+    expect(el.querySelectorAll('.a11y-snackbar')).toHaveLength(1);
+    expect(el.querySelector('.a11y-snackbar')!.textContent).toContain('Second');
+
+    // The first toast's cancelled timer must not dismiss again and pull Third in early.
+    vi.advanceTimersByTime(4999);
+    expect(el.querySelector('.a11y-snackbar')!.textContent).toContain('Second');
+  });
+
+  it('names the close button "Dismiss" by default, and dismiss-label relabels toasts already showing', () => {
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    el.notify('Saved');
+    const close = el.querySelector('.a11y-snackbar__close')!;
+    expect(close.getAttribute('type')).toBe('button');
+    expect(close.getAttribute('aria-label')).toBe('Dismiss');
+
+    el.setAttribute('dismiss-label', 'Fermer');
+    expect(close.getAttribute('aria-label')).toBe('Fermer');
+    el.notify('Encore');
+    expect(el.querySelectorAll('.a11y-snackbar__close')[1].getAttribute('aria-label')).toBe('Fermer');
   });
 });
 
@@ -179,9 +213,93 @@ describe('a11y-snackbar — timing (WCAG 2.2.1)', () => {
     expect(document.querySelector('.a11y-snackbar')).toBeNull();
   });
 
+  it.each([Infinity, 2 ** 31])('duration %d keeps the toast until dismissed (no overflow to 0)', (duration) => {
+    vi.useFakeTimers();
+    notify('Sticky', { duration });
+    vi.advanceTimersByTime(24 * 60 * 60 * 1000);
+    expect(document.querySelector('.a11y-snackbar')).not.toBeNull();
+    document.querySelector<HTMLButtonElement>('.a11y-snackbar__close')!.click();
+    expect(document.querySelector('.a11y-snackbar')).toBeNull();
+  });
+
   it('the action button always dismisses, even without onAction', () => {
     notify('Heads up', { actionText: 'OK' });
-    document.querySelector<HTMLButtonElement>('.a11y-snackbar button')!.click();
+    document.querySelector<HTMLButtonElement>('.a11y-snackbar__action')!.click();
     expect(document.querySelector('.a11y-snackbar')).toBeNull();
+  });
+});
+
+describe('a11y-snackbar — teardown', () => {
+  const flushMicrotasks = (): Promise<void> => Promise.resolve();
+
+  it('cancels pending auto-dismiss timers and drops toasts when the region is removed', async () => {
+    vi.useFakeTimers();
+    const el = document.createElement('a11y-snackbar') as any;
+    el.setAttribute('max-stack', '1');
+    document.body.appendChild(el);
+    el.notify('Showing');
+    el.notify('Queued');
+    const onDismissed = vi.spyOn(el, '_onItemDismissed');
+
+    el.remove();
+    await flushMicrotasks();
+    expect(el.querySelector('.a11y-snackbar')).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.advanceTimersByTime(20_000);
+    expect(onDismissed).not.toHaveBeenCalled();
+
+    // Re-adding starts clean: nothing from before comes back, new toasts show.
+    document.body.appendChild(el);
+    expect(el.querySelector('.a11y-snackbar')).toBeNull();
+    el.notify('Fresh');
+    expect(el.querySelectorAll('.a11y-snackbar')).toHaveLength(1);
+    expect(el.querySelector('.a11y-snackbar')!.textContent).toContain('Fresh');
+  });
+
+  it('drops a toast enqueued synchronously after removal (e.g. from a teardown callback) without starting a timer', async () => {
+    vi.useFakeTimers();
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    el.remove();
+    el.notify('Too late');
+    expect(el.querySelector('.a11y-snackbar')).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+    await flushMicrotasks();
+    document.body.appendChild(el);
+    expect(el.querySelector('.a11y-snackbar')).toBeNull();
+  });
+
+  it('keeps its toasts and timers when merely moved (disconnect + reconnect in the same task)', async () => {
+    vi.useFakeTimers();
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    el.notify('Still here', { duration: 3000 });
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    host.appendChild(el); // portals itself straight back to <body>
+    await flushMicrotasks();
+    expect(el.parentNode).toBe(document.body);
+    expect(el.querySelector('.a11y-snackbar')).not.toBeNull();
+    vi.advanceTimersByTime(3000);
+    expect(el.querySelector('.a11y-snackbar')).toBeNull();
+  });
+
+  it('dismissAll() removes showing toasts, drops queued ones, cancels timers, and skips onAction', () => {
+    vi.useFakeTimers();
+    const el = document.createElement('a11y-snackbar') as any;
+    el.setAttribute('max-stack', '2');
+    document.body.appendChild(el);
+    const onAction = vi.fn();
+    el.notify('a', { actionText: 'Undo', onAction });
+    el.notify('b');
+    el.notify('c');
+    el.dismissAll();
+    expect(el.querySelector('.a11y-snackbar')).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+    expect(onAction).not.toHaveBeenCalled();
+
+    el.notify('d');
+    el.notify('e');
+    expect(el.querySelectorAll('.a11y-snackbar')).toHaveLength(2); // count reset: both fit in max-stack 2
   });
 });

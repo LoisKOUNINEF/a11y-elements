@@ -1,4 +1,4 @@
-import { focusFromKeyboard, focusReturnTarget } from '../../core/focus-trap.js';
+import { focusFromKeyboard, focusReturnTarget, retargetFocusReturn } from '../../core/focus-trap.js';
 import { A11yAnchoredOverlayElement } from './a11y-anchored-overlay-element.js';
 
 /**
@@ -59,6 +59,9 @@ export abstract class A11yMenuOverlayElement extends A11yAnchoredOverlayElement 
     const returnTo = this._returnFocusTo;
     this._returnFocusTo = null;
     if (focusWasInside && returnTo?.isConnected && !this._detaching) returnTo.focus();
+    // Focus is in something opened from this menu (a modal from an item): when that closes,
+    // it should come back to this menu's trigger, not to the item, hidden by then.
+    else if (!focusWasInside && returnTo?.isConnected && this._wrapper) retargetFocusReturn(this._wrapper, returnTo);
     super._hide(opts);
   }
 
@@ -66,12 +69,35 @@ export abstract class A11yMenuOverlayElement extends A11yAnchoredOverlayElement 
     return Array.from(this.querySelectorAll<HTMLElement>('[role="menuitem"]'));
   }
 
+  /** `aria-disabled="true"`, or natively `disabled` (which can't take focus at all). */
+  private _isEnabled(el: HTMLElement): boolean {
+    return el.getAttribute('aria-disabled') !== 'true' && !el.matches(':disabled');
+  }
+
   private _enabledItems(): HTMLElement[] {
-    return this._items().filter((el) => el.getAttribute('aria-disabled') !== 'true');
+    return this._items().filter((el) => this._isEnabled(el));
   }
 
   private _initRovingTabindex(): void {
-    this._items().forEach((el, i) => el.setAttribute('tabindex', i === 0 ? '0' : '-1'));
+    const first = this._enabledItems()[0];
+    this._items().forEach((el) => el.setAttribute('tabindex', el === first ? '0' : '-1'));
+  }
+
+  /**
+   * The next enabled item after (`step` 1) or before (`step` -1) the focused
+   * one, wrapping — counted among all items, so it works from a disabled item
+   * the pointer focused too. With focus on no item: the first / the last.
+   */
+  private _adjacentEnabledItem(step: 1 | -1): HTMLElement | undefined {
+    const all = this._items();
+    const enabled = this._enabledItems();
+    const from = all.indexOf(document.activeElement as HTMLElement);
+    if (from === -1) return step === 1 ? enabled[0] : enabled[enabled.length - 1];
+    for (let i = 1; i <= all.length; i++) {
+      const candidate = all[(from + step * i + all.length * i) % all.length]!;
+      if (enabled.includes(candidate)) return candidate;
+    }
+    return undefined;
   }
 
   private _focusFirstEnabledItem(): void {
@@ -90,9 +116,13 @@ export abstract class A11yMenuOverlayElement extends A11yAnchoredOverlayElement 
   }
 
   private _focusItemAt(items: HTMLElement[], index: number): void {
-    items.forEach((el) => el.setAttribute('tabindex', '-1'));
-    const target = items[index];
+    this._focusItem(items[index]);
+  }
+
+  private _focusItem(target: HTMLElement | undefined): void {
     if (!target) return;
+    // Every item, disabled ones included: only the focused item may be the Tab stop.
+    this._items().forEach((el) => el.setAttribute('tabindex', '-1'));
     target.setAttribute('tabindex', '0');
     focusFromKeyboard(target);
   }
@@ -109,11 +139,11 @@ export abstract class A11yMenuOverlayElement extends A11yAnchoredOverlayElement 
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          this._focusItemAt(items, (currentIndex + 1) % items.length);
+          this._focusItem(this._adjacentEnabledItem(1));
           break;
         case 'ArrowUp':
           e.preventDefault();
-          this._focusItemAt(items, (currentIndex - 1 + items.length) % items.length);
+          this._focusItem(this._adjacentEnabledItem(-1));
           break;
         case 'Home':
           e.preventDefault();

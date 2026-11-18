@@ -1,5 +1,61 @@
 # Changelog
 
+## 1.0.0
+
+### Changes
+
+- Every `<a11y-snackbar>` toast has a round × close button overhanging its top-right corner, to dismiss it before its timer ends. It doesn't run `onAction`. It's named by the region's `dismiss-label`, else `setStrings({ dismiss })`; sized and styled with `--a11y-snackbar-close-size`, `--a11y-snackbar-close-border-width` and `--a11y-snackbar-close-font-size`. The message and action button now carry `.a11y-snackbar__message` / `.a11y-snackbar__action` classes (the old `.a11y-snackbar button` rule is now `.a11y-snackbar__action`).
+
+- Removing an `<a11y-snackbar>` from the document cancels its toasts' auto-dismiss timers and drops its toasts, queued ones included; they used to keep firing on the detached element. Re-adding it starts empty. Moving it (a disconnect and reconnect in the same task) keeps them.
+
+- New `SnackbarElement.dismissAll()`: removes every showing toast and drops queued ones, without running `onAction`.
+
+- `<a11y-snackbar>` and `<a11y-notification-banner>` only show items while they're in the document: one enqueued while detached waits until the region is added back. Calling `notify()`/`show()` before the region was first connected used to throw.
+
+- The `confirmDialog()` docs now say how to clear it on a SPA navigation (`removeOverlaysWithin()` doesn't track it).
+
+### Fixes
+
+- `raw()`'s sanitizer could be bypassed through DOM clobbering: a descendant named `children`, `attributes`, `localName`, … shadowed that property on a `<form>`, and the sanitizer skipped the subtree or the attributes behind it, so an `onerror`/`onclick` handler survived and ran once inserted. Every read now goes through the DOM prototypes.
+
+- Modal layers stack: a modal, dropdown, popover or loader already in the page when a modal opened was made `inert` with the rest of the page, and stayed unusable when opened from inside that modal. Closing a lower layer first (modal A while B, or a blocking loader, is open on top) no longer un-inerts the page or pulls focus out of the top one, and the top one later returns focus where the lower one would have. `inert` you set yourself is never removed.
+
+- An empty or blank numeric attribute (`max-files=""`, `max-stack=""`, `offset=""`) reads as its default instead of `0`; `max-files` below 1 counts as 1.
+
+- `<a11y-notification-banner>`: an `onAction` or `onClose` that calls `dismissAll()` no longer fires `onClose` twice or lets one banner too many show afterwards.
+
+- `confirmDialog()` resolves `false` when Confirm is clicked during the close fade after Cancel/Escape.
+
+- Popover / dropdown / context menu / tooltip: a click inside an overlay opened from one (a dropdown in a popover, a modal opened from it) no longer closes it as an outside click; Escape closes the most recently opened one first; an interactive popover closed by an outside click leaves focus where that click put it.
+
+- Closing an overlay before its first animation frame no longer animates it back in before it disappears.
+
+- A close transition waits for its longest property (`transitionend` of a shorter one used to end it early).
+
+- Menus (dropdown, context menu) treat natively `disabled` items as disabled, start the Tab stop on the first enabled item, and arrow keys from a pointer-focused disabled item go to its neighbours.
+
+- A modal opened from a menu item returns focus to the menu's trigger, not to the hidden item.
+
+- `removeOverlaysWithin()` also removes overlays authored inside the overlays it removes (a tooltip inside a modal).
+
+- `<a11y-dropdown>`: a press dragged off the trigger no longer swallows the next keyboard toggle.
+
+- `<a11y-anchor>` keeps an `aria-label` you change after it connected (it used to put the original back).
+
+- `<a11y-tabs>`: moving or re-inserting the element no longer re-applies the page's hash over the user's choice; a tab button reused for another tab selects its current `data-tab`.
+
+- `<a11y-radio-group>` / `<a11y-checkbox-group>` take in options appended to the element after it connected. A disabled checkbox group's "Select all" still shows whether every option is checked.
+
+- `<a11y-checkbox>`: an unrelated update no longer puts `indeterminate` back after a click cleared it, or clears one you set through the property.
+
+- `<a11y-progress>`: a `value` that isn't a number means indeterminate (not 0); `max` that isn't positive means 100.
+
+- `<a11y-picture>` drops `role`, its class and `aria-hidden` once its image is gone.
+
+- `<a11y-focusable>`: Enter/Space in a nested control are left to it, nothing fires while `aria-disabled="true"`, and your own `tabindex` is kept.
+
+- `<a11y-snackbar>`: `duration: Infinity` (or more than ~24.8 days) keeps the toast until dismissed; it used to vanish at once.
+
 ## 0.7.0
 
 ### Breaking changes

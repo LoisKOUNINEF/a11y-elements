@@ -1,3 +1,5 @@
+import { doc } from './safe-dom.js';
+
 /**
  * The library's built-in, user-facing strings — text that ends up in
  * accessible names and announcements — so a consumer can translate them.
@@ -103,13 +105,13 @@ export function setStrings(partial: Partial<A11yStrings>): void {
   for (const [key, value] of Object.entries(partial) as [keyof A11yStrings, string | undefined][]) {
     if (Object.hasOwn(DEFAULT_STRINGS, key) && typeof value === 'string') strings[key] = value;
   }
-  document.dispatchEvent(new Event(STRINGS_CHANGE_EVENT));
+  doc.dispatchEvent(new Event(STRINGS_CHANGE_EVENT));
 }
 
 /** Restores every built-in string to its English default. */
 export function resetStrings(): void {
   Object.assign(strings, DEFAULT_STRINGS);
-  document.dispatchEvent(new Event(STRINGS_CHANGE_EVENT));
+  doc.dispatchEvent(new Event(STRINGS_CHANGE_EVENT));
 }
 
 export function getString(key: keyof A11yStrings): string {

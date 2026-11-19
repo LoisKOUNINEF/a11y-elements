@@ -1,5 +1,6 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr, syncClass, syncText } from '../../core/dom-sync.js';
+import { doc } from '../../core/safe-dom.js';
 
 /** Marks the markup this element builds itself (in generated mode), so it never mixes it up with the consumer's. */
 const GENERATED = 'data-a11y-generated';
@@ -170,7 +171,14 @@ export class PictureElement extends A11yWrapperElement {
     const img = generated
       ? this.querySelector<HTMLImageElement>(`:scope > picture[${GENERATED}] > img`)
       : this.querySelector('img');
-    if (!img) return;
+    if (!img) {
+      // The image went away (src removed, authored <img> taken out): drop what it set, so
+      // aria-hidden can't hide whatever is put in here later.
+      syncClass(this, 'a11y-picture', false);
+      syncAttr(this, 'role', null);
+      syncAttr(this, 'aria-hidden', null);
+      return;
+    }
 
     // Guarded writes: this runs inside a MutationObserver callback watching
     // this subtree, and setAttribute/classList.add queue a mutation record
@@ -192,9 +200,9 @@ export class PictureElement extends A11yWrapperElement {
   private _syncGenerated(): void {
     let picture = this.querySelector<HTMLPictureElement>(`:scope > picture[${GENERATED}]`);
     if (!picture) {
-      picture = document.createElement('picture');
+      picture = doc.createElement('picture');
       picture.setAttribute(GENERATED, '');
-      picture.append(document.createElement('img'));
+      picture.append(doc.createElement('img'));
       this.prepend(picture);
     }
     const img = picture.querySelector<HTMLImageElement>(':scope > img')!;
@@ -203,7 +211,7 @@ export class PictureElement extends A11yWrapperElement {
     let elements = [...picture.querySelectorAll<HTMLSourceElement>(':scope > source')];
     // Add or remove only the difference, so unchanged sources aren't reloaded.
     while (elements.length < sources.length) {
-      const source = document.createElement('source');
+      const source = doc.createElement('source');
       img.before(source);
       elements.push(source);
     }
@@ -236,7 +244,7 @@ export class PictureElement extends A11yWrapperElement {
       return;
     }
     if (!caption) {
-      caption = document.createElement('figcaption');
+      caption = doc.createElement('figcaption');
       caption.setAttribute(GENERATED, '');
     }
     if (caption.previousElementSibling !== picture) picture.after(caption);

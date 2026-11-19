@@ -3,6 +3,7 @@ import { syncAttr, syncText } from '../../core/dom-sync.js';
 import type { FieldControl } from '../../core/field.js';
 import { nextId } from '../../core/ids.js';
 import { formatString, getString } from '../../core/strings.js';
+import { doc } from '../../core/safe-dom.js';
 
 /** Marks the markup this element builds, so the field never takes it for a consumer part. */
 const GENERATED = 'data-a11y-generated';
@@ -61,7 +62,7 @@ export class FileInputElement extends A11yFieldElement<File[]> {
   /** `dragenter`s minus `dragleave`s, since both fire again for every child crossed. */
   private _dragDepth = 0;
   /** Key for the host's own listeners in `wireOnce()`, which the field base already uses for the host. */
-  private readonly _hostKey = document.createComment('');
+  private readonly _hostKey = doc.createComment('');
 
   /** Adds files as a drop would: checked against the rules, announced, and followed by `input`/`change` events. */
   addFiles(files: Iterable<File>): void {
@@ -169,12 +170,12 @@ export class FileInputElement extends A11yFieldElement<File[]> {
 
     let dropzone = this._generated('dropzone');
     if (!dropzone) {
-      dropzone = document.createElement('div');
+      dropzone = doc.createElement('div');
       dropzone.className = 'a11y-file-input__dropzone';
       dropzone.setAttribute(GENERATED, '');
-      const button = document.createElement('label');
+      const button = doc.createElement('label');
       button.className = 'a11y-file-input__button';
-      const prompt = document.createElement('span');
+      const prompt = doc.createElement('span');
       prompt.className = 'a11y-file-input__prompt';
       // A pointer-only instruction: keyboard and screen reader users browse instead.
       prompt.setAttribute('aria-hidden', 'true');
@@ -190,7 +191,7 @@ export class FileInputElement extends A11yFieldElement<File[]> {
     const tail = (['rejected', 'list', 'status'] as const).map((name) => {
       const existing = this._generated(name);
       if (existing) return existing;
-      const el = document.createElement(name === 'status' ? 'div' : 'ul');
+      const el = doc.createElement(name === 'status' ? 'div' : 'ul');
       el.className = `a11y-file-input__${name}`;
       el.setAttribute(GENERATED, '');
       if (name === 'status') el.setAttribute('role', 'status');
@@ -289,7 +290,7 @@ export class FileInputElement extends A11yFieldElement<File[]> {
    */
   private _intake(control: HTMLInputElement, incoming: File[], current: File[]): { files: File[]; added: File[]; rejected: string[] } {
     const multiple = control.multiple;
-    const maxFiles = multiple ? this.numberAttr('max-files', Infinity) : 1;
+    const maxFiles = multiple ? Math.max(1, Math.floor(this.numberAttr('max-files', Infinity))) : 1;
     const maxSize = parseSize(this.getAttribute('max-size'));
     const values = {
       max: String(maxFiles),
@@ -354,7 +355,7 @@ export class FileInputElement extends A11yFieldElement<File[]> {
 
     list.replaceChildren(
       ...this._files.map((file) => {
-        const item = document.createElement('li');
+        const item = doc.createElement('li');
         item.className = 'a11y-file-input__item';
         if (previews && file.type.startsWith('image/')) {
           let url = this._previewUrls.get(file);
@@ -362,19 +363,19 @@ export class FileInputElement extends A11yFieldElement<File[]> {
             url = URL.createObjectURL(file);
             this._previewUrls.set(file, url);
           }
-          const img = document.createElement('img');
+          const img = doc.createElement('img');
           img.className = 'a11y-file-input__preview';
           img.alt = ''; // the name next to it already says what it is
           img.src = url;
           item.append(img);
         }
-        const name = document.createElement('span');
+        const name = doc.createElement('span');
         name.className = 'a11y-file-input__name';
         name.textContent = file.name;
-        const size = document.createElement('span');
+        const size = doc.createElement('span');
         size.className = 'a11y-file-input__size';
         size.textContent = formatSize(file.size, lang);
-        const remove = document.createElement('button');
+        const remove = doc.createElement('button');
         remove.type = 'button';
         remove.className = 'a11y-file-input__remove';
         remove.textContent = getString('remove');
@@ -395,7 +396,7 @@ export class FileInputElement extends A11yFieldElement<File[]> {
     if (messages.length || list.childElementCount) {
       list.replaceChildren(
         ...messages.map((message) => {
-          const item = document.createElement('li');
+          const item = doc.createElement('li');
           item.textContent = message;
           return item;
         }),

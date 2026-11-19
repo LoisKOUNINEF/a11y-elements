@@ -1,5 +1,6 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr } from '../../core/dom-sync.js';
+import { doc } from '../../core/safe-dom.js';
 
 /**
  * A label that renders a real `<label class="a11y-label">` around its
@@ -35,7 +36,7 @@ export class LabelElement extends A11yWrapperElement {
   get label(): HTMLLabelElement {
     let label = this.querySelector<HTMLLabelElement>(':scope > label.a11y-label');
     if (!label) {
-      label = document.createElement('label');
+      label = doc.createElement('label');
       label.className = 'a11y-label';
     }
     // Move the author's content (and anything added later) into the real label.

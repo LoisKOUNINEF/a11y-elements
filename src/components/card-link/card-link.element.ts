@@ -1,6 +1,7 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr, syncIdRef } from '../../core/dom-sync.js';
 import { nextId } from '../../core/ids.js';
+import { call } from '../../core/safe-dom.js';
 
 /** Descendants that handle their own clicks — a click on one of them is never forwarded to the card's link. */
 const INTERACTIVE_SELECTOR =
@@ -122,7 +123,7 @@ export class CardLinkElement extends A11yWrapperElement {
 
     // A click on the link itself (native) or another control (its own behavior).
     const target = e.target instanceof Element ? e.target : null;
-    const interactive = target?.closest(INTERACTIVE_SELECTOR);
+    const interactive = target && call(target, 'closest', INTERACTIVE_SELECTOR); // `target` can be a <form> whose controls shadow `closest`
     if (interactive && this.contains(interactive)) return null;
 
     // The user was dragging/selecting, not clicking.

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { confirmDialog } from './define.js';
 import { dismissAllOverlays } from '../../core/overlay-registry.js';
 import { raw } from '../../core/template.js';
@@ -58,6 +58,25 @@ describe('confirmDialog', () => {
     act();
     await expect(answer).resolves.toBe(false);
     expect(document.querySelector('a11y-modal')).toBeNull();
+  });
+
+  it('a confirm click during the close transition after Cancel still resolves false', async () => {
+    vi.useFakeTimers();
+    const style = document.createElement('style');
+    style.textContent = '.a11y-modal-wrapper { transition-duration: 1s; }';
+    document.head.appendChild(style);
+    try {
+      const answer = confirmDialog({ title: 'Delete?' });
+      button('cancel').click();
+      expect(document.querySelector('a11y-modal')).not.toBeNull(); // still fading out
+      button('confirm').click();
+      vi.advanceTimersByTime(2000);
+      vi.useRealTimers();
+      await expect(answer).resolves.toBe(false);
+    } finally {
+      style.remove();
+      vi.useRealTimers();
+    }
   });
 
   it('uses the given labels, the danger class, then setStrings()', () => {

@@ -1,6 +1,8 @@
 import { A11yOverlayElement } from '../../core/a11y-overlay-element.js';
+import { hasOverlayOpenedAfter, isInsideOverlayOpenedAfter } from '../../core/overlay-registry.js';
 import { FocusTrapHelper, type IFocusTrapOptions } from '../../core/focus-trap.js';
 import { whenTransitionDone } from '../../core/transition.js';
+import { doc } from '../../core/safe-dom.js';
 
 export type AnchoredSide = 'top' | 'bottom' | 'left' | 'right';
 export type AnchoredAlign = 'start' | 'end';
@@ -41,7 +43,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
   get anchorElement(): HTMLElement | null {
     if (this._anchorEl) return this._anchorEl;
     const id = this.getAttribute('anchor');
-    return id ? document.getElementById(id) : null;
+    return id ? doc.getElementById(id) : null;
   }
 
   set anchorElement(el: HTMLElement | null) {
@@ -84,7 +86,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
   }
 
   protected createWrapper(): HTMLElement {
-    const el = document.createElement('div');
+    const el = doc.createElement('div');
     el.className = 'a11y-anchored-overlay-wrapper';
     return el;
   }
@@ -101,7 +103,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     if (this._wrapper) this._teardownChrome();
 
     const wrapper = this.createWrapper();
-    document.body.appendChild(wrapper);
+    doc.body.appendChild(wrapper);
     this.classList.add(this.getContentClass());
     this._moveSelfTo(wrapper); // see A11yOverlayElement's class doc on why this isn't a raw appendChild
     this._wrapper = wrapper;
@@ -115,12 +117,19 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
       this._focusTrap.activate();
     }
 
-    requestAnimationFrame(() => wrapper.classList.add('a11y-is-open'));
+    // Skipped if closed before the frame: adding it then would animate a closing overlay back in.
+    requestAnimationFrame(() => {
+      if (this._wrapper === wrapper) wrapper.classList.add('a11y-is-open');
+    });
     if (!this._isShowing) this._onShown();
   }
 
   protected override _hide(opts?: { immediate?: boolean }): void {
-    this._unbindActiveListeners();
+    // Focus already moved elsewhere on the page (e.g. the outside click that closes this landed
+    // on a text field): leave it there rather than pulling it back to the trigger.
+    const active = doc.activeElement;
+    const focusMovedAway = !!this._wrapper && !!active && active !== doc.body && !this._wrapper.contains(active);
+    this._unbindActiveListeners({ returnFocus: !focusMovedAway });
 
     const wrapper = this._wrapper;
     if (!wrapper) {
@@ -139,7 +148,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
       this.classList.remove(this.getContentClass());
       // Detach from the wrapper before it's removed — unless the consumer is
       // removing this element from the document, which must stay removed.
-      if (!this._detaching) this._moveSelfTo(document.body);
+      if (!this._detaching) this._moveSelfTo(doc.body);
       wrapper.remove();
       this._onHidden();
     };
@@ -160,8 +169,8 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     finish();
   }
 
-  private _unbindActiveListeners(): void {
-    this._focusTrap?.deactivate();
+  private _unbindActiveListeners(opts?: { returnFocus?: boolean }): void {
+    this._focusTrap?.deactivate(opts);
     this._focusTrap = null;
     this._unbindDismissListeners();
     this._unbindRepositionListeners();
@@ -169,7 +178,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
 
   private _teardownChrome(): void {
     this._unbindActiveListeners();
-    this._moveSelfTo(document.body);
+    this._moveSelfTo(doc.body);
     this._wrapper?.remove();
     this._wrapper = null;
   }
@@ -183,8 +192,8 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     if (!anchorRect || !this._wrapper) return;
 
     const wrapperRect = this._wrapper.getBoundingClientRect();
-    const viewportWidth = document.documentElement.clientWidth;
-    const viewportHeight = document.documentElement.clientHeight;
+    const viewportWidth = doc.documentElement.clientWidth;
+    const viewportHeight = doc.documentElement.clientHeight;
 
     const { placement, top, left } = this._computePosition(anchorRect, wrapperRect, viewportWidth, viewportHeight);
 
@@ -256,11 +265,14 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     this._boundOutsideClick = (e: MouseEvent): void => {
       const target = e.target as Node;
       if (wrapper.contains(target) || this.anchorElement?.contains(target)) return;
+      if (isInsideOverlayOpenedAfter(this, target)) return; // e.g. a dropdown opened from inside this popover
       this.close('outside-click');
     };
     // Deferred so the same click/tap that opened the overlay doesn't immediately close it.
+    // Capture phase: decided before the click's own handlers run — a menu item's handler closes
+    // its dropdown, and once closed the dropdown no longer counts as "opened on top of this one".
     this._outsideClickTimer = setTimeout(() => {
-      document.addEventListener('click', this._boundOutsideClick!);
+      doc.addEventListener('click', this._boundOutsideClick!, true);
     }, 0);
 
     if (!this.wantsFocusTrap()) {
@@ -269,10 +281,13 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
       // modal), and `preventDefault()` tells every other handler it's taken.
       this._boundKeyDown = (e: KeyboardEvent): void => {
         if (e.key !== 'Escape' || e.defaultPrevented) return;
+        // Capture listeners run in the order they were added, i.e. oldest overlay first:
+        // leave Escape to whatever was opened on top of this one.
+        if (hasOverlayOpenedAfter(this)) return;
         e.preventDefault();
         this.close('escape');
       };
-      document.addEventListener('keydown', this._boundKeyDown, true);
+      doc.addEventListener('keydown', this._boundKeyDown, true);
     }
   }
 
@@ -282,11 +297,11 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
       this._outsideClickTimer = null;
     }
     if (this._boundOutsideClick) {
-      document.removeEventListener('click', this._boundOutsideClick);
+      doc.removeEventListener('click', this._boundOutsideClick, true);
       this._boundOutsideClick = null;
     }
     if (this._boundKeyDown) {
-      document.removeEventListener('keydown', this._boundKeyDown, true);
+      doc.removeEventListener('keydown', this._boundKeyDown, true);
       this._boundKeyDown = null;
     }
   }

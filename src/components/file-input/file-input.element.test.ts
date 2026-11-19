@@ -259,6 +259,13 @@ describe('a11y-file-input', () => {
       ]);
     });
 
+    it('an empty max-files means no limit, not a limit of 0', () => {
+      const { el } = mount(FIELD, 'max-files=""');
+      drop(el, [file('a.pdf'), file('b.pdf')]);
+      expect(names(el)).toEqual(['a.pdf', 'b.pdf']);
+      expect(rejected(el)).toEqual([]);
+    });
+
     it('uses the message attributes, then setStrings()', () => {
       const { el } = mount(FIELD, 'max-size="1KB" size-rejected-message="{name} is over {maxSize}"');
       setStrings({ fileCountRejected: '{name}: max {max}' });

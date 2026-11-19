@@ -1,3 +1,5 @@
+import { doc, prop } from './safe-dom.js';
+
 /**
  * Why an overlay closed: `'escape'`, a click on the `'backdrop'`, the ×
  * `'close-button'`, an `'outside-click'`, focus leaving a menu (`'focus-out'`),
@@ -42,6 +44,15 @@ interface SharedState {
   scrollLocks: number;
   /** Each body-mounted overlay → the parent it was authored in, for `removeOverlaysWithin()`. */
   portalOrigins: Map<Element, Node>;
+  /** Open modal layers (`inertOutside()` calls), bottom to top: only the top one decides what's inert. */
+  inertLayers: InertLayer[];
+  /** Elements whose `inert` attribute this library set — the only ones it ever removes it from. */
+  inertedByLib: Set<Element>;
+}
+
+interface InertLayer {
+  keep: Element;
+  exempt?: (el: Element) => boolean;
 }
 
 /**
@@ -53,9 +64,17 @@ interface SharedState {
  */
 const STATE_KEY = Symbol.for('a11y-elements/overlay-state');
 const store = globalThis as unknown as Record<symbol, SharedState | undefined>;
-const state: SharedState = (store[STATE_KEY] ??= { openOverlays: new Set(), scrollLocks: 0, portalOrigins: new Map() });
-// A state object created by an older bundle on the same page predates this field.
+const state: SharedState = (store[STATE_KEY] ??= {
+  openOverlays: new Set(),
+  scrollLocks: 0,
+  portalOrigins: new Map(),
+  inertLayers: [],
+  inertedByLib: new Set(),
+});
+// A state object created by an older bundle on the same page predates these fields.
 state.portalOrigins ??= new Map();
+state.inertLayers ??= [];
+state.inertedByLib ??= new Set();
 
 /**
  * Tracks every currently-open overlay instance so a consumer's own SPA
@@ -72,6 +91,36 @@ export function registerOpenOverlay(overlay: Dismissible): void {
 
 export function unregisterOpenOverlay(overlay: Dismissible): void {
   state.openOverlays.delete(overlay);
+}
+
+/** Open overlays registered after `overlay` (the set keeps opening order). */
+function openedAfter(overlay: Dismissible): Dismissible[] {
+  const open = Array.from(state.openOverlays);
+  const index = open.indexOf(overlay);
+  return index === -1 ? [] : open.slice(index + 1);
+}
+
+/**
+ * Whether another overlay was opened after `overlay` and is still open — so
+ * a key press like Escape belongs to that one, the topmost, not to `overlay`.
+ */
+export function hasOverlayOpenedAfter(overlay: Dismissible): boolean {
+  return openedAfter(overlay).length > 0;
+}
+
+/**
+ * Whether `target` is inside an overlay opened after `overlay` (a dropdown in
+ * a popover, a modal opened from it…). That overlay lives in its own chrome
+ * on `<body>`, so a click in it is outside `overlay`'s DOM but not outside it
+ * as far as the user is concerned.
+ */
+export function isInsideOverlayOpenedAfter(overlay: Dismissible, target: Node | null): boolean {
+  const later = new Set<unknown>(openedAfter(overlay));
+  if (later.size === 0) return false;
+  for (let node: Node | null = target; node; node = prop(node, 'parentNode') ?? (node as ShadowRoot).host ?? null) {
+    if (later.has(node)) return true;
+  }
+  return false;
 }
 
 export function dismissAllOverlays(): void {
@@ -96,12 +145,21 @@ export function forgetPortalOrigin(overlay: Element): void {
  * Returns how many were removed.
  */
 export function removeOverlaysWithin(host: Node): number {
+  // An overlay authored inside another one (a tooltip in a modal) records that overlay as its
+  // origin, which sits in <body>, not in `host`: keep going until no removed root contains one.
+  const roots: Node[] = [host];
   let removed = 0;
-  for (const [overlay, origin] of Array.from(state.portalOrigins)) {
-    if (!host.contains(origin)) continue;
-    overlay.remove(); // its disconnectedCallback tears it down and forgets it
-    state.portalOrigins.delete(overlay);
-    removed++;
+  let found = true;
+  while (found) {
+    found = false;
+    for (const [overlay, origin] of Array.from(state.portalOrigins)) {
+      if (!roots.some((root) => root.contains(origin))) continue;
+      overlay.remove(); // its disconnectedCallback tears it down and forgets it
+      state.portalOrigins.delete(overlay);
+      roots.push(overlay);
+      removed++;
+      found = true;
+    }
   }
   return removed;
 }
@@ -110,20 +168,54 @@ export function removeOverlaysWithin(host: Node): number {
  * Makes every child of `<body>` except `keep` (and those `exempt` keeps)
  * `inert`, so keyboard and assistive-tech users can't reach the page behind a
  * modal overlay — a dimmed backdrop only blocks the mouse, and `aria-modal`
- * alone still lets some screen readers wander out. Children that were already
- * `inert` (e.g. behind a modal below this one) are left as they are. Returns
- * a function that undoes exactly what this call did.
+ * alone still lets some screen readers wander out.
+ *
+ * Calls stack: each pushes a layer, and only the topmost open layer decides
+ * what's inert, so closing a lower modal (or a modal under a blocking loader)
+ * first leaves the page behind the top one inert. `inert` the consumer set
+ * themselves is never removed. Returns a function that pops this layer.
  */
 export function inertOutside(keep: Element, exempt?: (el: Element) => boolean): () => void {
-  const inerted: Element[] = [];
-  for (const child of Array.from(document.body.children)) {
-    if (child === keep || child.contains(keep) || child.hasAttribute('inert') || exempt?.(child)) continue;
-    child.setAttribute('inert', '');
-    inerted.push(child);
-  }
+  const layer: InertLayer = { keep, exempt };
+  state.inertLayers.push(layer);
+  syncInert();
+  let released = false;
   return () => {
-    for (const el of inerted) el.removeAttribute('inert');
+    if (released) return;
+    released = true;
+    const index = state.inertLayers.indexOf(layer);
+    if (index !== -1) state.inertLayers.splice(index, 1);
+    syncInert();
   };
+}
+
+/**
+ * Removes the `inert` this library put on `el`, if any. Overlays call it as
+ * they move into their open chrome: a closed overlay sits in `<body>`, so a
+ * modal opened before it inerted it, and it would stay unusable when opened
+ * from inside that modal.
+ */
+export function releaseInert(el: Element): void {
+  if (state.inertedByLib.delete(el)) el.removeAttribute('inert');
+}
+
+function syncInert(): void {
+  const top = state.inertLayers[state.inertLayers.length - 1];
+  const wanted = new Set<Element>();
+  if (top) {
+    for (const child of Array.from(doc.body.children)) {
+      if (child === top.keep || child.contains(top.keep) || top.exempt?.(child)) continue;
+      wanted.add(child);
+    }
+  }
+  for (const el of Array.from(state.inertedByLib)) {
+    if (!wanted.has(el)) releaseInert(el);
+  }
+  for (const el of wanted) {
+    if (el.hasAttribute('inert')) continue; // already inert, by us or by the consumer
+    el.setAttribute('inert', '');
+    state.inertedByLib.add(el);
+  }
 }
 
 const NO_SCROLL_CLASS = 'a11y-no-scroll';
@@ -144,7 +236,7 @@ const GUTTER_CLASS = 'a11y-no-scroll--gutter';
  */
 export function lockScroll(): void {
   if (state.scrollLocks++ !== 0) return;
-  const root = document.documentElement;
+  const root = doc.documentElement;
   const widthBefore = root.clientWidth;
   root.classList.add(NO_SCROLL_CLASS);
   if (root.clientWidth > widthBefore) root.classList.add(GUTTER_CLASS);
@@ -152,7 +244,7 @@ export function lockScroll(): void {
 
 export function unlockScroll(): void {
   if (state.scrollLocks === 0) return;
-  if (--state.scrollLocks === 0) document.documentElement.classList.remove(NO_SCROLL_CLASS, GUTTER_CLASS);
+  if (--state.scrollLocks === 0) doc.documentElement.classList.remove(NO_SCROLL_CLASS, GUTTER_CLASS);
 }
 
 /**

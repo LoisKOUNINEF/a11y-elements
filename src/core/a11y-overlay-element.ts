@@ -6,8 +6,10 @@ import {
   emitOverlayClose,
   recordPortalOrigin,
   forgetPortalOrigin,
+  releaseInert,
   type OverlayCloseReason,
 } from './overlay-registry.js';
+import { doc } from './safe-dom.js';
 
 /**
  * Base for the overlay family (modal, drawer, popover, tooltip, snackbar,
@@ -84,7 +86,7 @@ export abstract class A11yOverlayElement extends A11yElement {
     // synchronously ahead of the markup) connects before its children are
     // parsed — defer the initial show until the document is, so `_show()`
     // sees the real content (heading, focusable elements).
-    if (document.readyState === 'loading') this.afterParse(() => this._showIfStillOpen());
+    if (doc.readyState === 'loading') this.afterParse(() => this._showIfStillOpen());
     else this._show();
   }
 
@@ -126,7 +128,7 @@ export abstract class A11yOverlayElement extends A11yElement {
 
   /** Runs `callback` once the document has finished parsing (never, if it already has — call sites handle that case directly). */
   protected afterParse(callback: () => void): void {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', callback, { once: true });
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', callback, { once: true });
   }
 
   private _showIfStillOpen(): void {
@@ -150,8 +152,8 @@ export abstract class A11yOverlayElement extends A11yElement {
 
   private _portalToBody(): void {
     const origin = this.parentNode;
-    if (origin === document.body) return;
-    this._moveSelfTo(document.body);
+    if (origin === doc.body) return;
+    this._moveSelfTo(doc.body);
     if (origin instanceof Element) recordPortalOrigin(this, origin);
   }
 
@@ -163,6 +165,9 @@ export abstract class A11yOverlayElement extends A11yElement {
    * building or tearing down wrapper/backdrop chrome.
    */
   protected _moveSelfTo(newParent: Node): void {
+    // Moving into its open chrome (or back to <body>): drop any `inert` a modal
+    // opened earlier put on this element while it sat closed in <body>.
+    releaseInert(this);
     this._internalMove = true;
     try {
       newParent.appendChild(this);

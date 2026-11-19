@@ -22,16 +22,21 @@ export class ProgressElement extends A11yElement {
   private _label = h('span', { class: 'a11y-progress__label', id: this._labelId });
   private _bar = h('progress', { class: 'a11y-progress__bar' });
 
+  /** `undefined` (an indeterminate bar) when the attribute is missing, empty or not a finite number. */
   get value(): number | undefined {
     const v = this.getAttribute('value');
-    return v == null ? undefined : Number(v);
+    if (v == null || v.trim() === '') return undefined;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
   }
   set value(v: number | undefined) {
     v == null ? this.removeAttribute('value') : this.setAttribute('value', String(v));
   }
 
+  /** 100 unless set to a positive finite number (a native `<progress>` ignores `max <= 0`). */
   get max(): number {
-    return this.numberAttr('max', 100);
+    const max = this.numberAttr('max', 100);
+    return Number.isFinite(max) && max > 0 ? max : 100;
   }
   set max(v: number) {
     this.setAttribute('max', String(v));

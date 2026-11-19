@@ -51,6 +51,27 @@ describe('a11y-checkbox', () => {
     expect(el.querySelector('input')!.indeterminate).toBe(true);
   });
 
+  it("an unrelated re-sync doesn't put indeterminate back after a click cleared it", async () => {
+    const el = mount('<input type="checkbox">');
+    el.setAttribute('indeterminate', '');
+    const input = el.querySelector('input')!;
+    input.click(); // the browser clears indeterminate and checks it
+    expect(input.indeterminate).toBe(false);
+    el.setAttribute('label', 'Agree');
+    await flush();
+    expect(input.indeterminate).toBe(false);
+    expect(input.checked).toBe(true);
+  });
+
+  it('leaves indeterminate set through the native property alone', async () => {
+    const el = mount('<input type="checkbox">');
+    const input = el.querySelector('input')!;
+    input.indeterminate = true;
+    el.setAttribute('label', 'Agree');
+    await flush();
+    expect(input.indeterminate).toBe(true);
+  });
+
   it('getValue/setValue read and write the real input', () => {
     const el = mount('<input type="checkbox">');
     expect(el.getValue()).toBe(false);

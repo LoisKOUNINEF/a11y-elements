@@ -59,6 +59,27 @@ describe('a11y-anchor — external links', () => {
     await flush();
     expect(a.getAttribute('aria-label')).toBe('External site (opens in new tab)');
   });
+  it("keeps an aria-label the consumer sets later instead of reverting it", async () => {
+    const el = mount('<a href="/x" aria-label="Old">Link</a>');
+    const a = el.querySelector('a')!;
+    a.setAttribute('aria-label', 'New');
+    await flush();
+    expect(a.getAttribute('aria-label')).toBe('New');
+    a.removeAttribute('aria-label');
+    await flush();
+    expect(a.hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('builds the new-tab label from a label the consumer changed later', async () => {
+    const el = mount('<a href="https://example.com" target="_blank" aria-label="Old">Link</a>');
+    const a = el.querySelector('a')!;
+    a.setAttribute('aria-label', 'New');
+    await flush();
+    expect(a.getAttribute('aria-label')).toBe('New (opens in new tab)');
+    a.removeAttribute('target');
+    await flush();
+    expect(a.getAttribute('aria-label')).toBe('New');
+  });
 });
 
 describe('a11y-anchor — internal same-page anchors', () => {

@@ -1,6 +1,7 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr, syncClass } from '../../core/dom-sync.js';
 import { nextId } from '../../core/ids.js';
+import { call, doc } from '../../core/safe-dom.js';
 
 type Orientation = 'horizontal' | 'vertical';
 
@@ -12,7 +13,7 @@ function isDisabled(tab: HTMLElement): boolean {
 function hashTarget(hash: string): HTMLElement | null {
   if (hash.length < 2) return null;
   try {
-    return document.getElementById(decodeURIComponent(hash.slice(1)));
+    return doc.getElementById(decodeURIComponent(hash.slice(1)));
   } catch {
     return null; // malformed escape sequence
   }
@@ -60,6 +61,8 @@ export class TabsElement extends A11yWrapperElement {
 
   /** The initial `location.hash`, until its target shows up somewhere in the document. */
   private _pendingHash = '';
+  /** The page's hash is honoured on the first connect only: a later move/re-insert must not undo the user's choice. */
+  private _hashCaptured = false;
 
   get selected(): string {
     return this._current()?.dataset.tab ?? '';
@@ -85,12 +88,17 @@ export class TabsElement extends A11yWrapperElement {
   }
 
   override connectedCallback(): void {
-    this._pendingHash = location.hash;
+    if (!this._hashCaptured) {
+      this._hashCaptured = true;
+      this._pendingHash = location.hash;
+    }
     super.connectedCallback();
   }
 
   private _owns(el: Element): boolean {
-    return el.parentElement?.closest('a11y-tabs') === this;
+    // The parent can be a <form>, whose controls shadow `closest`.
+    const parent = el.parentElement;
+    return !!parent && call(parent, 'closest', 'a11y-tabs') === this;
   }
 
   private _tablist(): HTMLElement | null {
@@ -155,6 +163,8 @@ export class TabsElement extends A11yWrapperElement {
 
       this.wireOnce(tab, () =>
         this.listen(tab, 'click', () => {
+          // Read now, not when wired: a framework may reuse this button for another tab.
+          const name = tab.dataset.tab;
           if (name && !isDisabled(tab)) this._choose(name);
         }),
       );

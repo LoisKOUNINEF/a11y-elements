@@ -10,6 +10,7 @@ export * from './a11y-overlay-element.js';
 export * from './focus-trap.js';
 export * from './overlay-registry.js';
 export * from './dom-sync.js';
+export * from './safe-dom.js';
 export * from './transition.js';
 export * from './strings.js';
 export * from './define-element.js';

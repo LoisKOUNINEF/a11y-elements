@@ -1,4 +1,5 @@
 import { STRINGS_CHANGE_EVENT } from './strings.js';
+import { doc } from './safe-dom.js';
 
 type Listener = [target: EventTarget, type: string, handler: EventListener, options?: AddEventListenerOptions | boolean];
 
@@ -41,7 +42,7 @@ export abstract class A11yElement extends HTMLElement {
   disconnectedCallback(): void {
     this._connected = false;
     this._cleanupListeners();
-    if (this._stringsListener) document.removeEventListener(STRINGS_CHANGE_EVENT, this._stringsListener);
+    if (this._stringsListener) doc.removeEventListener(STRINGS_CHANGE_EVENT, this._stringsListener);
     this._stringsListener = null;
     this.onDisconnect?.();
   }
@@ -80,7 +81,7 @@ export abstract class A11yElement extends HTMLElement {
     this._stringsListener = () => {
       if (this._connected) this.onStringsChange?.();
     };
-    document.addEventListener(STRINGS_CHANGE_EVENT, this._stringsListener);
+    doc.addEventListener(STRINGS_CHANGE_EVENT, this._stringsListener);
   }
 
   attributeChangedCallback(_name: string, oldValue: string | null, newValue: string | null): void {
@@ -169,9 +170,10 @@ export abstract class A11yElement extends HTMLElement {
     return this.hasAttribute(name);
   }
 
+  /** The attribute as a number; `fallback` when it's missing, empty/blank (`Number('')` would be 0) or not a number. */
   protected numberAttr(name: string, fallback: number): number {
     const value = this.getAttribute(name);
-    if (value == null) return fallback;
+    if (value == null || value.trim() === '') return fallback;
     const parsed = Number(value);
     return Number.isNaN(parsed) ? fallback : parsed;
   }

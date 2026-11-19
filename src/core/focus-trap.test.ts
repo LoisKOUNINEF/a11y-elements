@@ -440,3 +440,66 @@ describe('focusReturnTarget — triggers the browser did not focus (Safari)', ()
   });
 });
 
+
+describe('FocusTrapHelper — closing a lower trap first', () => {
+  it("doesn't pull focus out of the trap still on top, which later returns where the lower one would have", () => {
+    const trigger = document.createElement('button');
+    const a = document.createElement('div');
+    a.innerHTML = '<button id="open-b">Open B</button>';
+    const b = document.createElement('div');
+    b.innerHTML = '<button id="in-b">In B</button>';
+    document.body.append(trigger, a, b);
+
+    trigger.focus();
+    const trapA = new FocusTrapHelper({ container: a });
+    trapA.activate();
+    const trapB = new FocusTrapHelper({ container: b });
+    trapB.activate();
+    expect(document.activeElement?.id).toBe('in-b');
+
+    trapA.deactivate();
+    a.remove();
+    expect(document.activeElement?.id).toBe('in-b');
+
+    trapB.deactivate();
+    expect(document.activeElement).toBe(trigger);
+  });
+});
+
+describe('DOM clobbering', () => {
+  // Not `getAttribute`: jsdom's own selector engine reads it off the instance (covered in e2e/).
+  it.each(['matches', 'closest', 'checkVisibility', 'shadowRoot', 'focus'])(
+    'traps focus around a focusable <form> whose control is named "%s"',
+    (name) => {
+      // jsdom doesn't implement [LegacyOverrideBuiltIns]: emulate the named control on the instance.
+      const form = document.createElement('form');
+      form.tabIndex = 0;
+      const input = document.createElement('input');
+      form.append(input);
+      container.querySelector('#middle')!.before(form);
+      Object.defineProperty(form, name, { value: input, configurable: true });
+
+      const trap = new FocusTrapHelper({ container });
+      expect(() => trap.activate()).not.toThrow();
+      expect(document.activeElement?.id).toBe('first');
+      container.querySelector<HTMLElement>('#last')!.focus();
+      tab(container.querySelector('#last')!);
+      expect(document.activeElement?.id).toBe('first');
+      trap.deactivate();
+    },
+  );
+
+  it('traps focus in a container that is a <form> with a control named "contains"', () => {
+    const form = document.createElement('form');
+    form.innerHTML = '<button id="a">A</button><button id="b">B</button>';
+    document.body.append(form);
+    Object.defineProperty(form, 'contains', { value: form.querySelector('#a'), configurable: true });
+
+    const trap = new FocusTrapHelper({ container: form });
+    trap.activate();
+    form.querySelector<HTMLElement>('#b')!.focus();
+    tab(form.querySelector('#b')!);
+    expect(document.activeElement?.id).toBe('a');
+    trap.deactivate();
+  });
+});

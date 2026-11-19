@@ -66,6 +66,34 @@ describe('A11yMenuOverlayElement', () => {
     expect(document.activeElement).toBe(edit); // wraps back to the first enabled item
   });
 
+  it('treats natively disabled items as disabled: never focused, never the Tab stop', () => {
+    const el = document.createElement('test-menu-overlay') as TestMenu;
+    el.setAttribute('anchor', 'trigger');
+    el.innerHTML = '<button role="menuitem" disabled>Edit</button><button role="menuitem">Delete</button><button role="menuitem">Share</button>';
+    document.body.appendChild(el);
+    el.open = true;
+    const [edit, del, share] = [...el.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+    expect(document.activeElement).toBe(del);
+    expect([edit, del, share].map((i) => i!.getAttribute('tabindex'))).toEqual(['-1', '0', '-1']);
+    const wrapper = document.querySelector('.a11y-anchored-overlay-wrapper')!;
+    wrapper.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    wrapper.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(del); // wrapped past the disabled first item
+  });
+
+  it.each([
+    ['ArrowDown', 'share'],
+    ['ArrowUp', 'edit'],
+  ])('%s from a pointer-focused disabled item moves to its enabled neighbour', (key, expected) => {
+    const el = mount();
+    el.open = true;
+    const disabled = el.querySelector<HTMLElement>('[aria-disabled="true"]')!;
+    disabled.focus(); // a click on it focuses it (tabindex=-1)
+    document.querySelector('.a11y-anchored-overlay-wrapper')!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+    expect((document.activeElement as HTMLElement).dataset.value).toBe(expected);
+    expect(el.querySelectorAll('[tabindex="0"]')).toHaveLength(1);
+  });
+
   it('asks for a visible focus ring when arrow keys move focus', () => {
     const el = mount();
     el.open = true;

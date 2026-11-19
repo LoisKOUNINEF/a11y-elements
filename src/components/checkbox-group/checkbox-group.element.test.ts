@@ -219,4 +219,24 @@ describe('a11y-checkbox-group', () => {
     observer.disconnect();
     expect(records).toBeLessThan(10);
   });
+
+  it('takes in options appended to the host after the first sync', async () => {
+    const el = mount(OPTIONS, { 'select-all': '' });
+    const onChange = vi.fn();
+    el.onChange = onChange;
+    el.insertAdjacentHTML('beforeend', '<label><input type="checkbox" name="toppings" value="peppers"> Peppers</label>');
+    await flush();
+    const peppers = option(el, 'peppers');
+    expect(el.querySelector('fieldset.a11y-checkbox-group')!.contains(peppers)).toBe(true);
+    expect(peppers.classList.contains('a11y-checkbox__input')).toBe(true);
+    toggle(selectAllInput(el)!);
+    expect(el.getValue()).toEqual(['cheese', 'ham', 'olives', 'peppers']);
+  });
+
+  it('a disabled group still shows "Select all" checked when every option is', async () => {
+    const el = mount(OPTIONS.replaceAll('value=', 'checked value='), { 'select-all': '', disabled: '' });
+    await flush();
+    expect(selectAllInput(el)!.checked).toBe(true);
+    expect(selectAllInput(el)!.disabled).toBe(true);
+  });
 });

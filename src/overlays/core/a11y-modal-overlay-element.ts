@@ -4,6 +4,7 @@ import { inertOutside, lockScroll, unlockScroll } from '../../core/overlay-regis
 import { getString } from '../../core/strings.js';
 import { whenTransitionDone } from '../../core/transition.js';
 import { nextId } from '../../core/ids.js';
+import { doc } from '../../core/safe-dom.js';
 
 /**
  * Base for centered/backdrop overlays that always trap focus and lock page
@@ -75,13 +76,13 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
   }
 
   protected createBackdrop(): HTMLElement {
-    const el = document.createElement('div');
+    const el = doc.createElement('div');
     el.className = 'a11y-modal-overlay';
     return el;
   }
 
   protected createWrapper(): HTMLElement {
-    const el = document.createElement('div');
+    const el = doc.createElement('div');
     el.className = 'a11y-modal-wrapper';
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-modal', 'true');
@@ -103,7 +104,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
   private _initialFocusTarget(): HTMLElement | null {
     const ref = this.initialFocus;
     if (ref) {
-      const byId = document.getElementById(ref);
+      const byId = doc.getElementById(ref);
       if (byId && this.contains(byId)) return byId;
       try {
         const bySelector = this.querySelector<HTMLElement>(ref);
@@ -142,6 +143,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
     this._restoreInert = inertOutside(backdrop, (el) => el.classList.contains('a11y-passive-overlay-region'));
 
     requestAnimationFrame(() => {
+      if (this._wrapper !== wrapper) return; // closed before this frame: don't animate it back in
       backdrop.classList.add('a11y-is-open');
       wrapper.classList.add('a11y-is-open');
     });
@@ -175,7 +177,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
       this.classList.remove(this.getContentClass());
       // Detach from the wrapper before it's removed — unless the consumer is
       // removing this element from the document, which must stay removed.
-      if (!this._detaching) this._moveSelfTo(document.body);
+      if (!this._detaching) this._moveSelfTo(doc.body);
       wrapper.remove();
       backdrop.remove();
       this._onHidden();
@@ -200,7 +202,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
   }
 
   private _prependCloseButton(): void {
-    const btn = document.createElement('button');
+    const btn = doc.createElement('button');
     btn.type = 'button';
     btn.className = 'a11y-modal-close-button';
     btn.textContent = '×';
@@ -218,7 +220,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
     }
     const button = this._closeButton;
     if (this.dismissible || !button) return;
-    const hadFocus = document.activeElement === button;
+    const hadFocus = doc.activeElement === button;
     button.remove();
     this._closeButton = null;
     if (hadFocus && this._wrapper) {
@@ -236,7 +238,7 @@ export abstract class A11yModalOverlayElement extends A11yOverlayElement {
     const backdrop = this.createBackdrop();
     const wrapper = this.createWrapper();
     backdrop.appendChild(wrapper);
-    document.body.appendChild(backdrop);
+    doc.body.appendChild(backdrop);
     this.classList.add(this.getContentClass());
     this._moveSelfTo(wrapper); // see A11yOverlayElement's class doc on why this isn't a raw appendChild
     return { backdrop, wrapper };

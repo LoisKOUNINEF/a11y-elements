@@ -1,6 +1,7 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncClass, syncText } from '../../core/dom-sync.js';
 import type { ValueElement } from '../../core/value-element.js';
+import { doc } from '../../core/safe-dom.js';
 
 /**
  * Enhances a real `<input type="checkbox">` authored by the consumer with a
@@ -44,6 +45,9 @@ export class CheckboxElement extends A11yWrapperElement implements ValueElement<
     if (input) input.checked = checked;
   }
 
+  /** The `indeterminate` attribute as last applied, per input: it's only written when it changes. */
+  private _appliedIndeterminate = new WeakMap<HTMLInputElement, boolean>();
+
   private _input(): HTMLInputElement | null {
     return this.querySelector('input[type="checkbox"]');
   }
@@ -54,7 +58,11 @@ export class CheckboxElement extends A11yWrapperElement implements ValueElement<
 
     const wrapper = this._ensureWrapper(input);
     syncClass(input, 'a11y-checkbox__input', true);
-    input.indeterminate = this.boolAttr('indeterminate'); // IDL-only property, never reflected — safe unguarded
+    // Only when the attribute changes: a click clears `indeterminate` natively, and the consumer may set
+    // the property directly — an unrelated re-sync (label, disabled…) must not put the attribute's back.
+    const indeterminate = this.boolAttr('indeterminate');
+    if ((this._appliedIndeterminate.get(input) ?? false) !== indeterminate) input.indeterminate = indeterminate;
+    this._appliedIndeterminate.set(input, indeterminate);
     this._syncLabel(wrapper);
 
     this.wireOnce(input, () => this.listen(input, 'change', () => this.onChange?.(input.checked)));
@@ -64,7 +72,7 @@ export class CheckboxElement extends A11yWrapperElement implements ValueElement<
     const existing = input.closest<HTMLLabelElement>('label.a11y-checkbox');
     if (existing && existing.parentElement === this) return existing;
 
-    const wrapper = document.createElement('label');
+    const wrapper = doc.createElement('label');
     wrapper.className = 'a11y-checkbox';
     input.replaceWith(wrapper);
     wrapper.appendChild(input);
@@ -79,7 +87,7 @@ export class CheckboxElement extends A11yWrapperElement implements ValueElement<
       return;
     }
     if (!span) {
-      span = document.createElement('span');
+      span = doc.createElement('span');
       span.className = 'a11y-checkbox__label';
       wrapper.appendChild(span);
     }

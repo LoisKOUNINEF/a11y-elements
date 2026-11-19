@@ -111,4 +111,33 @@ describe('a11y-focusable', () => {
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  it('leaves Enter/Space from a nested control to that control', () => {
+    const el = mount('Card <input aria-label="Qty">');
+    const onClick = vi.fn();
+    el.addEventListener('click', onClick);
+    const input = el.querySelector('input')!;
+    const space = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+    input.dispatchEvent(space);
+    expect(space.defaultPrevented).toBe(false); // the space still types
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('does nothing on Enter/Space while aria-disabled', () => {
+    const el = mount();
+    el.setAttribute('aria-disabled', 'true');
+    const onClick = vi.fn();
+    el.addEventListener('click', onClick);
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("keeps a consumer's own tabindex", () => {
+    const el = document.createElement('a11y-focusable');
+    el.setAttribute('tabindex', '-1');
+    el.textContent = 'Item';
+    document.body.appendChild(el);
+    expect(el.getAttribute('tabindex')).toBe('-1');
+  });
 });

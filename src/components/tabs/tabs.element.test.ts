@@ -200,6 +200,32 @@ describe('a11y-tabs', () => {
     expect(el.selected).toBe('one');
   });
 
+  it("a move (disconnect + reconnect) doesn't re-apply the page's hash over the user's choice", async () => {
+    const hadScroll = 'scrollIntoView' in Element.prototype;
+    Element.prototype.scrollIntoView = vi.fn(); // jsdom has none
+    history.replaceState(null, '', '#in-two');
+    const el = mount();
+    expect(el.selected).toBe('two');
+    tab(el, 'one').click();
+    expect(el.selected).toBe('one');
+
+    const other = document.createElement('div');
+    document.body.appendChild(other);
+    other.appendChild(el); // a framework re-inserting the element
+    await flush();
+    expect(el.selected).toBe('one');
+    history.replaceState(null, '', location.pathname);
+    if (!hadScroll) delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  it('a tab button reused for another tab selects its current tab name', () => {
+    const el = mount();
+    const reused = tab(el, 'two');
+    reused.dataset.tab = 'three';
+    reused.click(); // the stale name ('two') no longer exists, and would fall back to 'one'
+    expect(el.selected).toBe('three');
+  });
+
   it('leaves the tabs and panels of a nested a11y-tabs to it', () => {
     const el = mount({}, `
       <div data-tablist><button data-tab="outer">Outer</button></div>

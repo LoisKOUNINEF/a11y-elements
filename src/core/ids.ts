@@ -1,3 +1,5 @@
+import { doc } from './safe-dom.js';
+
 /**
  * Page-wide id counter, on `globalThis` for the same reason as the strings
  * store: each standalone `dist/browser/**\/define.js` bundle inlines its own
@@ -12,6 +14,6 @@ const counter = (store[IDS_KEY] ??= { count: 0 });
 export function nextId(prefix: string): string {
   let id: string;
   do id = `${prefix}-${++counter.count}`;
-  while (typeof document !== 'undefined' && document.getElementById(id));
+  while (typeof document !== 'undefined' && doc.getElementById(id));
   return id;
 }

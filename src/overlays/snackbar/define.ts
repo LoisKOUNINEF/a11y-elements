@@ -1,6 +1,7 @@
 import { defineElement } from '../../core/define-element.js';
 import type { Content } from '../../core/dom.js';
 import { SnackbarElement, type NotifyOptions } from './snackbar.element.js';
+import { doc } from '../../core/safe-dom.js';
 
 defineElement('a11y-snackbar', SnackbarElement);
 
@@ -15,11 +16,11 @@ export { SnackbarElement, type NotifyOptions };
 let cachedRegion: SnackbarElement | null = null;
 
 function getRegion(): SnackbarElement {
-  const existing = document.querySelector<SnackbarElement>('a11y-snackbar');
+  const existing = doc.querySelector<SnackbarElement>('a11y-snackbar');
   if (existing) return existing;
   if (!cachedRegion || !cachedRegion.isConnected) {
-    cachedRegion = document.createElement('a11y-snackbar') as SnackbarElement;
-    document.body.appendChild(cachedRegion);
+    cachedRegion = doc.createElement('a11y-snackbar') as SnackbarElement;
+    doc.body.appendChild(cachedRegion);
   }
   return cachedRegion;
 }

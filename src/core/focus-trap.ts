@@ -1,3 +1,5 @@
+import { call, doc, prop } from './safe-dom.js';
+
 type KeyboardEventHandler = (event: KeyboardEvent) => void;
 
 /** Everything that can be a Tab stop; `isTabbable()` then drops what's hidden or has a negative `tabindex`. */
@@ -52,9 +54,10 @@ export interface IFocusTrapHelperParams {
  */
 function isTabbable(el: HTMLElement): boolean {
   // A negative tabindex takes even a native control out of the Tab order.
-  if (Number(el.getAttribute('tabindex')) < 0) return false;
-  if (el.closest('[hidden], [inert]')) return false;
-  if (typeof el.checkVisibility === 'function') return el.checkVisibility({ visibilityProperty: true });
+  // Read through `call()`/`prop()`: `el` can be a <form> (e.g. in `raw()` content) whose controls shadow these.
+  if (Number(call(el, 'getAttribute', 'tabindex')) < 0) return false;
+  if (call(el, 'closest', '[hidden], [inert]')) return false;
+  if (typeof prop(el, 'checkVisibility') === 'function') return call(el, 'checkVisibility', { visibilityProperty: true });
   return true;
 }
 
@@ -66,17 +69,22 @@ function isTabbable(el: HTMLElement): boolean {
  */
 function queryFocusable(root: ParentNode): HTMLElement[] {
   const found: HTMLElement[] = [];
-  for (const el of Array.from(root.querySelectorAll<HTMLElement>('*'))) {
-    if (el.matches(FOCUSABLE_SELECTOR)) found.push(el);
-    if (el.shadowRoot) found.push(...queryFocusable(el.shadowRoot));
+  for (const el of Array.from(call(root, 'querySelectorAll', '*') as NodeListOf<HTMLElement>)) {
+    if (call(el, 'matches', FOCUSABLE_SELECTOR)) found.push(el);
+    const shadow = prop(el, 'shadowRoot');
+    if (shadow) found.push(...queryFocusable(shadow));
   }
   return found;
 }
 
 /** The focused element itself, not the shadow host `document.activeElement` stops at. */
 function deepActiveElement(): HTMLElement | null {
-  let active = document.activeElement;
-  while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+  let active = doc.activeElement;
+  while (active) {
+    const inner = prop(active, 'shadowRoot')?.activeElement;
+    if (!inner) break;
+    active = inner;
+  }
   return active as HTMLElement | null;
 }
 
@@ -120,11 +128,11 @@ const pointerStore = globalThis as unknown as Record<symbol, PointerState | unde
 const pointerState: PointerState = (pointerStore[POINTER_KEY] ??= { lastPressed: null, listening: false });
 if (!pointerState.listening && typeof document !== 'undefined') {
   pointerState.listening = true;
-  document.addEventListener(
+  doc.addEventListener(
     'pointerdown',
     (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      pointerState.lastPressed = target?.closest<HTMLElement>(FOCUSABLE_SELECTOR) ?? null;
+      pointerState.lastPressed = target ? (call(target, 'closest', FOCUSABLE_SELECTOR) as HTMLElement | null) : null;
     },
     true,
   );
@@ -136,10 +144,21 @@ if (!pointerState.listening && typeof document !== 'undefined') {
  * didn't focus a clicked trigger — the element that was last pressed.
  */
 export function focusReturnTarget(): HTMLElement | null {
-  const active = document.activeElement as HTMLElement | null;
-  if (active && active !== document.body && active !== document.documentElement) return active;
+  const active = doc.activeElement as HTMLElement | null;
+  if (active && active !== doc.body && active !== doc.documentElement) return active;
   const pressed = pointerState.lastPressed;
   return pressed?.isConnected ? pressed : active;
+}
+
+/**
+ * Points every active trap that would return focus into `container` (which is
+ * closing) at `target` instead. E.g. a modal opened from a menu item would
+ * otherwise give focus back to that item, hidden by then, and lose it to
+ * `<body>`; the menu hands over its own trigger.
+ */
+export function retargetFocusReturn(container: Element, target: HTMLElement): void {
+  // `?.`: the stack is shared page-wide, and a trap from an older bundle may lack the method.
+  for (const trap of activeTraps) trap._retargetReturnFrom?.(container, target);
 }
 
 /**
@@ -150,7 +169,7 @@ export function focusReturnTarget(): HTMLElement | null {
  * move focus without ever showing where it went.
  */
 export function focusFromKeyboard(el: HTMLElement): void {
-  el.focus({ focusVisible: true } as FocusOptions); // TS 5.9's lib.dom lacks `focusVisible`
+  call(el, 'focus', { focusVisible: true } as FocusOptions); // TS 5.9's lib.dom lacks `focusVisible`
 }
 
 /**
@@ -194,36 +213,39 @@ export class FocusTrapHelper {
   private _resolveInertTarget(): HTMLElement | null {
     const target = this._options.inertTarget;
     if (!target) return null;
-    return typeof target === 'string' ? document.querySelector<HTMLElement>(target) : target;
+    return typeof target === 'string' ? doc.querySelector<HTMLElement>(target) : target;
   }
 
   private _resolveInitialFocus(): HTMLElement | null {
     const option = this._options.initialFocus;
     const el = typeof option === 'function' ? option() : option;
-    if (!el || !this._container.contains(el)) return null;
-    return el.matches(FOCUSABLE_SELECTOR) && isTabbable(el) ? el : null;
+    if (!el || !call(this._container, 'contains', el)) return null;
+    return call(el, 'matches', FOCUSABLE_SELECTOR) && isTabbable(el) ? el : null;
   }
 
   public activate(): void {
     if (this._isActive) return;
 
     this._previousActiveElement = focusReturnTarget();
+    // On the stack before focus moves: moving it can close whatever had it (a menu losing focus),
+    // and that close may retarget where this trap returns focus (see `retargetFocusReturn()`).
+    activeTraps.push(this);
     this._focusableElements = this._getFocusableElements();
 
     if (this._focusableElements.length > 0) {
       this._firstFocusableElement = this._focusableElements[0] ?? null;
-      (this._resolveInitialFocus() ?? this._firstFocusableElement)?.focus();
+      const first = this._resolveInitialFocus() ?? this._firstFocusableElement;
+      if (first) call(first, 'focus');
     } else {
-      this._container.setAttribute('tabindex', '-1');
-      this._container.focus();
+      call(this._container, 'setAttribute', 'tabindex', '-1');
+      call(this._container, 'focus');
       this._firstFocusableElement = this._container;
     }
 
     // On `document`, not the container: clicking non-focusable content inside
     // the trap (text, padding) moves focus to <body>, and a container
     // listener would then never see Escape/Tab again.
-    document.addEventListener('keydown', this._boundKeyDown);
-    activeTraps.push(this);
+    doc.addEventListener('keydown', this._boundKeyDown);
 
     this._inertTarget = this._resolveInertTarget();
     if (this._inertTarget) this._inertTarget.inert = true;
@@ -231,22 +253,31 @@ export class FocusTrapHelper {
     this._isActive = true;
   }
 
-  public deactivate(): void {
+  /** `returnFocus: false` skips giving focus back, e.g. when the user already moved it elsewhere. */
+  public deactivate({ returnFocus = true }: { returnFocus?: boolean } = {}): void {
     if (!this._isActive) return;
 
-    document.removeEventListener('keydown', this._boundKeyDown);
+    doc.removeEventListener('keydown', this._boundKeyDown);
     const index = activeTraps.indexOf(this);
+    const wasTop = index === activeTraps.length - 1;
     if (index !== -1) activeTraps.splice(index, 1);
 
     if (this._inertTarget) this._inertTarget.inert = false;
     this._inertTarget = null;
 
-    if (this._container.getAttribute('tabindex') === '-1') {
-      this._container.removeAttribute('tabindex');
+    if (call(this._container, 'getAttribute', 'tabindex') === '-1') {
+      call(this._container, 'removeAttribute', 'tabindex');
     }
 
-    if (this._options.returnFocusOnDeactivate && this._previousActiveElement?.focus) {
-      this._previousActiveElement.focus();
+    if (!wasTop && index !== -1) {
+      // A trap above this one is still active (e.g. modal A closed while modal B, opened from it,
+      // stays open): focus must not leave B. Where B would return to probably lives in this
+      // container and is about to go, so B returns to where this trap would have instead.
+      const above = activeTraps[index];
+      const aboveTarget = above?._previousActiveElement;
+      if (above && (!aboveTarget || call(this._container, 'contains', aboveTarget))) above._previousActiveElement = this._previousActiveElement;
+    } else if (returnFocus && this._options.returnFocusOnDeactivate && this._previousActiveElement && prop(this._previousActiveElement, 'focus')) {
+      call(this._previousActiveElement, 'focus');
     }
 
     this._focusableElements = null;
@@ -259,6 +290,11 @@ export class FocusTrapHelper {
   private _escapeDeactivates(): boolean {
     const option = this._options.escapeDeactivates;
     return typeof option === 'function' ? option() : option !== false;
+  }
+
+  /** @internal — see `retargetFocusReturn()`. */
+  public _retargetReturnFrom(container: Element, target: HTMLElement): void {
+    if (this._previousActiveElement && call(container, 'contains', this._previousActiveElement)) this._previousActiveElement = target;
   }
 
   public getIsActive(): boolean {
@@ -288,9 +324,9 @@ export class FocusTrapHelper {
     return (
       !target ||
       target === document ||
-      target === document.body ||
-      target === document.documentElement ||
-      this._container.contains(target)
+      target === doc.body ||
+      target === doc.documentElement ||
+      call(this._container, 'contains', target)
     );
   }
 

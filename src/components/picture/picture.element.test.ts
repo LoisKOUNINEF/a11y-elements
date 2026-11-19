@@ -69,6 +69,16 @@ describe('a11y-picture', () => {
     expect(el.getAttribute('aria-hidden')).toBe('true');
   });
 
+  it('drops role, class and aria-hidden once its <img> is removed', async () => {
+    const el = mount('<img src="a.jpg" alt="">');
+    expect(el.getAttribute('aria-hidden')).toBe('true');
+    el.querySelector('img')!.remove();
+    await flush();
+    expect(el.hasAttribute('aria-hidden')).toBe(false);
+    expect(el.hasAttribute('role')).toBe(false);
+    expect(el.classList.contains('a11y-picture')).toBe(false);
+  });
+
   it('does not set role=figure or the a11y-picture class when there is no <img>', () => {
     const el = mount('');
     expect(el.hasAttribute('role')).toBe(false);

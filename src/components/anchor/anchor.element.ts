@@ -1,6 +1,7 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr } from '../../core/dom-sync.js';
 import { formatString, getString } from '../../core/strings.js';
+import { doc } from '../../core/safe-dom.js';
 
 /** Whether a link `target` opens a new browsing context — `_blank` or a named window, not `_self`/`_parent`/`_top`. */
 function opensNewContext(target: string | null): boolean {
@@ -17,7 +18,7 @@ function targetName(target: HTMLElement, id: string): string {
   const labelledBy = (target.getAttribute('aria-labelledby') ?? '')
     .split(/\s+/)
     .filter(Boolean)
-    .map((ref) => document.getElementById(ref)?.textContent?.trim() ?? '')
+    .map((ref) => doc.getElementById(ref)?.textContent?.trim() ?? '')
     .filter(Boolean)
     .join(' ');
   if (labelledBy) return labelledBy;
@@ -78,12 +79,17 @@ export class AnchorElement extends A11yWrapperElement {
 
   /** Each link's own `aria-label` before this element touched it, so the new-tab suffix is never applied twice and can be undone. */
   private _originalLabels = new WeakMap<HTMLAnchorElement, string | null>();
+  /** The `aria-label` this element last left on each link: a different one means the consumer changed it since. */
+  private _writtenLabels = new WeakMap<HTMLAnchorElement, string | null>();
 
   protected override _sync(): void {
     const anchor = this.querySelector<HTMLAnchorElement>('a[href]');
     if (!anchor) return;
 
-    if (!this._originalLabels.has(anchor)) this._originalLabels.set(anchor, anchor.getAttribute('aria-label'));
+    const currentLabel = anchor.getAttribute('aria-label');
+    if (!this._originalLabels.has(anchor) || currentLabel !== this._writtenLabels.get(anchor)) {
+      this._originalLabels.set(anchor, currentLabel); // first sight, or the consumer set a new label
+    }
     const originalLabel = this._originalLabels.get(anchor) ?? null;
 
     if (opensNewContext(anchor.getAttribute('target'))) {
@@ -96,6 +102,7 @@ export class AnchorElement extends A11yWrapperElement {
     } else {
       syncAttr(anchor, 'aria-label', originalLabel);
     }
+    this._writtenLabels.set(anchor, anchor.getAttribute('aria-label'));
 
     // `href` is read at activation time, not captured here, so a link
     // whose href changes later is handled according to its current value.
@@ -104,7 +111,7 @@ export class AnchorElement extends A11yWrapperElement {
         const href = anchor.getAttribute('href') ?? '';
         if (!href.startsWith('#') || href.length < 2) return; // not a same-page anchor: native behavior
         const id = decodeFragment(href.slice(1));
-        const target = id === null ? null : document.getElementById(id);
+        const target = id === null ? null : doc.getElementById(id);
         if (!id || !target) return; // malformed, or nothing to jump to: leave it to the browser
         e.preventDefault();
         // The URL and history still get the fragment, as on a native jump (back returns here).
@@ -143,12 +150,12 @@ export class AnchorElement extends A11yWrapperElement {
     }, 100);
 
     const template = this.getAttribute('navigated-label') ?? getString('navigatedTo');
-    const announcement = document.createElement('div');
+    const announcement = doc.createElement('div');
     announcement.setAttribute('role', 'status');
     announcement.setAttribute('aria-live', 'polite');
     announcement.setAttribute('aria-atomic', 'true');
     announcement.className = 'a11y-visually-hidden';
-    document.body.appendChild(announcement);
+    doc.body.appendChild(announcement);
     // Delay content so AT registers the live region before it receives text.
     setTimeout(() => {
       announcement.textContent = formatString(template, { name: targetName(target, id) });

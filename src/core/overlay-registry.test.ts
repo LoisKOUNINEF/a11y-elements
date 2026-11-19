@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { lockScroll, unlockScroll } from './overlay-registry.js';
+import {
+  inertOutside,
+  isInsideOverlayOpenedAfter,
+  lockScroll,
+  registerOpenOverlay,
+  releaseInert,
+  unlockScroll,
+  unregisterOpenOverlay,
+} from './overlay-registry.js';
 
 const root = document.documentElement;
 
@@ -68,5 +76,83 @@ describe('lockScroll', () => {
     expect(root.classList.contains('a11y-no-scroll--gutter')).toBe(true);
     unlockScroll();
     unlockScroll();
+  });
+});
+
+describe('inertOutside() — stacked layers', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  function page(): { main: HTMLElement; a: HTMLElement; b: HTMLElement; mine: HTMLElement } {
+    document.body.innerHTML = '<main></main><div id="a"></div><div id="b"></div><aside id="mine" inert></aside>';
+    const $ = (sel: string) => document.querySelector<HTMLElement>(sel)!;
+    return { main: $('main'), a: $('#a'), b: $('#b'), mine: $('#mine') };
+  }
+
+  it('closing the lower layer first leaves the page behind the top one inert', () => {
+    const { main, a, b } = page();
+    const releaseA = inertOutside(a);
+    const releaseB = inertOutside(b);
+    expect(main.hasAttribute('inert')).toBe(true);
+    expect(a.hasAttribute('inert')).toBe(true);
+    expect(b.hasAttribute('inert')).toBe(false);
+
+    releaseA();
+    expect(main.hasAttribute('inert')).toBe(true);
+    expect(b.hasAttribute('inert')).toBe(false);
+
+    releaseB();
+    expect(main.hasAttribute('inert')).toBe(false);
+    expect(a.hasAttribute('inert')).toBe(false);
+  });
+
+  it('un-inerts the new top layer when the one above it closes', () => {
+    const { main, a, b } = page();
+    const releaseA = inertOutside(a);
+    const releaseB = inertOutside(b);
+    releaseB();
+    expect(a.hasAttribute('inert')).toBe(false);
+    expect(main.hasAttribute('inert')).toBe(true);
+    releaseA();
+  });
+
+  it("never removes the consumer's own inert, and releasing twice is harmless", () => {
+    const { a, mine } = page();
+    const release = inertOutside(a);
+    release();
+    release();
+    expect(mine.hasAttribute('inert')).toBe(true);
+  });
+
+  it('releaseInert() only clears inert the library set', () => {
+    const { main, a, mine } = page();
+    const release = inertOutside(a);
+    releaseInert(main);
+    releaseInert(mine);
+    expect(main.hasAttribute('inert')).toBe(false);
+    expect(mine.hasAttribute('inert')).toBe(true);
+    release();
+  });
+});
+
+describe('isInsideOverlayOpenedAfter', () => {
+  it('ends on a <form> whose control is named "parentNode" (no endless walk)', () => {
+    const lower = { close() {} };
+    const upper = { close() {} };
+    registerOpenOverlay(lower);
+    registerOpenOverlay(upper);
+    const form = document.body.appendChild(document.createElement('form'));
+    const inner = form.appendChild(document.createElement('div'));
+    const input = inner.appendChild(document.createElement('input'));
+    // jsdom doesn't implement [LegacyOverrideBuiltIns]: emulate the named control on the instance.
+    Object.defineProperty(form, 'parentNode', { value: input, configurable: true });
+    try {
+      expect(isInsideOverlayOpenedAfter(lower, input)).toBe(false);
+    } finally {
+      unregisterOpenOverlay(lower);
+      unregisterOpenOverlay(upper);
+      form.remove();
+    }
   });
 });

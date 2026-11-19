@@ -33,6 +33,17 @@ describe('whenTransitionDone', () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
+  it("doesn't end on the transitionend of a shorter property", () => {
+    const el = box('transition-property: opacity, transform; transition-duration: 0.15s, 0.3s');
+    const done = vi.fn();
+    whenTransitionDone(el, done);
+    const end = (propertyName: string) => Object.assign(new Event('transitionend'), { propertyName });
+    el.dispatchEvent(end('opacity'));
+    expect(done).not.toHaveBeenCalled();
+    el.dispatchEvent(end('transform'));
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+
   it('falls back to a timeout just past duration + delay if transitionend never arrives', () => {
     vi.useFakeTimers();
     const el = box('transition-duration: 200ms, 0.1s; transition-delay: 100ms');

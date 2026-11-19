@@ -2,6 +2,7 @@ import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr, syncClass, syncText } from '../../core/dom-sync.js';
 import { getString } from '../../core/strings.js';
 import type { ValueElement } from '../../core/value-element.js';
+import { doc } from '../../core/safe-dom.js';
 
 const SELECT_ALL_INPUT_CLASS = 'a11y-checkbox-group__select-all-input';
 
@@ -118,7 +119,7 @@ export class CheckboxGroupElement extends A11yWrapperElement implements ValueEle
       return existing;
     }
 
-    const fieldset = document.createElement('fieldset');
+    const fieldset = doc.createElement('fieldset');
     fieldset.className = 'a11y-checkbox-group';
     // Move every existing child (the consumer's option markup) into it.
     while (this.firstChild) fieldset.appendChild(this.firstChild);
@@ -133,7 +134,7 @@ export class CheckboxGroupElement extends A11yWrapperElement implements ValueEle
 
     if (legendText) {
       if (!legend) {
-        legend = document.createElement('legend');
+        legend = doc.createElement('legend');
         legend.className = 'a11y-checkbox-group__legend';
         fieldset.prepend(legend);
       }
@@ -154,12 +155,12 @@ export class CheckboxGroupElement extends A11yWrapperElement implements ValueEle
     }
 
     if (!wrapper) {
-      wrapper = document.createElement('label');
+      wrapper = doc.createElement('label');
       wrapper.className = 'a11y-checkbox a11y-checkbox-group__select-all';
-      const input = document.createElement('input');
+      const input = doc.createElement('input');
       input.type = 'checkbox';
       input.className = `a11y-checkbox__input ${SELECT_ALL_INPUT_CLASS}`;
-      const span = document.createElement('span');
+      const span = doc.createElement('span');
       span.className = 'a11y-checkbox__label';
       wrapper.append(input, span);
     }

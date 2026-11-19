@@ -1,4 +1,5 @@
 import { A11yMenuOverlayElement } from '../core/a11y-menu-overlay-element.js';
+import { doc } from '../../core/safe-dom.js';
 
 /**
  * A menu that opens at the mouse position on right-click (`contextmenu`) of
@@ -33,7 +34,7 @@ export class ContextMenuElement extends A11yMenuOverlayElement {
   get triggerElement(): HTMLElement | null {
     if (this._triggerEl) return this._triggerEl;
     const id = this.getAttribute('trigger');
-    return id ? document.getElementById(id) : null;
+    return id ? doc.getElementById(id) : null;
   }
 
   set triggerElement(el: HTMLElement | null) {

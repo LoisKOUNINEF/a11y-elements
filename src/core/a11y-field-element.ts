@@ -1,4 +1,5 @@
 import { A11yWrapperElement } from './a11y-wrapper-element.js';
+import { call } from './safe-dom.js';
 import {
   bindField,
   type FieldBinding,
@@ -173,7 +174,8 @@ export abstract class A11yFieldElement<V = string> extends A11yWrapperElement im
   private _parts(tag: string): HTMLElement[] {
     return [...this.querySelectorAll<HTMLElement>(tag)].filter(
       // Markup a subclass generates (e.g. `<a11y-file-input>`'s browse `<label>`) is never a part.
-      (el) => el.parentElement?.closest(FIELD_TAGS) === this && !el.closest('[data-a11y-generated]'),
+      // The parent can be a <form>, whose controls shadow `closest`.
+      (el) => !!el.parentElement && call(el.parentElement, 'closest', FIELD_TAGS) === this && !el.closest('[data-a11y-generated]'),
     );
   }
 

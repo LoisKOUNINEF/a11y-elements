@@ -1,5 +1,6 @@
 import { focusFromKeyboard, focusReturnTarget, retargetFocusReturn } from '../../core/focus-trap.js';
 import { A11yAnchoredOverlayElement } from './a11y-anchored-overlay-element.js';
+import { doc } from '../../core/safe-dom.js';
 
 /**
  * Base for menu-shaped anchored overlays (dropdown, context menu): roving
@@ -54,7 +55,7 @@ export abstract class A11yMenuOverlayElement extends A11yAnchoredOverlayElement 
   }
 
   protected override _hide(opts?: { immediate?: boolean }): void {
-    const focusWasInside = !!this._wrapper?.contains(document.activeElement);
+    const focusWasInside = !!this._wrapper?.contains(doc.activeElement);
     this._unbindMenuKeyboardHandling(); // before moving focus, so our own focusout handler doesn't fire
     const returnTo = this._returnFocusTo;
     this._returnFocusTo = null;
@@ -91,7 +92,7 @@ export abstract class A11yMenuOverlayElement extends A11yAnchoredOverlayElement 
   private _adjacentEnabledItem(step: 1 | -1): HTMLElement | undefined {
     const all = this._items();
     const enabled = this._enabledItems();
-    const from = all.indexOf(document.activeElement as HTMLElement);
+    const from = all.indexOf(doc.activeElement as HTMLElement);
     if (from === -1) return step === 1 ? enabled[0] : enabled[enabled.length - 1];
     for (let i = 1; i <= all.length; i++) {
       const candidate = all[(from + step * i + all.length * i) % all.length]!;
@@ -134,7 +135,7 @@ export abstract class A11yMenuOverlayElement extends A11yAnchoredOverlayElement 
     this._boundMenuKeyDown = (e: KeyboardEvent): void => {
       const items = this._enabledItems();
       if (items.length === 0) return;
-      const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+      const currentIndex = items.indexOf(doc.activeElement as HTMLElement);
 
       switch (e.key) {
         case 'ArrowDown':

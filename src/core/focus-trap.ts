@@ -1,3 +1,5 @@
+import { call, doc, prop } from './safe-dom.js';
+
 type KeyboardEventHandler = (event: KeyboardEvent) => void;
 
 /** Everything that can be a Tab stop; `isTabbable()` then drops what's hidden or has a negative `tabindex`. */
@@ -52,9 +54,10 @@ export interface IFocusTrapHelperParams {
  */
 function isTabbable(el: HTMLElement): boolean {
   // A negative tabindex takes even a native control out of the Tab order.
-  if (Number(el.getAttribute('tabindex')) < 0) return false;
-  if (el.closest('[hidden], [inert]')) return false;
-  if (typeof el.checkVisibility === 'function') return el.checkVisibility({ visibilityProperty: true });
+  // Read through `call()`/`prop()`: `el` can be a <form> (e.g. in `raw()` content) whose controls shadow these.
+  if (Number(call(el, 'getAttribute', 'tabindex')) < 0) return false;
+  if (call(el, 'closest', '[hidden], [inert]')) return false;
+  if (typeof prop(el, 'checkVisibility') === 'function') return call(el, 'checkVisibility', { visibilityProperty: true });
   return true;
 }
 
@@ -66,17 +69,22 @@ function isTabbable(el: HTMLElement): boolean {
  */
 function queryFocusable(root: ParentNode): HTMLElement[] {
   const found: HTMLElement[] = [];
-  for (const el of Array.from(root.querySelectorAll<HTMLElement>('*'))) {
-    if (el.matches(FOCUSABLE_SELECTOR)) found.push(el);
-    if (el.shadowRoot) found.push(...queryFocusable(el.shadowRoot));
+  for (const el of Array.from(call(root, 'querySelectorAll', '*') as NodeListOf<HTMLElement>)) {
+    if (call(el, 'matches', FOCUSABLE_SELECTOR)) found.push(el);
+    const shadow = prop(el, 'shadowRoot');
+    if (shadow) found.push(...queryFocusable(shadow));
   }
   return found;
 }
 
 /** The focused element itself, not the shadow host `document.activeElement` stops at. */
 function deepActiveElement(): HTMLElement | null {
-  let active = document.activeElement;
-  while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+  let active = doc.activeElement;
+  while (active) {
+    const inner = prop(active, 'shadowRoot')?.activeElement;
+    if (!inner) break;
+    active = inner;
+  }
   return active as HTMLElement | null;
 }
 
@@ -120,11 +128,11 @@ const pointerStore = globalThis as unknown as Record<symbol, PointerState | unde
 const pointerState: PointerState = (pointerStore[POINTER_KEY] ??= { lastPressed: null, listening: false });
 if (!pointerState.listening && typeof document !== 'undefined') {
   pointerState.listening = true;
-  document.addEventListener(
+  doc.addEventListener(
     'pointerdown',
     (event) => {
       const target = event.target instanceof Element ? event.target : null;
-      pointerState.lastPressed = target?.closest<HTMLElement>(FOCUSABLE_SELECTOR) ?? null;
+      pointerState.lastPressed = target ? (call(target, 'closest', FOCUSABLE_SELECTOR) as HTMLElement | null) : null;
     },
     true,
   );
@@ -136,8 +144,8 @@ if (!pointerState.listening && typeof document !== 'undefined') {
  * didn't focus a clicked trigger — the element that was last pressed.
  */
 export function focusReturnTarget(): HTMLElement | null {
-  const active = document.activeElement as HTMLElement | null;
-  if (active && active !== document.body && active !== document.documentElement) return active;
+  const active = doc.activeElement as HTMLElement | null;
+  if (active && active !== doc.body && active !== doc.documentElement) return active;
   const pressed = pointerState.lastPressed;
   return pressed?.isConnected ? pressed : active;
 }
@@ -161,7 +169,7 @@ export function retargetFocusReturn(container: Element, target: HTMLElement): vo
  * move focus without ever showing where it went.
  */
 export function focusFromKeyboard(el: HTMLElement): void {
-  el.focus({ focusVisible: true } as FocusOptions); // TS 5.9's lib.dom lacks `focusVisible`
+  call(el, 'focus', { focusVisible: true } as FocusOptions); // TS 5.9's lib.dom lacks `focusVisible`
 }
 
 /**
@@ -205,14 +213,14 @@ export class FocusTrapHelper {
   private _resolveInertTarget(): HTMLElement | null {
     const target = this._options.inertTarget;
     if (!target) return null;
-    return typeof target === 'string' ? document.querySelector<HTMLElement>(target) : target;
+    return typeof target === 'string' ? doc.querySelector<HTMLElement>(target) : target;
   }
 
   private _resolveInitialFocus(): HTMLElement | null {
     const option = this._options.initialFocus;
     const el = typeof option === 'function' ? option() : option;
-    if (!el || !this._container.contains(el)) return null;
-    return el.matches(FOCUSABLE_SELECTOR) && isTabbable(el) ? el : null;
+    if (!el || !call(this._container, 'contains', el)) return null;
+    return call(el, 'matches', FOCUSABLE_SELECTOR) && isTabbable(el) ? el : null;
   }
 
   public activate(): void {
@@ -226,17 +234,18 @@ export class FocusTrapHelper {
 
     if (this._focusableElements.length > 0) {
       this._firstFocusableElement = this._focusableElements[0] ?? null;
-      (this._resolveInitialFocus() ?? this._firstFocusableElement)?.focus();
+      const first = this._resolveInitialFocus() ?? this._firstFocusableElement;
+      if (first) call(first, 'focus');
     } else {
-      this._container.setAttribute('tabindex', '-1');
-      this._container.focus();
+      call(this._container, 'setAttribute', 'tabindex', '-1');
+      call(this._container, 'focus');
       this._firstFocusableElement = this._container;
     }
 
     // On `document`, not the container: clicking non-focusable content inside
     // the trap (text, padding) moves focus to <body>, and a container
     // listener would then never see Escape/Tab again.
-    document.addEventListener('keydown', this._boundKeyDown);
+    doc.addEventListener('keydown', this._boundKeyDown);
 
     this._inertTarget = this._resolveInertTarget();
     if (this._inertTarget) this._inertTarget.inert = true;
@@ -248,7 +257,7 @@ export class FocusTrapHelper {
   public deactivate({ returnFocus = true }: { returnFocus?: boolean } = {}): void {
     if (!this._isActive) return;
 
-    document.removeEventListener('keydown', this._boundKeyDown);
+    doc.removeEventListener('keydown', this._boundKeyDown);
     const index = activeTraps.indexOf(this);
     const wasTop = index === activeTraps.length - 1;
     if (index !== -1) activeTraps.splice(index, 1);
@@ -256,8 +265,8 @@ export class FocusTrapHelper {
     if (this._inertTarget) this._inertTarget.inert = false;
     this._inertTarget = null;
 
-    if (this._container.getAttribute('tabindex') === '-1') {
-      this._container.removeAttribute('tabindex');
+    if (call(this._container, 'getAttribute', 'tabindex') === '-1') {
+      call(this._container, 'removeAttribute', 'tabindex');
     }
 
     if (!wasTop && index !== -1) {
@@ -266,9 +275,9 @@ export class FocusTrapHelper {
       // container and is about to go, so B returns to where this trap would have instead.
       const above = activeTraps[index];
       const aboveTarget = above?._previousActiveElement;
-      if (above && (!aboveTarget || this._container.contains(aboveTarget))) above._previousActiveElement = this._previousActiveElement;
-    } else if (returnFocus && this._options.returnFocusOnDeactivate && this._previousActiveElement?.focus) {
-      this._previousActiveElement.focus();
+      if (above && (!aboveTarget || call(this._container, 'contains', aboveTarget))) above._previousActiveElement = this._previousActiveElement;
+    } else if (returnFocus && this._options.returnFocusOnDeactivate && this._previousActiveElement && prop(this._previousActiveElement, 'focus')) {
+      call(this._previousActiveElement, 'focus');
     }
 
     this._focusableElements = null;
@@ -285,7 +294,7 @@ export class FocusTrapHelper {
 
   /** @internal — see `retargetFocusReturn()`. */
   public _retargetReturnFrom(container: Element, target: HTMLElement): void {
-    if (this._previousActiveElement && container.contains(this._previousActiveElement)) this._previousActiveElement = target;
+    if (this._previousActiveElement && call(container, 'contains', this._previousActiveElement)) this._previousActiveElement = target;
   }
 
   public getIsActive(): boolean {
@@ -315,9 +324,9 @@ export class FocusTrapHelper {
     return (
       !target ||
       target === document ||
-      target === document.body ||
-      target === document.documentElement ||
-      this._container.contains(target)
+      target === doc.body ||
+      target === doc.documentElement ||
+      call(this._container, 'contains', target)
     );
   }
 

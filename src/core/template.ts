@@ -1,4 +1,4 @@
-import { parseInContext, parseSanitized, sanitizeMarkup } from './sanitize.js';
+import { nodeChildNodes, parseInContext, parseSanitized, sanitizeMarkup } from './sanitize.js';
 
 /**
  * Markup to insert as HTML rather than as text: made by `raw()` (sanitized)
@@ -51,7 +51,9 @@ class Markup implements Raw {
 /**
  * Markup inserted sanitized: `<script>`, `<style>`, `<link>`, `<base>`,
  * `<meta>`, event handler attributes, `srcdoc`, `javascript:` URLs, `data:`
- * frame sources and SVG animations of URL attributes are removed.
+ * frame sources and SVG animations of URL attributes are removed, and so is
+ * an `id`/`name` that would shadow a built-in of `document` or of a `<form>`
+ * (`name="createElement"`, `name="action"`, `id="body"`, …).
  */
 export function raw(value: string): Raw {
   return new Markup(value == null ? '' : String(value), false);
@@ -75,6 +77,6 @@ export function rawNodes(value: Raw, parent: Node | null): Node[] {
   const brand = value as unknown as Record<symbol, unknown>;
   const source = brand[SOURCE];
   if (typeof source !== 'string') return parseSanitized(value.__html, parent);
-  if (brand[TRUSTED] === true) return Array.from(parseInContext(source, parent).childNodes);
+  if (brand[TRUSTED] === true) return Array.from(nodeChildNodes(parseInContext(source, parent)));
   return parseSanitized(source, parent);
 }

@@ -274,3 +274,99 @@ test.describe('modal opened from a menu item', () => {
     await expect(page.locator('#actions')).toBeFocused();
   });
 });
+
+test.describe('DOM clobbering', () => {
+  // `document` and `<form>` are [LegacyOverrideBuiltIns]: a named element shadows their built-ins in
+  // real browsers only (jsdom doesn't implement it). Markup injected directly, not through raw(), tests
+  // that the library reads through the prototypes; the raw() tests check the sanitizer drops the names.
+  type Openable = HTMLElement & { open: boolean };
+  const DOCUMENT_CLOBBERS = `
+    <img name="createElement"><img name="getElementById"><form name="querySelector"></form>
+    <form name="body"></form><img name="activeElement"><img name="addEventListener">`;
+
+  test('raw() drops ids and names that would shadow document or form built-ins', async ({ page }) => {
+    await setUp(page, '<form name="login"></form>');
+    const names = await page.evaluate(async () => {
+      const { notify } = (await import('/dist/browser/all.js')) as typeof import('../src/all.js');
+      const { raw } = (await import('/dist/core/template.js')) as typeof import('../src/core/template.js');
+      notify(raw('<img name="createElement"><form id="body"><input name="action"><input name="email"></form><form name="login"></form>'), { duration: 60_000 });
+      const message = document.querySelector('.a11y-snackbar__message')!;
+      return [typeof document.createElement, ...[...message.querySelectorAll('*')].map((el) => `${el.localName}:${el.getAttribute('id') ?? ''}:${el.getAttribute('name') ?? ''}`)];
+    });
+    expect(names).toEqual(['function', 'img::', 'form::', 'input::', 'input::email', 'form::']);
+  });
+
+  // Playwright's own engines (locator actionability, getByRole) read these properties off the
+  // instance too, so with clobbering markup on the page the checks below go through `evaluate()`,
+  // the prototypes and mouse coordinates instead.
+  const q = (page: Page, selector: string) =>
+    page.evaluate((sel) => !!Document.prototype.querySelector.call(document, sel), selector);
+  const clickAt = async (page: Page, selector: string) => {
+    const box = await page.evaluate((sel) => {
+      const r = Document.prototype.querySelector.call(document, sel)!.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    }, selector);
+    await page.mouse.click(box.x, box.y);
+  };
+
+  test('document built-ins shadowed by named page elements do not break rendering, overlays or focus', async ({ page }) => {
+    await setUp(page, `<main><button id="open">Open</button></main>${DOCUMENT_CLOBBERS}<a11y-modal id="m"><h2>Settings</h2><button>Save</button></a11y-modal>`);
+    expect(await page.evaluate(() => [typeof document.createElement, (document.body as Element).localName])).toEqual(['object', 'form']);
+
+    const rendered = await page.evaluate(async () => {
+      const { notify } = (await import('/dist/browser/all.js')) as typeof import('../src/all.js');
+      const { h } = (await import('/dist/core/dom.js')) as typeof import('../src/core/dom.js');
+      notify('first', { duration: 60_000 });
+      notify('second', { duration: 60_000 });
+      return [h('b', null, 'x').outerHTML, Document.prototype.querySelectorAll.call(document, '.a11y-snackbar').length];
+    });
+    expect(rendered).toEqual(['<b>x</b>', 2]);
+
+    await page.evaluate(() => {
+      const byId = (id: string) => Document.prototype.getElementById.call(document, id)!;
+      byId('open').onclick = () => ((byId('m') as Openable).open = true);
+    });
+    await clickAt(page, '#open');
+    await expect.poll(() => q(page, 'body > .a11y-modal-overlay > .a11y-modal-wrapper[role="dialog"]')).toBe(true);
+    // Portaled to the real <body>, not the <form name="body">, and the page behind it is inert.
+    expect(await q(page, 'form[name="body"] .a11y-modal-overlay')).toBe(false);
+    expect(await q(page, 'main[inert]')).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect.poll(() => q(page, 'main[inert]')).toBe(false);
+    expect(await page.evaluate(() => (Object.getOwnPropertyDescriptor(Document.prototype, 'activeElement')!.get!.call(document) as Element).id)).toBe('open');
+  });
+
+  test('a click on a form whose control is named parentNode, with nested overlays open, does not freeze the page', async ({ page }) => {
+    await setUp(
+      page,
+      `<button id="p-trigger">Info</button>
+      <a11y-popover id="p" anchor="p-trigger">
+        <button id="d-trigger">Actions</button>
+        <a11y-dropdown id="d" anchor="d-trigger"><button role="menuitem">Edit</button></a11y-dropdown>
+      </a11y-popover>
+      <form style="position: fixed; right: 0; bottom: 0"><div><input id="field" name="parentNode" aria-label="Field"></div></form>`,
+    );
+    await page.evaluate(() => ((document.getElementById('p') as Openable).open = true));
+    await page.waitForTimeout(50); // outside-click listeners are bound on the next tick
+    await page.evaluate(() => ((document.getElementById('d') as Openable).open = true));
+    await page.waitForTimeout(50);
+    await clickAt(page, '#field');
+    // Answering at all means the main thread isn't stuck; the outside click closed both overlays.
+    expect(await page.evaluate(() => ['p', 'd'].map((id) => (document.getElementById(id) as Openable).open))).toEqual([false, false]);
+  });
+
+  test('a modal traps Tab around a focusable form whose controls shadow matches, closest and getAttribute', async ({ page }) => {
+    await setUp(
+      page,
+      `<a11y-modal id="m"><h2>Settings</h2><button id="first">First</button>
+        <form tabindex="0" aria-label="Form"><input name="matches" aria-label="A"><input name="closest" aria-label="B"><input name="getAttribute" aria-label="C"></form>
+        <button id="last">Last</button></a11y-modal>`,
+    );
+    await page.evaluate(() => ((document.getElementById('m') as Openable).open = true));
+    await expect.poll(() => q(page, '.a11y-modal-wrapper[role="dialog"]')).toBe(true);
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press('Tab');
+      expect(await focusInside(page, '.a11y-modal-wrapper')).toBe(true);
+    }
+  });
+});

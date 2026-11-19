@@ -1,6 +1,7 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncClass, syncText } from '../../core/dom-sync.js';
 import type { ValueElement } from '../../core/value-element.js';
+import { doc } from '../../core/safe-dom.js';
 
 /**
  * Enhances a real `<input type="checkbox">` authored by the consumer with a
@@ -71,7 +72,7 @@ export class CheckboxElement extends A11yWrapperElement implements ValueElement<
     const existing = input.closest<HTMLLabelElement>('label.a11y-checkbox');
     if (existing && existing.parentElement === this) return existing;
 
-    const wrapper = document.createElement('label');
+    const wrapper = doc.createElement('label');
     wrapper.className = 'a11y-checkbox';
     input.replaceWith(wrapper);
     wrapper.appendChild(input);
@@ -86,7 +87,7 @@ export class CheckboxElement extends A11yWrapperElement implements ValueElement<
       return;
     }
     if (!span) {
-      span = document.createElement('span');
+      span = doc.createElement('span');
       span.className = 'a11y-checkbox__label';
       wrapper.appendChild(span);
     }

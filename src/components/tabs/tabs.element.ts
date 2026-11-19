@@ -1,6 +1,7 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr, syncClass } from '../../core/dom-sync.js';
 import { nextId } from '../../core/ids.js';
+import { call, doc } from '../../core/safe-dom.js';
 
 type Orientation = 'horizontal' | 'vertical';
 
@@ -12,7 +13,7 @@ function isDisabled(tab: HTMLElement): boolean {
 function hashTarget(hash: string): HTMLElement | null {
   if (hash.length < 2) return null;
   try {
-    return document.getElementById(decodeURIComponent(hash.slice(1)));
+    return doc.getElementById(decodeURIComponent(hash.slice(1)));
   } catch {
     return null; // malformed escape sequence
   }
@@ -95,7 +96,9 @@ export class TabsElement extends A11yWrapperElement {
   }
 
   private _owns(el: Element): boolean {
-    return el.parentElement?.closest('a11y-tabs') === this;
+    // The parent can be a <form>, whose controls shadow `closest`.
+    const parent = el.parentElement;
+    return !!parent && call(parent, 'closest', 'a11y-tabs') === this;
   }
 
   private _tablist(): HTMLElement | null {

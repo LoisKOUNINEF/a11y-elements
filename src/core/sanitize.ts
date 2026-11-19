@@ -1,3 +1,5 @@
+import { doc } from './safe-dom.js';
+
 /**
  * DOM-based sanitizer behind `raw()`: markup is parsed once in the inert
  * document behind a `<template>` (nothing loads or runs there), cleaned as
@@ -19,6 +21,22 @@ const ATTR_ANIMATION_TAGS = new Set(['animate', 'set']);
 
 const SCRIPT_URL = /^javascript:/i;
 
+/**
+ * `document` and `<form>` are `[LegacyOverrideBuiltIns]` too: once inserted,
+ * `<img name="createElement">` makes `document.createElement` that image, and
+ * `<input name="action">` shadows its form's `action`. An `id`/`name` whose
+ * value names a property of either (or of a named element already on the
+ * page) is dropped — DOMPurify's `SANITIZE_DOM`. Markup you write yourself,
+ * or pass to `trustedRaw()`, keeps its names.
+ */
+const CLOBBERING_ATTRS = new Set(['id', 'name']);
+let probeForm: HTMLFormElement | undefined;
+
+function clobbers(value: string): boolean {
+  probeForm ??= doc.createElement('form');
+  return value in document || value in probeForm;
+}
+
 /*
  * Clobbering-proof DOM access. A `<form>` is `[LegacyOverrideBuiltIns]`: a
  * descendant named `children`, `attributes`, `localName`, `remove`, … shadows
@@ -35,7 +53,8 @@ const fragmentChildren = getter<HTMLCollection>(DocumentFragment.prototype, 'chi
 const elementAttributes = getter<NamedNodeMap>(Element.prototype, 'attributes');
 const elementLocalName = getter<string>(Element.prototype, 'localName');
 const elementNamespace = getter<string | null>(Element.prototype, 'namespaceURI');
-const nodeChildNodes = getter<NodeListOf<ChildNode>>(Node.prototype, 'childNodes');
+export const nodeChildNodes = getter<NodeListOf<ChildNode>>(Node.prototype, 'childNodes');
+const nodeType = getter<number>(Node.prototype, 'nodeType');
 const templateContentOf = getter<DocumentFragment>(HTMLTemplateElement.prototype, 'content');
 const { getAttribute, removeAttribute, remove } = Element.prototype;
 
@@ -46,7 +65,7 @@ const SCRIPT_OR_DATA_URL = /^(javascript|data):/i;
 
 /** Parses `source` as markup and returns it sanitized, as a string. Only for `String()` fallbacks: rendering inserts the nodes from `parseSanitized()` instead. */
 export function sanitizeMarkup(source: string): string {
-  const holder = document.createElement('template');
+  const holder = doc.createElement('template');
   holder.innerHTML = source;
   sanitizeNode(holder.content);
   return holder.innerHTML;
@@ -65,8 +84,8 @@ export function parseSanitized(source: string, parent: Node | null): Node[] {
 
 /** Parses `source` as markup with an element like `parent` as context, unsanitized: the holder of the parsed nodes. */
 export function parseInContext(source: string, parent: Node | null): ParentNode {
-  const holder = document.createElement('template');
-  const parentEl = parent && parent.nodeType === Node.ELEMENT_NODE ? (parent as Element) : null;
+  const holder = doc.createElement('template');
+  const parentEl = parent && nodeType(parent) === Node.ELEMENT_NODE ? (parent as Element) : null;
   if (parentEl && !templateContent(parentEl)) {
     const context = holder.content.ownerDocument.createElementNS(elementNamespace(parentEl), elementLocalName(parentEl));
     context.innerHTML = source;
@@ -101,7 +120,8 @@ function sanitizeNode(root: ParentNode): void {
       const name = attr.name.toLowerCase();
       if (
         !isAllowedAttribute(name, attr.value) ||
-        (FRAME_TAGS.has(tag) && FRAME_URL_ATTRS.has(name) && isDangerousUrl(attr.value, SCRIPT_OR_DATA_URL))
+        (FRAME_TAGS.has(tag) && FRAME_URL_ATTRS.has(name) && isDangerousUrl(attr.value, SCRIPT_OR_DATA_URL)) ||
+        (CLOBBERING_ATTRS.has(name) && clobbers(attr.value))
       ) {
         removeAttribute.call(el, attr.name);
       }

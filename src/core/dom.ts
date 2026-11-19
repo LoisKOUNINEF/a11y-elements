@@ -1,4 +1,5 @@
 import { isRaw, rawNodes, type Raw } from './template.js';
+import { call, doc } from './safe-dom.js';
 
 /** Content for an element: a string is text, a `Raw` is markup (see `raw()`), a `Node` goes in as is. */
 export type Content = string | number | Node | Raw;
@@ -16,9 +17,10 @@ export type AttrValue = string | number | boolean | null | undefined;
 export function appendContent(parent: ParentNode & Node, ...children: Child[]): void {
   for (const child of children) {
     if (child == null || child === false) continue;
-    if (isRaw(child)) parent.append(...rawNodes(child, parent));
-    else if (typeof child === 'object' && 'nodeType' in child) parent.append(child);
-    else parent.append(String(child));
+    // `call()`: `parent` can be a <form> whose controls shadow `append`.
+    if (isRaw(child)) call(parent, 'append', ...rawNodes(child, parent));
+    else if (typeof child === 'object' && 'nodeType' in child) call(parent, 'append', child);
+    else call(parent, 'append', String(child));
   }
 }
 
@@ -36,7 +38,7 @@ export function h<K extends keyof HTMLElementTagNameMap>(
 ): HTMLElementTagNameMap[K];
 export function h(tag: string, attrs?: Record<string, AttrValue> | null, ...children: Child[]): HTMLElement;
 export function h(tag: string, attrs?: Record<string, AttrValue> | null, ...children: Child[]): HTMLElement {
-  const el = document.createElement(tag);
+  const el = doc.createElement(tag);
   setAttrs(el, attrs);
   appendContent(el, ...children);
   return el;

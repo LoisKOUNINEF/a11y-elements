@@ -1,6 +1,7 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr, syncClass, syncText } from '../../core/dom-sync.js';
 import type { ValueElement } from '../../core/value-element.js';
+import { doc } from '../../core/safe-dom.js';
 
 /**
  * Enhances a real `<input type="checkbox">` with `role="switch"` and a
@@ -50,7 +51,7 @@ export class SwitchElement extends A11yWrapperElement implements ValueElement<bo
     const existing = input.closest<HTMLLabelElement>('label.a11y-switch');
     if (existing && existing.parentElement === this) return existing;
 
-    const wrapper = document.createElement('label');
+    const wrapper = doc.createElement('label');
     wrapper.className = 'a11y-switch';
     input.replaceWith(wrapper);
     wrapper.appendChild(input);
@@ -65,7 +66,7 @@ export class SwitchElement extends A11yWrapperElement implements ValueElement<bo
       return;
     }
     if (!span) {
-      span = document.createElement('span');
+      span = doc.createElement('span');
       span.className = 'a11y-switch__label';
       wrapper.appendChild(span);
     }

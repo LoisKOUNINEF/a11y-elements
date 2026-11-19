@@ -1,6 +1,7 @@
 import { syncAttr, syncIdRef, syncText } from './dom-sync.js';
 import { nextId } from './ids.js';
 import { formatString, getString } from './strings.js';
+import { doc } from './safe-dom.js';
 
 /**
  * `bindField()` — the headless primitive behind `<a11y-input>` and
@@ -198,13 +199,13 @@ export function bindField(initialParts: FieldParts, initialOptions: FieldOptions
     let text = counter.querySelector<HTMLElement>(':scope > .a11y-counter__text');
     let status = counter.querySelector<HTMLElement>(':scope > .a11y-counter__status');
     if (!text) {
-      text = document.createElement('span');
+      text = doc.createElement('span');
       text.className = 'a11y-counter__text';
       text.setAttribute('aria-hidden', 'true');
       counter.prepend(text);
     }
     if (!status) {
-      status = document.createElement('span');
+      status = doc.createElement('span');
       status.className = 'a11y-counter__status';
       status.setAttribute('aria-live', 'polite');
       counter.append(status);
@@ -250,7 +251,7 @@ export function bindField(initialParts: FieldParts, initialOptions: FieldOptions
             !(el as HTMLInputElement).validity.valid,
         )
       : control;
-    if (first === control && document.activeElement !== control) control.focus();
+    if (first === control && doc.activeElement !== control) control.focus();
   }
 
   control.addEventListener(
@@ -287,7 +288,7 @@ export function bindField(initialParts: FieldParts, initialOptions: FieldOptions
   );
 
   // The `reset` event fires before the form resets its controls' values.
-  document.addEventListener(
+  doc.addEventListener(
     'reset',
     (event) => {
       if (event.target !== control.form) return;

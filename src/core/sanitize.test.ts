@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { parseInContext, parseSanitized, sanitizeMarkup } from './sanitize.js';
+import { rawNodes, trustedRaw } from './template.js';
 
 describe('sanitizeMarkup()', () => {
   it('removes script, style, link, base and meta elements, including SVG ones', () => {
@@ -108,10 +109,45 @@ describe('DOM clobbering (form named properties)', () => {
     expect(out).not.toMatch(/<script/i);
   });
 
+  it('trustedRaw() returns the real child nodes of a clobbered form context', () => {
+    const form = document.createElement('form');
+    expect(rawNodes(trustedRaw('<input name="childNodes"><b>kept</b>'), form)).toHaveLength(2);
+  });
+
   it('parseSanitized() returns the real child nodes of a clobbered form context', () => {
     const form = document.createElement('form');
     const nodes = parseSanitized('<input name="childNodes"><img src="x" onerror="x">', form);
     expect(nodes).toHaveLength(2);
     expect((nodes[1] as Element).hasAttribute('onerror')).toBe(false);
+  });
+});
+
+describe('clobbering id/name (SANITIZE_DOM)', () => {
+  it.each([
+    ['<img name="createElement">', '<img>'],
+    ['<form name="querySelector"></form>', '<form></form>'],
+    ['<img id="body" name="activeElement">', '<img>'],
+    ['<input name="action">', '<input>'],
+    ['<input name="submit">', '<input>'],
+    ['<form><input id="parentNode"></form>', '<form><input></form>'],
+  ])('drops an id/name that shadows a document or form built-in: %s', (markup, expected) => {
+    expect(sanitizeMarkup(markup)).toBe(expected);
+  });
+
+  it('keeps ordinary ids and names', () => {
+    expect(sanitizeMarkup('<input name="email"><a id="main-content" name="q">x</a>')).toBe(
+      '<input name="email"><a id="main-content" name="q">x</a>',
+    );
+  });
+
+  it('leaves trustedRaw() names alone', () => {
+    const nodes = rawNodes(trustedRaw('<img name="createElement">'), null);
+    expect((nodes[0] as Element).getAttribute('name')).toBe('createElement');
+  });
+
+  it('parses in the context of a parent <form> whose control shadows nodeType', () => {
+    const form = document.createElement('form');
+    Object.defineProperty(form, 'nodeType', { value: document.createElement('input'), configurable: true });
+    expect((parseInContext('<b>x</b>', form) as Element).localName).toBe('form');
   });
 });

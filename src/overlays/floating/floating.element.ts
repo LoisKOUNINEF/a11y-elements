@@ -12,6 +12,7 @@ import { getString } from '../../core/strings.js';
 import { whenTransitionDone } from '../../core/transition.js';
 import type { PassiveOverlayPosition } from '../core/a11y-passive-overlay-element.js';
 import { nextId } from '../../core/ids.js';
+import { doc } from '../../core/safe-dom.js';
 
 export type FloatingPosition = PassiveOverlayPosition;
 
@@ -146,7 +147,7 @@ export class FloatingElement extends A11yElement {
   get controlsElement(): HTMLElement | null {
     if (this._controlsEl) return this._controlsEl;
     const id = this.getAttribute('controls');
-    return id ? document.getElementById(id) : null;
+    return id ? doc.getElementById(id) : null;
   }
 
   set controlsElement(el: HTMLElement | null) {
@@ -172,7 +173,7 @@ export class FloatingElement extends A11yElement {
     // Upgraded mid-parse (define script loaded synchronously ahead of the
     // markup): wait for the children — and a `controls` target authored
     // after this element — before wrapping/wiring them.
-    if (document.readyState === 'loading') this._afterParse(() => this._setUp());
+    if (doc.readyState === 'loading') this._afterParse(() => this._setUp());
     else this._setUp();
   }
 
@@ -272,7 +273,7 @@ export class FloatingElement extends A11yElement {
     if (!proceed) return;
 
     this.collapse();
-    const hadFocus = this.contains(document.activeElement);
+    const hadFocus = this.contains(doc.activeElement);
     this.classList.add('a11y-is-dismissing');
     this._cancelDismissWait = whenTransitionDone(this, () => {
       this._cancelDismissWait = null;
@@ -303,14 +304,14 @@ export class FloatingElement extends A11yElement {
     const position = this.position;
     if (this._stack?.dataset.position === position && this.parentNode === this._stack) return;
     const previous = this._stack;
-    let stack = Array.from(document.body.children).find(
+    let stack = Array.from(doc.body.children).find(
       (el): el is HTMLElement => el.classList.contains('a11y-floating-stack') && (el as HTMLElement).dataset.position === position,
     );
     if (!stack) {
-      stack = document.createElement('div');
+      stack = doc.createElement('div');
       stack.className = 'a11y-floating-stack';
       stack.dataset.position = position;
-      document.body.appendChild(stack);
+      doc.body.appendChild(stack);
     }
     this._stack = stack;
     this._moveSelfTo(stack);
@@ -322,7 +323,7 @@ export class FloatingElement extends A11yElement {
   }
 
   private _afterParse(callback: () => void): void {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', callback, { once: true });
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', callback, { once: true });
   }
 
   // --- host role ---
@@ -424,20 +425,20 @@ export class FloatingElement extends A11yElement {
     if (this._panel) return;
 
     const existing = this.querySelector<HTMLElement>(`:scope > ${TRIGGER_SELECTOR}`);
-    const launcher = existing ?? document.createElement('button');
+    const launcher = existing ?? doc.createElement('button');
     if (!existing) {
       (launcher as HTMLButtonElement).type = 'button';
       launcher.className = 'a11y-floating-launcher';
       this._generatedLauncher = true;
     }
 
-    const panel = document.createElement('div');
+    const panel = doc.createElement('div');
     panel.className = 'a11y-floating-panel';
     panel.id = nextId('a11y-floating-panel');
     panel.setAttribute('role', 'dialog');
     panel.hidden = true;
 
-    const close = document.createElement('button');
+    const close = doc.createElement('button');
     close.type = 'button';
     close.className = 'a11y-floating-panel-close';
     close.textContent = '×';
@@ -531,14 +532,14 @@ export class FloatingElement extends A11yElement {
       });
       this._focusTrap.activate();
     } else {
-      document.addEventListener('keydown', this._onKeyDown);
+      doc.addEventListener('keydown', this._onKeyDown);
     }
     this._focusPanel();
 
     // Deferred so the click that expanded the panel doesn't collapse it.
     this._outsideClickTimer = setTimeout(() => {
       this._outsideClickTimer = null;
-      document.addEventListener('click', this._onOutsideClick);
+      doc.addEventListener('click', this._onOutsideClick);
     }, 0);
 
     registerOpenOverlay(this._registryHandle);
@@ -552,13 +553,13 @@ export class FloatingElement extends A11yElement {
     this._isExpanded = false;
     if (this.expanded) this.setBoolAttr('expanded', false); // collapsed from outside the attribute (disconnect, mode switch)
 
-    const hadFocus = panel.contains(document.activeElement);
+    const hadFocus = panel.contains(doc.activeElement);
     this._focusTrap?.deactivate();
     this._focusTrap = null;
-    document.removeEventListener('keydown', this._onKeyDown);
+    doc.removeEventListener('keydown', this._onKeyDown);
     if (this._outsideClickTimer) clearTimeout(this._outsideClickTimer);
     this._outsideClickTimer = null;
-    document.removeEventListener('click', this._onOutsideClick);
+    doc.removeEventListener('click', this._onOutsideClick);
 
     this._launcher?.setAttribute('aria-expanded', 'false');
     if (restoreFocus && hadFocus) this._launcher?.focus();
@@ -592,8 +593,8 @@ export class FloatingElement extends A11yElement {
 
   private _onKeyDown = (e: KeyboardEvent): void => {
     if (e.key !== 'Escape' || e.defaultPrevented) return;
-    const active = document.activeElement;
-    if (active && active !== document.body && !this.contains(active)) return; // Escape meant for something else
+    const active = doc.activeElement;
+    if (active && active !== doc.body && !this.contains(active)) return; // Escape meant for something else
     this.collapse();
   };
 
@@ -606,7 +607,7 @@ export class FloatingElement extends A11yElement {
   private _syncDismissButton(): void {
     const wanted = this.boolAttr('dismissible');
     if (wanted && !this._dismissButton) {
-      const btn = document.createElement('button');
+      const btn = doc.createElement('button');
       btn.type = 'button';
       btn.className = 'a11y-floating-dismiss';
       btn.textContent = '×';
@@ -625,7 +626,7 @@ export class FloatingElement extends A11yElement {
     const origin = this._focusOrigin;
     this._focusOrigin = null;
     if (origin?.isConnected) origin.focus();
-    else (document.activeElement as HTMLElement | null)?.blur?.();
+    else (doc.activeElement as HTMLElement | null)?.blur?.();
   }
 
   private _onFocusIn = (e: FocusEvent): void => {
@@ -660,7 +661,7 @@ export class FloatingElement extends A11yElement {
     const delta = y - this._lastScrollY;
     if (Math.abs(delta) < this.numberAttr('scroll-threshold', DEFAULT_SCROLL_THRESHOLD)) return;
     this._lastScrollY = y;
-    const away = delta > 0 && y > 0 && !this._isExpanded && !this.contains(document.activeElement);
+    const away = delta > 0 && y > 0 && !this._isExpanded && !this.contains(doc.activeElement);
     this.classList.toggle('a11y-floating--scrolled-away', away);
   };
 }

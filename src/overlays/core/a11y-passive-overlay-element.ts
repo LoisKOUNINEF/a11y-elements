@@ -1,6 +1,7 @@
 import { A11yElement } from '../../core/a11y-element.js';
 import { forgetPortalOrigin, recordPortalOrigin } from '../../core/overlay-registry.js';
 import type { Content } from '../../core/dom.js';
+import { doc } from '../../core/safe-dom.js';
 
 const DEFAULT_MAX_STACK = 3;
 /** setTimeout's limit: longer (or `Infinity`) delays overflow to 0 and fire at once. */
@@ -45,8 +46,8 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
     this._initConnect();
     this._connected = true;
     const origin = this.parentNode;
-    if (origin !== document.body) {
-      document.body.appendChild(this);
+    if (origin !== doc.body) {
+      doc.body.appendChild(this);
       // Recorded only now: that move ran a nested disconnect, which forgets the origin.
       if (origin instanceof Element) recordPortalOrigin(this, origin);
     }

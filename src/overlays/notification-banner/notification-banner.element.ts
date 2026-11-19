@@ -1,6 +1,7 @@
 import { A11yPassiveOverlayElement, type PassiveOverlayItem } from '../core/a11y-passive-overlay-element.js';
 import { getString } from '../../core/strings.js';
 import { h, type Content } from '../../core/dom.js';
+import { doc } from '../../core/safe-dom.js';
 
 export type NotificationBannerType = 'info' | 'success' | 'error' | 'warning';
 
@@ -70,9 +71,9 @@ export class NotificationBannerElement extends A11yPassiveOverlayElement<Notific
     super.connectedCallback();
     this.classList.add('a11y-notification-banner-region');
     if (!this._topContainer) {
-      this._topContainer = document.createElement('div');
+      this._topContainer = doc.createElement('div');
       this._topContainer.className = 'a11y-notification-banner-region__top';
-      this._bottomContainer = document.createElement('div');
+      this._bottomContainer = doc.createElement('div');
       this._bottomContainer.className = 'a11y-notification-banner-region__bottom';
       this.append(this._topContainer, this._bottomContainer);
     }
@@ -108,7 +109,7 @@ export class NotificationBannerElement extends A11yPassiveOverlayElement<Notific
     const position = item.position ?? 'top';
     const container = position === 'top' ? this._topContainer : this._bottomContainer;
 
-    const el = document.createElement('div');
+    const el = doc.createElement('div');
     el.className = `a11y-notification-banner a11y-notification-banner--${type}`;
     el.setAttribute('role', type === 'error' ? 'alert' : 'status');
     el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');

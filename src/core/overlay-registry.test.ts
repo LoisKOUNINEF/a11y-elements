@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { inertOutside, lockScroll, releaseInert, unlockScroll } from './overlay-registry.js';
+import {
+  inertOutside,
+  isInsideOverlayOpenedAfter,
+  lockScroll,
+  registerOpenOverlay,
+  releaseInert,
+  unlockScroll,
+  unregisterOpenOverlay,
+} from './overlay-registry.js';
 
 const root = document.documentElement;
 
@@ -125,5 +133,26 @@ describe('inertOutside() — stacked layers', () => {
     expect(main.hasAttribute('inert')).toBe(false);
     expect(mine.hasAttribute('inert')).toBe(true);
     release();
+  });
+});
+
+describe('isInsideOverlayOpenedAfter', () => {
+  it('ends on a <form> whose control is named "parentNode" (no endless walk)', () => {
+    const lower = { close() {} };
+    const upper = { close() {} };
+    registerOpenOverlay(lower);
+    registerOpenOverlay(upper);
+    const form = document.body.appendChild(document.createElement('form'));
+    const inner = form.appendChild(document.createElement('div'));
+    const input = inner.appendChild(document.createElement('input'));
+    // jsdom doesn't implement [LegacyOverrideBuiltIns]: emulate the named control on the instance.
+    Object.defineProperty(form, 'parentNode', { value: input, configurable: true });
+    try {
+      expect(isInsideOverlayOpenedAfter(lower, input)).toBe(false);
+    } finally {
+      unregisterOpenOverlay(lower);
+      unregisterOpenOverlay(upper);
+      form.remove();
+    }
   });
 });

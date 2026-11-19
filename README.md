@@ -2,31 +2,31 @@
 
 Framework-agnostic accessibility Custom Elements (Web Components). A behavior layer, not a themed UI kit. 
 
-- See a [demo of the elements](https://nutin.dev/a11y-elements/elements)
+- See a [demo of the components](https://nutin.dev/a11y-elements/elements)
 - See a [demo of the overlays](https://nutin.dev/a11y-elements/overlays)
 
 ## Elements
 
 ### Accessibility components
 
-- [`<a11y-anchor>`](#a11y-anchor) ·
-- [`<a11y-avatar>`](#a11y-avatar) ·
-- [`<a11y-card-link>`](#a11y-card-link) ·
-- [`<a11y-checkbox>`](#a11y-checkbox) ·
-- [`<a11y-checkbox-group>`](#a11y-checkbox-group) ·
-- [`<a11y-file-input>`](#a11y-file-input) ·
-- [`<a11y-focusable>`](#a11y-focusable) ·
-- [`<a11y-input>`](#a11y-input) ·
-- [`<a11y-label>`](#a11y-label) ·
-- [`<a11y-picture>`](#a11y-picture) ·
-- [`<a11y-progress>`](#a11y-progress) ·
-- [`<a11y-radio-group>`](#a11y-radio-group) ·
-- [`<a11y-select>`](#a11y-select) ·
-- [`<a11y-skeleton>`](#a11y-skeleton) ·
-- [`<a11y-spinner>`](#a11y-spinner) ·
-- [`<a11y-switch>`](#a11y-switch) ·
-- [`<a11y-tabs>`](#a11y-tabs) ·
-- [`<a11y-textarea>`](#a11y-textarea) ·
+- [`<a11y-anchor>`](#a11y-anchor)
+- [`<a11y-avatar>`](#a11y-avatar)
+- [`<a11y-card-link>`](#a11y-card-link)
+- [`<a11y-checkbox>`](#a11y-checkbox)
+- [`<a11y-checkbox-group>`](#a11y-checkbox-group)
+- [`<a11y-file-input>`](#a11y-file-input)
+- [`<a11y-focusable>`](#a11y-focusable)
+- [`<a11y-input>`](#a11y-input)
+- [`<a11y-label>`](#a11y-label)
+- [`<a11y-picture>`](#a11y-picture)
+- [`<a11y-progress>`](#a11y-progress)
+- [`<a11y-radio-group>`](#a11y-radio-group)
+- [`<a11y-select>`](#a11y-select)
+- [`<a11y-skeleton>`](#a11y-skeleton)
+- [`<a11y-spinner>`](#a11y-spinner)
+- [`<a11y-switch>`](#a11y-switch)
+- [`<a11y-tabs>`](#a11y-tabs)
+- [`<a11y-textarea>`](#a11y-textarea)
 - [`<a11y-visually-hidden>`](#a11y-visually-hidden)
 
 ### Overlays
@@ -1639,7 +1639,7 @@ notify(h('span', null, 'Saved. ', h('a', { href: '/files' }, 'View files'))); //
 
 It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone, so toasts outlive a SPA navigation while the region stays in the page. Call `dismissAll()` to clear them. Removing the region from the document (e.g. with `removeOverlaysWithin()`) drops its toasts, queued ones included, and cancels their timers; re-adding it starts empty. A toast enqueued while the region is detached waits until it's back in the page. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
 
-A `message` is text: a string is inserted as text, never parsed. A DOM node (e.g. built with `h()` from `a11y-elements/core`) is inserted as is. For markup, pass `raw(markup)` from `a11y-elements/core`. It's sanitized against script injection (no scripts, `<style>`, event handlers or `javascript:` URLs). That's a basic XSS filter, not a full sanitizer like DOMPurify: forms, links, images and `style` attributes still pass, so untrusted markup can still look like your UI (phishing). Pass user data as text, or run it through DOMPurify first. `trustedRaw(markup)` skips that, for markup you wrote yourself. The same goes for `<a11y-notification-banner>`.
+A `message` is text: a string is inserted as text, never parsed. A DOM node (e.g. built with `h()` from `a11y-elements/core`) is inserted as is. For markup, pass `raw(markup)` from `a11y-elements/core`. It's sanitized against script injection (no scripts, `<style>`, event handlers or `javascript:` URLs). It also drops an `id` or `name` that would shadow a built-in of `document` or of a `<form>` (DOM clobbering: `name="createElement"`, `name="action"`, `id="body"`, …), or a name a form or image on the page already has. That's a basic XSS filter, not a full sanitizer like DOMPurify: forms, links, images and `style` attributes still pass, so untrusted markup can still look like your UI (phishing). Pass user data as text, or run it through DOMPurify first. `trustedRaw(markup)` skips that, for markup you wrote yourself. The same goes for `<a11y-notification-banner>`.
 
 `notify()` options (method and convenience export):
 

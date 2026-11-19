@@ -1,3 +1,5 @@
+import { doc, prop } from './safe-dom.js';
+
 /**
  * Why an overlay closed: `'escape'`, a click on the `'backdrop'`, the ×
  * `'close-button'`, an `'outside-click'`, focus leaving a menu (`'focus-out'`),
@@ -115,7 +117,7 @@ export function hasOverlayOpenedAfter(overlay: Dismissible): boolean {
 export function isInsideOverlayOpenedAfter(overlay: Dismissible, target: Node | null): boolean {
   const later = new Set<unknown>(openedAfter(overlay));
   if (later.size === 0) return false;
-  for (let node: Node | null = target; node; node = node.parentNode ?? (node as ShadowRoot).host ?? null) {
+  for (let node: Node | null = target; node; node = prop(node, 'parentNode') ?? (node as ShadowRoot).host ?? null) {
     if (later.has(node)) return true;
   }
   return false;
@@ -201,7 +203,7 @@ function syncInert(): void {
   const top = state.inertLayers[state.inertLayers.length - 1];
   const wanted = new Set<Element>();
   if (top) {
-    for (const child of Array.from(document.body.children)) {
+    for (const child of Array.from(doc.body.children)) {
       if (child === top.keep || child.contains(top.keep) || top.exempt?.(child)) continue;
       wanted.add(child);
     }
@@ -234,7 +236,7 @@ const GUTTER_CLASS = 'a11y-no-scroll--gutter';
  */
 export function lockScroll(): void {
   if (state.scrollLocks++ !== 0) return;
-  const root = document.documentElement;
+  const root = doc.documentElement;
   const widthBefore = root.clientWidth;
   root.classList.add(NO_SCROLL_CLASS);
   if (root.clientWidth > widthBefore) root.classList.add(GUTTER_CLASS);
@@ -242,7 +244,7 @@ export function lockScroll(): void {
 
 export function unlockScroll(): void {
   if (state.scrollLocks === 0) return;
-  if (--state.scrollLocks === 0) document.documentElement.classList.remove(NO_SCROLL_CLASS, GUTTER_CLASS);
+  if (--state.scrollLocks === 0) doc.documentElement.classList.remove(NO_SCROLL_CLASS, GUTTER_CLASS);
 }
 
 /**

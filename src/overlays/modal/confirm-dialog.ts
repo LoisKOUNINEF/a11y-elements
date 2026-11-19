@@ -1,6 +1,7 @@
 import { getString } from '../../core/strings.js';
 import { appendContent, h, type Content } from '../../core/dom.js';
 import type { ModalElement } from './modal.element.js';
+import { call, doc } from '../../core/safe-dom.js';
 
 export interface ConfirmDialogOptions {
   /** The dialog's heading, which also names it. */
@@ -30,7 +31,7 @@ export function confirmDialog(options: ConfirmDialogOptions): Promise<boolean> {
   const confirmLabel = options.confirmLabel ?? getString('confirm');
   const cancelLabel = options.cancelLabel ?? getString('cancel');
 
-  const modal = document.createElement('a11y-modal') as ModalElement;
+  const modal = doc.createElement('a11y-modal') as ModalElement;
   modal.classList.add('a11y-confirm');
   modal.setAttribute('initial-focus', '.a11y-confirm__cancel');
   appendContent(
@@ -50,7 +51,7 @@ export function confirmDialog(options: ConfirmDialogOptions): Promise<boolean> {
     modal.addEventListener('click', (e) => {
       // Already closing (Cancel, Escape…): a click during the fade-out must not turn it into a confirm.
       if (!modal.open) return;
-      const button = (e.target as Element).closest('button');
+      const button = call(e.target as Element, 'closest', 'button'); // the message can hold a <form> with a control named `closest`
       if (button?.classList.contains('a11y-confirm__confirm')) {
         confirmed = true;
         modal.close();
@@ -62,7 +63,7 @@ export function confirmDialog(options: ConfirmDialogOptions): Promise<boolean> {
       modal.remove();
       resolve(confirmed);
     };
-    document.body.appendChild(modal);
+    doc.body.appendChild(modal);
     modal.open = true;
   });
 }

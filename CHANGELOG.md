@@ -14,9 +14,15 @@
 
 - The `confirmDialog()` docs now say how to clear it on a SPA navigation (`removeOverlaysWithin()` doesn't track it).
 
+- `raw()` drops an `id` or `name` whose value would shadow a built-in of `document` or of a `<form>` (`name="createElement"`, `name="action"`, `name="submit"`, `id="body"`, …), or that a named form or image already on the page uses, as DOMPurify's `SANITIZE_DOM` does. `trustedRaw()` and your own markup keep their names.
+
+- New `prop()`, `call()` and `doc` in `a11y-elements/core`: read a property or call a method without a named `<form>` control or page element shadowing it, for code of your own that runs over content like `raw()` markup.
+
 ### Fixes
 
 - `raw()`'s sanitizer could be bypassed through DOM clobbering: a descendant named `children`, `attributes`, `localName`, … shadowed that property on a `<form>`, and the sanitizer skipped the subtree or the attributes behind it, so an `onerror`/`onclick` handler survived and ran once inserted. Every read now goes through the DOM prototypes.
+
+- More DOM clobbering, outside the sanitizer: once inserted, `raw()` content such as `<img name="createElement">`, `<form name="body">` or `<img name="activeElement">` shadowed `document`'s built-ins, so every later render, `notify()` and id threw, overlays portaled into the wrong element and focus returned to the wrong place. Every `document` read now goes through its prototype. A click inside a `<form>` holding `<input name="parentNode">` while two overlays were open froze the tab in an endless loop. A focus trap over a `<form>` whose control was named `matches`, `closest`, `getAttribute`, … threw on open instead of trapping focus.
 
 - Modal layers stack: a modal, dropdown, popover or loader already in the page when a modal opened was made `inert` with the rest of the page, and stayed unusable when opened from inside that modal. Closing a lower layer first (modal A while B, or a blocking loader, is open on top) no longer un-inerts the page or pulls focus out of the top one, and the top one later returns focus where the lower one would have. `inert` you set yourself is never removed.
 

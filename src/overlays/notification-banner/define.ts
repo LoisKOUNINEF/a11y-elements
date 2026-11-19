@@ -1,6 +1,7 @@
 import { defineElement } from '../../core/define-element.js';
 import type { Content } from '../../core/dom.js';
 import { NotificationBannerElement, type NotificationBannerOptions } from './notification-banner.element.js';
+import { doc } from '../../core/safe-dom.js';
 
 defineElement('a11y-notification-banner', NotificationBannerElement);
 
@@ -15,11 +16,11 @@ export { NotificationBannerElement, type NotificationBannerOptions };
 let cachedRegion: NotificationBannerElement | null = null;
 
 function getRegion(): NotificationBannerElement {
-  const existing = document.querySelector<NotificationBannerElement>('a11y-notification-banner');
+  const existing = doc.querySelector<NotificationBannerElement>('a11y-notification-banner');
   if (existing) return existing;
   if (!cachedRegion || !cachedRegion.isConnected) {
-    cachedRegion = document.createElement('a11y-notification-banner') as NotificationBannerElement;
-    document.body.appendChild(cachedRegion);
+    cachedRegion = doc.createElement('a11y-notification-banner') as NotificationBannerElement;
+    doc.body.appendChild(cachedRegion);
   }
   return cachedRegion;
 }

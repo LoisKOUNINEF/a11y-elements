@@ -1,6 +1,7 @@
 import { A11yPassiveOverlayElement, type PassiveOverlayItem } from '../core/a11y-passive-overlay-element.js';
 import { getString } from '../../core/strings.js';
 import { h, type Content } from '../../core/dom.js';
+import { doc } from '../../core/safe-dom.js';
 
 export type SnackbarType = 'info' | 'success' | 'error' | 'warning';
 
@@ -65,9 +66,9 @@ export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
     super.connectedCallback();
     this.classList.add('a11y-snackbar-region');
     if (!this._bottomContainer) {
-      this._bottomContainer = document.createElement('div');
+      this._bottomContainer = doc.createElement('div');
       this._bottomContainer.className = 'a11y-snackbar-region__bottom';
-      this._topContainer = document.createElement('div');
+      this._topContainer = doc.createElement('div');
       this._topContainer.className = 'a11y-snackbar-region__top';
       this.append(this._bottomContainer, this._topContainer);
     }
@@ -104,7 +105,7 @@ export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
     const duration = item.duration ?? (item.actionText ? 10_000 : 3000);
     const container = position === 'bottom' ? this._bottomContainer : this._topContainer;
 
-    const el = document.createElement('div');
+    const el = doc.createElement('div');
     el.className = `a11y-snackbar a11y-snackbar--${type}`;
     el.setAttribute('role', type === 'error' ? 'alert' : 'status');
     el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');

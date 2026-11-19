@@ -1,6 +1,7 @@
 import { A11yWrapperElement } from '../../core/a11y-wrapper-element.js';
 import { syncAttr, syncClass, syncText } from '../../core/dom-sync.js';
 import type { ValueElement } from '../../core/value-element.js';
+import { doc } from '../../core/safe-dom.js';
 
 /**
  * Enhances a set of real, consumer-authored `<input type="radio">` options
@@ -70,7 +71,7 @@ export class RadioGroupElement extends A11yWrapperElement implements ValueElemen
       return existing;
     }
 
-    const fieldset = document.createElement('fieldset');
+    const fieldset = doc.createElement('fieldset');
     fieldset.className = 'a11y-radio-group';
     // Move every existing child (the consumer's option markup) into it.
     while (this.firstChild) fieldset.appendChild(this.firstChild);
@@ -85,7 +86,7 @@ export class RadioGroupElement extends A11yWrapperElement implements ValueElemen
 
     if (legendText) {
       if (!legend) {
-        legend = document.createElement('legend');
+        legend = doc.createElement('legend');
         legend.className = 'a11y-radio-group__legend';
         fieldset.prepend(legend);
       }

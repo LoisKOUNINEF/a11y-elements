@@ -1,6 +1,6 @@
 {
   "name": "a11y-elements",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Framework-agnostic accessibility Custom Elements (Web Components) — behavior, not a themed UI kit.",
   "type": "module",
   "license": "MIT",
@@ -94,6 +94,7 @@
     "@playwright/test": "^1.64.1",
     "@types/node": "^22.10.2",
     "jsdom": "^25.0.1",
+    "linkedom": "^0.18.15",
     "publint": "^0.2.12",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",

@@ -1,3 +1,5 @@
+import { builtIn } from './builtin.js';
+
 /**
  * Clobbering-proof DOM reads.
  *
@@ -19,14 +21,6 @@ const OVERRIDES_BUILTINS = /^\[object (?:HTMLFormElement|(?:HTML|XML)?Document)\
 
 function overridesBuiltIns(target: unknown): boolean {
   return OVERRIDES_BUILTINS.test(Object.prototype.toString.call(target));
-}
-
-function builtIn(target: object, name: PropertyKey): PropertyDescriptor | undefined {
-  for (let proto = Object.getPrototypeOf(target); proto; proto = Object.getPrototypeOf(proto)) {
-    const desc = Object.getOwnPropertyDescriptor(proto, name);
-    if (desc) return desc;
-  }
-  return undefined;
 }
 
 /** `target[name]`, never a named descendant shadowing it. */

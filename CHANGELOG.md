@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1
+
+### Fixes
+
+- Importing `a11y-elements` threw (`Cannot read properties of undefined (reading 'get')`) in DOMs that don't place accessors where the spec does, such as linkedom for SSR prerendering. The `raw()` sanitizer now looks up every DOM accessor through the node's prototype chain when it runs, never at import, and needs no DOM to be imported.
+
+- In those DOMs `raw()` content rendered as nothing (linkedom's `Node.prototype.childNodes` is an empty stub), and `String(raw(…))` kept the markup unsanitized (linkedom serializes a `<template>`'s own children, not its `content`). Both are sanitized now, nested templates included.
+
 ## 1.0.0
 
 ### Changes

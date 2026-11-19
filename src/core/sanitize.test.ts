@@ -63,31 +63,49 @@ describe('parseInContext()', () => {
 describe('DOM clobbering (form named properties)', () => {
   // jsdom doesn't implement `[LegacyOverrideBuiltIns]` on <form>: emulate it, so a
   // descendant named like a built-in shadows that built-in, as in real browsers.
+  // Named properties are own properties of the form instance (never on a
+  // prototype), so the emulation defines them on every <form> parsed by innerHTML.
   const CLOBBERED = ['children', 'attributes', 'localName', 'remove', 'removeAttribute', 'getAttribute', 'content', 'childNodes'];
-  const saved = new Map<string, PropertyDescriptor | undefined>();
+  const innerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML')!;
 
-  beforeAll(() => {
+  function clobber(form: Element): void {
     for (const name of CLOBBERED) {
-      saved.set(name, Object.getOwnPropertyDescriptor(HTMLFormElement.prototype, name));
-      Object.defineProperty(HTMLFormElement.prototype, name, {
+      Object.defineProperty(form, name, {
         configurable: true,
-        get(this: HTMLFormElement) {
+        get(this: Element) {
           const named = Element.prototype.querySelector.call(this, `[name="${name}"]`);
           if (named) return named;
-          const proto = Object.getPrototypeOf(HTMLFormElement.prototype);
-          const desc = Object.getOwnPropertyDescriptor(Element.prototype, name) ?? Object.getOwnPropertyDescriptor(Node.prototype, name)
-            ?? Object.getOwnPropertyDescriptor(proto, name);
-          return desc?.get ? desc.get.call(this) : desc?.value;
+          for (let proto = Object.getPrototypeOf(this); proto; proto = Object.getPrototypeOf(proto)) {
+            const desc = Object.getOwnPropertyDescriptor(proto, name);
+            if (desc) return desc.get ? desc.get.call(this) : desc.value;
+          }
+          return undefined;
         },
       });
     }
+  }
+
+  function clobberAll(root: Element | DocumentFragment): void {
+    if (root instanceof HTMLFormElement) clobber(root);
+    for (const el of Array.from((root instanceof DocumentFragment ? DocumentFragment.prototype : Element.prototype).querySelectorAll.call(root, '*'))) {
+      if (el instanceof HTMLFormElement) clobber(el);
+      if (el instanceof HTMLTemplateElement) clobberAll(el.content);
+    }
+  }
+
+  beforeAll(() => {
+    Object.defineProperty(Element.prototype, 'innerHTML', {
+      ...innerHTML,
+      set(this: Element, value: string) {
+        innerHTML.set!.call(this, value);
+        clobberAll(this instanceof HTMLTemplateElement ? this.content : this);
+        if (this instanceof HTMLFormElement) clobber(this);
+      },
+    });
   });
 
   afterAll(() => {
-    for (const [name, desc] of saved) {
-      if (desc) Object.defineProperty(HTMLFormElement.prototype, name, desc);
-      else delete (HTMLFormElement.prototype as unknown as Record<string, unknown>)[name];
-    }
+    Object.defineProperty(Element.prototype, 'innerHTML', innerHTML);
   });
 
   it('the emulation really clobbers (sanity check)', () => {

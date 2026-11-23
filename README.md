@@ -43,7 +43,7 @@ Behavior shared by overlays is described once, in [Common to all overlays](#comm
 - [`<a11y-notification-banner>`](#a11y-notification-banner)
 - [`<a11y-popover>`](#a11y-popover)
 - [`<a11y-snackbar>`](#a11y-snackbar)
-- [`<a11y-tooltip>`](#a11y-toolti
+- [`<a11y-tooltip>`](#a11y-tooltip)
 
 ### Import paths
 
@@ -1713,6 +1713,8 @@ Status colors and the z-index scale, defined on `:root` (in `overlays/core/overl
 
 Each status color has a text color drawn on it (`--a11y-color-text-on-<type>`). Every default pair passes WCAG AA (4.5:1): success 5.13:1, info 5.75:1, error 5.62:1, warning 9.00:1. Warning is amber with dark text, since white on it is only 1.97:1. If you change a status color, check its contrast with its text color.
 
+Overlays move themselves to `<body>`, so a tooltip opened from inside a modal would render behind it at its own level (320 < 510). Instead, a dropdown, popover, tooltip or context menu opened from inside another overlay (a modal, drawer, emergency dialog, popover or toast region) stacks just above that overlay: its z-index is the parent's plus its `--a11y-z-nested-<name>` offset. That's 513 for a tooltip in a modal, 523 in a drawer and 613 in an emergency dialog, so it stays below a drawer or blocking loader opened on top. Snackbar and notification-banner stay usable while a modal, drawer or emergency dialog is open, so they're shown that many levels above the topmost one instead of behind its backdrop. Under a blocking loader they keep their usual level. Keep the offsets below 10, the gap between modal layers. The parent's z-index is set at runtime as `--a11y-z-parent` on the nested overlay's wrapper (`.a11y-is-nested`), and as `--a11y-z-modal-layer` on `<html>` (`.a11y-modal-layer-open`).
+
 <details>
 <summary>CSS variables</summary>
 
@@ -1749,6 +1751,12 @@ Each status color has a text color drawn on it (`--a11y-color-text-on-<type>`). 
 | `--a11y-z-emergency-dialog` | `610` |
 | `--a11y-z-debug-panel` | `700` |
 | `--a11y-z-inspector` | `710` |
+| `--a11y-z-nested-dropdown` | `1` |
+| `--a11y-z-nested-popover` | `2` |
+| `--a11y-z-nested-tooltip` | `3` |
+| `--a11y-z-nested-context-menu` | `4` |
+| `--a11y-z-nested-snackbar` | `5` |
+| `--a11y-z-nested-notification-banner` | `6` |
 
 </details>
 
@@ -1879,3 +1887,7 @@ The full list of tokens, with their defaults, is in the shipped `dist/a11y.css` 
 ## License
 
 MIT — see [`LICENSE.txt`](./LICENSE.txt).
+
+## Support
+
+If you find a11y-elements useful, consider supporting its development via [Ko-fi](https://ko-fi.com/loiskouninef)

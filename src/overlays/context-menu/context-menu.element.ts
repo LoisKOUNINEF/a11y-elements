@@ -57,6 +57,11 @@ export class ContextMenuElement extends A11yMenuOverlayElement {
     if (name === 'trigger') this._bindTrigger();
   }
 
+  /** Anchored to a point, not an element: its trigger is what it was opened from. */
+  protected override nestingTarget(): Node | null {
+    return this.triggerElement ?? super.nestingTarget();
+  }
+
   protected override createWrapper(): HTMLElement {
     const el = super.createWrapper();
     el.classList.add('a11y-context-menu-wrapper');

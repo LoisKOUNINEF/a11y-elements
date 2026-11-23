@@ -81,3 +81,8 @@
     animation: none;
   }
 }
+
+/* Kept usable while a modal is open, so shown above it rather than behind its backdrop. */
+html.a11y-modal-layer-open .a11y-notification-banner-region {
+  z-index: calc(var(--a11y-z-modal-layer) + var(--a11y-z-nested-notification-banner, 6));
+}

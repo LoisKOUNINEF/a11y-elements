@@ -132,6 +132,43 @@ export function recordPortalOrigin(overlay: Element, origin: Node): void {
   state.portalOrigins.set(overlay, origin);
 }
 
+/** Where `overlay` was authored before it moved itself to `<body>`, if it did. */
+export function getPortalOrigin(overlay: Element): Node | null {
+  return state.portalOrigins.get(overlay) ?? null;
+}
+
+const PASSIVE_REGION_CLASS = 'a11y-passive-overlay-region';
+
+/**
+ * The stacking root (the direct child of `<body>`: a modal's backdrop, an
+ * anchored overlay's wrapper, a snackbar region…) of the nearest overlay that
+ * `target` sits inside — an open overlay other than `except`, or a passive
+ * region. `null` when `target` isn't inside one. Overlays opened from inside
+ * another one stack themselves just above this root's z-index.
+ */
+export function findOverlayChromeRoot(target: Node | null, except?: unknown): HTMLElement | null {
+  const body = doc.body;
+  let overlay: Element | null = null;
+  for (let node: Node | null = target; node; node = prop(node, 'parentNode') ?? (node as ShadowRoot).host ?? null) {
+    if (node === body) return null;
+    if (node instanceof Element && node !== except && (state.openOverlays.has(node as unknown as Dismissible) || node.classList.contains(PASSIVE_REGION_CLASS))) {
+      overlay = node;
+      break;
+    }
+  }
+  for (let node: Node | null = overlay; node; node = prop(node, 'parentNode') ?? (node as ShadowRoot).host ?? null) {
+    const parent: Node | null = prop(node, 'parentNode');
+    if (parent === body) return node as HTMLElement;
+  }
+  return null;
+}
+
+/** An element's computed z-index as a number, or `null` when it's `auto` (or not set). */
+export function computedZIndex(el: Element): number | null {
+  const z = Number.parseInt(getComputedStyle(el).zIndex, 10);
+  return Number.isFinite(z) ? z : null;
+}
+
 /** Drops the record once an overlay leaves the document for real, so it isn't kept alive. */
 export function forgetPortalOrigin(overlay: Element): void {
   state.portalOrigins.delete(overlay);
@@ -199,8 +236,12 @@ export function releaseInert(el: Element): void {
   if (state.inertedByLib.delete(el)) el.removeAttribute('inert');
 }
 
+const MODAL_LAYER_CLASS = 'a11y-modal-layer-open';
+const MODAL_LAYER_Z = '--a11y-z-modal-layer';
+
 function syncInert(): void {
   const top = state.inertLayers[state.inertLayers.length - 1];
+  syncModalLayer(top);
   const wanted = new Set<Element>();
   if (top) {
     for (const child of Array.from(doc.body.children)) {
@@ -216,6 +257,24 @@ function syncInert(): void {
     el.setAttribute('inert', '');
     state.inertedByLib.add(el);
   }
+}
+
+/**
+ * While the topmost modal layer keeps passive regions (snackbar,
+ * notification-banner) usable, exposes its z-index on `<html>` so their CSS
+ * can stack them just above it instead of behind its backdrop. A layer that
+ * inerts them too (a blocking loader) keeps them at their usual level.
+ */
+function syncModalLayer(top: InertLayer | undefined): void {
+  const root = doc.documentElement;
+  const z = top?.exempt ? computedZIndex(top.keep) : null;
+  if (z === null) {
+    root.classList.remove(MODAL_LAYER_CLASS);
+    root.style.removeProperty(MODAL_LAYER_Z);
+    return;
+  }
+  root.style.setProperty(MODAL_LAYER_Z, String(z));
+  root.classList.add(MODAL_LAYER_CLASS);
 }
 
 const NO_SCROLL_CLASS = 'a11y-no-scroll';

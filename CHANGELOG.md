@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2
+
+### Fixes
+
+- A tooltip, popover, dropdown or context menu opened from inside another overlay (a modal, drawer, emergency dialog, popover or snackbar) was rendered behind it, since its z-index is lower. It now stacks just above that overlay: the parent's z-index plus a new `--a11y-z-nested-<name>` offset (dropdown 1, popover 2, tooltip 3, context-menu 4). Outside other overlays nothing changes.
+
+- Snackbar and notification-banner, which stay usable while a modal is open, were hidden behind its backdrop. While a modal, drawer or emergency dialog is open they now stack above the topmost one (`--a11y-z-nested-snackbar: 5`, `--a11y-z-nested-notification-banner: 6`). Under a blocking loader they stay below it.
+
 ## 1.0.1
 
 ### Fixes

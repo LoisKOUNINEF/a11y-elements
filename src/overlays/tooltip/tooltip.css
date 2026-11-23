@@ -7,6 +7,11 @@
   max-width: var(--a11y-tooltip-max-width, 240px);
 }
 
+/* Opened from inside another overlay: just above it (see overlay-variables.css). */
+.a11y-tooltip-wrapper.a11y-is-nested {
+  z-index: calc(var(--a11y-z-parent) + var(--a11y-z-nested-tooltip, 3));
+}
+
 /* Hidden until shown — see modal.css's `a11y-modal` rule for why this is
    gated on the content class rather than the `open` attribute. */
 a11y-tooltip {

@@ -11,6 +11,11 @@
   min-width: var(--a11y-dropdown-min-width, 160px);
 }
 
+/* Opened from inside another overlay: just above it (see overlay-variables.css). */
+.a11y-dropdown-wrapper.a11y-is-nested {
+  z-index: calc(var(--a11y-z-parent) + var(--a11y-z-nested-dropdown, 1));
+}
+
 /* Hidden until shown — see modal.css's `a11y-modal` rule for why this is
    gated on the content class rather than the `open` attribute. */
 a11y-dropdown {

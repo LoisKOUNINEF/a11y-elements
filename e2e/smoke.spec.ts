@@ -94,6 +94,39 @@ test.describe('modal', () => {
     await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
   });
 
+  test('a tooltip inside it is shown above it, not behind its backdrop', async ({ page }) => {
+    await setUp(
+      page,
+      `<a11y-modal id="m" open><h2>Settings</h2><button id="save">Save</button>
+        <a11y-tooltip anchor="save" show-delay="0">Saves your changes</a11y-tooltip></a11y-modal>`,
+    );
+    await page.locator('#save').focus();
+    await expect(page.getByRole('tooltip')).toBeVisible();
+    const { onTop, zIndex } = await page.evaluate(() => {
+      const wrapper = document.querySelector('.a11y-tooltip-wrapper')!;
+      const r = wrapper.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return { onTop: !!hit && wrapper.contains(hit), zIndex: getComputedStyle(wrapper).zIndex };
+    });
+    expect(onTop).toBe(true);
+    expect(zIndex).toBe('513');
+  });
+
+  test('a snackbar shown while it is open is above its backdrop', async ({ page }) => {
+    await setUp(page, '<a11y-snackbar id="s"></a11y-snackbar><a11y-modal id="m" open><h2>Settings</h2><button>Save</button></a11y-modal>');
+    await page.evaluate(() => (document.getElementById('s') as HTMLElement & { notify(m: string): void }).notify('Saved'));
+    const toast = page.locator('.a11y-snackbar');
+    await expect(toast).toBeVisible();
+    const { onTop, zIndex } = await page.evaluate(() => {
+      const el = document.querySelector('.a11y-snackbar')!;
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return { onTop: !!hit && el.contains(hit), zIndex: getComputedStyle(document.getElementById('s')!).zIndex };
+    });
+    expect(onTop).toBe(true);
+    expect(zIndex).toBe('515');
+  });
+
   test('Tab reaches controls inside a web component', async ({ page }) => {
     await setUp(page, '<a11y-modal id="m"><h2>Settings</h2><x-field></x-field><button id="after">After</button></a11y-modal>');
     await page.evaluate(() => {

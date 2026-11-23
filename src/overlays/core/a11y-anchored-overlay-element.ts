@@ -1,5 +1,11 @@
 import { A11yOverlayElement } from '../../core/a11y-overlay-element.js';
-import { hasOverlayOpenedAfter, isInsideOverlayOpenedAfter } from '../../core/overlay-registry.js';
+import {
+  computedZIndex,
+  findOverlayChromeRoot,
+  getPortalOrigin,
+  hasOverlayOpenedAfter,
+  isInsideOverlayOpenedAfter,
+} from '../../core/overlay-registry.js';
 import { FocusTrapHelper, type IFocusTrapOptions } from '../../core/focus-trap.js';
 import { whenTransitionDone } from '../../core/transition.js';
 import { doc } from '../../core/safe-dom.js';
@@ -95,6 +101,28 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     return 'a11y-anchored-overlay-content';
   }
 
+  /**
+   * What this overlay was opened from, to tell whether it's nested in another
+   * overlay (a tooltip in a modal): the anchor, else where it was authored.
+   */
+  protected nestingTarget(): Node | null {
+    return this.anchorElement ?? getPortalOrigin(this);
+  }
+
+  /**
+   * It lives on `<body>`, so its own z-index (tooltip 320…) would put it
+   * behind the overlay it was opened from (modal 510…). Nested, it records
+   * that overlay's z-index as `--a11y-z-parent`, and its CSS stacks it
+   * `--a11y-z-nested-<name>` above that.
+   */
+  private _markNesting(wrapper: HTMLElement): void {
+    const root = findOverlayChromeRoot(this.nestingTarget(), this);
+    const z = root && root !== wrapper ? computedZIndex(root) : null;
+    if (z === null) return;
+    wrapper.classList.add('a11y-is-nested');
+    wrapper.style.setProperty('--a11y-z-parent', String(z));
+  }
+
   protected override _show(): void {
     // Reopened mid-close: complete that close first (see A11yModalOverlayElement).
     this._flushPendingHide();
@@ -103,6 +131,7 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     if (this._wrapper) this._teardownChrome();
 
     const wrapper = this.createWrapper();
+    this._markNesting(wrapper);
     doc.body.appendChild(wrapper);
     this.classList.add(this.getContentClass());
     this._moveSelfTo(wrapper); // see A11yOverlayElement's class doc on why this isn't a raw appendChild

@@ -39,4 +39,16 @@
   --a11y-z-emergency-dialog: 610;
   --a11y-z-debug-panel: 700;
   --a11y-z-inspector: 710;
+
+  /* An overlay opened from inside another one (a tooltip in a modal, a
+     dropdown in a popover) stacks this far above that overlay's z-index,
+     instead of using its own level above. Snackbar and notification-banner
+     use theirs above the topmost modal, drawer or emergency-dialog while one
+     is open. Keep them below 10, the gap between modal layers. */
+  --a11y-z-nested-dropdown: 1;
+  --a11y-z-nested-popover: 2;
+  --a11y-z-nested-tooltip: 3;
+  --a11y-z-nested-context-menu: 4;
+  --a11y-z-nested-snackbar: 5;
+  --a11y-z-nested-notification-banner: 6;
 }

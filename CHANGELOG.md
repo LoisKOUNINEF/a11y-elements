@@ -14,6 +14,8 @@
 
 - On a touch screen, a `<a11y-tooltip>` showed after a tap on its anchor and stayed until the next tap elsewhere: the tap counts as a hover and focuses the button. Hover now only counts for a mouse, focus only when the keyboard was used last (so focus handed back by a modal closed with Escape still shows it, in every browser; before any input, `:focus-visible` decides), and pressing the anchor hides the tooltip (with a mouse, until the pointer leaves). A touch or pen long press (500 ms) shows it instead, until the next tap elsewhere or on the anchor.
 
+- In WebKit on a touch screen (iOS Safari, Linux WebKit), a tap on empty page space didn't close an open tooltip, popover, dropdown or menu. WebKit fires no `click` for such a tap unless the element tapped or one of its parents has a click listener, and the outside-click listener is on `document`. While one is open, `<html>` now has an empty click listener.
+
 ## 1.0.2
 
 ### Fixes

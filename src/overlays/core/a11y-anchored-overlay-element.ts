@@ -39,6 +39,10 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
   private _focusTrap: FocusTrapHelper | null = null;
   private _boundOutsideClick: ((e: MouseEvent) => void) | null = null;
   private _outsideClickTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The `<html>` given the no-op click listener, kept to remove it from the same element. */
+  private _tapTargetRoot: HTMLElement | null = null;
+  /** Per instance: a shared function would be added once, and the first overlay to close would remove it for all. */
+  private _noopClick = (): void => {};
   private _boundKeyDown: ((e: KeyboardEvent) => void) | null = null;
   private _boundReposition: (() => void) | null = null;
   private _resizeObserver: ResizeObserver | null = null;
@@ -303,6 +307,12 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     this._outsideClickTimer = setTimeout(() => {
       doc.addEventListener('click', this._boundOutsideClick!, true);
     }, 0);
+    // WebKit with a touch screen (iOS Safari, Linux WebKit) fires no `click` for a tap
+    // unless the element tapped or one of its parents has a click listener: one on
+    // `document` doesn't count. On <html>, not <body>: a tap below a short <body> lands on <html>.
+    // Without this, a tap on empty page space wouldn't close the overlay.
+    this._tapTargetRoot = doc.documentElement;
+    this._tapTargetRoot.addEventListener('click', this._noopClick);
 
     if (!this.wantsFocusTrap()) {
       // Capture phase, before a focus trap's own document listener: Escape
@@ -328,6 +338,10 @@ export abstract class A11yAnchoredOverlayElement extends A11yOverlayElement {
     if (this._boundOutsideClick) {
       doc.removeEventListener('click', this._boundOutsideClick, true);
       this._boundOutsideClick = null;
+    }
+    if (this._tapTargetRoot) {
+      this._tapTargetRoot.removeEventListener('click', this._noopClick);
+      this._tapTargetRoot = null;
     }
     if (this._boundKeyDown) {
       doc.removeEventListener('keydown', this._boundKeyDown, true);

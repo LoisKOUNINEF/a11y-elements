@@ -113,6 +113,25 @@ describe('A11yAnchoredOverlayElement', () => {
     expect(el.open).toBe(true);
   });
 
+  it('keeps a click listener on <html> while open, so WebKit fires click for a tap on empty space', () => {
+    const add = vi.spyOn(document.documentElement, 'addEventListener');
+    const remove = vi.spyOn(document.documentElement, 'removeEventListener');
+    const clickListeners = (spy: typeof add) => spy.mock.calls.filter(([type]) => type === 'click').map(([, fn]) => fn);
+    const first = mount();
+    const second = mount();
+
+    first.open = true;
+    second.open = true;
+    const [firstFn, secondFn] = clickListeners(add);
+    expect(clickListeners(add)).toHaveLength(2);
+    expect(firstFn).not.toBe(secondFn); // one per overlay: closing one leaves the other's in place
+
+    first.open = false;
+    expect(clickListeners(remove)).toEqual([firstFn]);
+    second.open = false;
+    expect(clickListeners(remove)).toEqual([firstFn, secondFn]);
+  });
+
   it('portals itself back out and removes the wrapper after the transition ends', () => {
     const el = mount();
     el.open = true;

@@ -1546,10 +1546,20 @@ It's a page region, not an open/close overlay: it fires no open/close events and
 | Option | Default | Description |
 | --- | --- | --- |
 | `type` | `info` | `info`, `success`, `warning` or `error` (`error` uses `role="alert"`). |
-| `position` | `top` | `top` or `bottom`. |
+| `position` | `--a11y-notification-banner-position`, else `top` | `top` or `bottom`. |
 | `actionText` / `onAction` | — | Adds an action button; clicking it runs `onAction` and dismisses the banner. |
 | `onClose` | — | Called when the banner is dismissed. |
 | `maxStack` | — | Sets `max-stack` on the region (sticky for later banners). |
+
+To set the default position for every banner, use CSS, like any other style property:
+
+```css
+:root {
+    --a11y-notification-banner-position: bottom;
+}
+```
+
+It's read each time a banner is shown, so a change applies to the next banners, not to those already on screen. A `position` passed to `show()` wins. Other values, corners included, are ignored.
 
 Classes: `.a11y-notification-banner--info` / `--success` / `--warning` / `--error`, `__message`, `__action`, `__close`.
 
@@ -1565,6 +1575,7 @@ Colors come from the shared `--a11y-color-*` tokens (see [Shared tokens](#shared
 | `--a11y-notification-banner-close-font-size` | `1.25rem` |
 | `--a11y-notification-banner-gap` | `1rem` |
 | `--a11y-notification-banner-padding` | `0.75rem 1.5rem` |
+| `--a11y-notification-banner-position` | `top` |
 
 </details>
 
@@ -1661,7 +1672,7 @@ To set the default position for every toast, use CSS, like any other style prope
 }
 ```
 
-It's read each time a toast is shown, so a change applies to the next toasts, not to those already on screen. A `position` passed to `notify()` wins. Toasts in the same position stack; each position has its own stack.
+It's read each time a toast is shown, so a change applies to the next toasts, not to those already on screen. A `position` passed to `notify()` wins. Toasts in the same position stack; each position has its own stack. Each stack is up to 90% of the viewport wide, so on a narrow screen toasts in different positions can overlap.
 
 Classes: `.a11y-snackbar--info` / `--success` / `--warning` / `--error`.
 

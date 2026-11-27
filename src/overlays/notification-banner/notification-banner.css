@@ -1,3 +1,6 @@
+/* One fixed container per position. The default position is
+   `--a11y-notification-banner-position` (default `top`): `top` or `bottom`.
+   It's read by JS when a banner is shown, not used in a `var()` here. */
 .a11y-notification-banner-region__top,
 .a11y-notification-banner-region__bottom {
   position: fixed;
@@ -69,6 +72,16 @@
 .a11y-notification-banner__close {
   font-size: var(--a11y-notification-banner-close-font-size, 1.25rem);
   line-height: 1;
+}
+
+/* Slides in from the edge it's pinned to. */
+.a11y-notification-banner-region__bottom .a11y-notification-banner {
+  animation-name: a11y-notification-banner-fade-in-up;
+}
+
+@keyframes a11y-notification-banner-fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes a11y-notification-banner-fade-in {

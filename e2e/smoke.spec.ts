@@ -403,3 +403,127 @@ test.describe('DOM clobbering', () => {
     }
   });
 });
+
+test.describe('tooltip on a touch screen', () => {
+  test.use({ hasTouch: true, isMobile: false, viewport: { width: 390, height: 700 } });
+
+  const markup = `<button id="lang" style="margin:100px">FR</button>
+    <a11y-tooltip anchor="lang">Change language</a11y-tooltip>`;
+
+  /** Presses `#lang` with a touch pointer for `ms`, with synthetic pointer events: Playwright's tap() is instant. */
+  async function touchPress(page: Page, ms: number): Promise<void> {
+    await page.evaluate(async (duration) => {
+      const button = document.getElementById('lang')!;
+      const r = button.getBoundingClientRect();
+      const init = { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, clientX: r.x + 5, clientY: r.y + 5 };
+      button.dispatchEvent(new PointerEvent('pointerenter', { ...init, bubbles: false }));
+      button.dispatchEvent(new PointerEvent('pointerdown', init));
+      await new Promise((resolve) => setTimeout(resolve, duration));
+      button.dispatchEvent(new PointerEvent('pointerup', init));
+      button.dispatchEvent(new PointerEvent('pointerleave', { ...init, bubbles: false }));
+    }, ms);
+  }
+
+  test('a tap does not leave the tooltip showing', async ({ page }) => {
+    await setUp(page, markup);
+    await page.locator('#lang').tap();
+    await page.waitForTimeout(600); // past show-delay (300) and the long press (500)
+    await expect(page.getByRole('tooltip')).toBeHidden();
+  });
+
+  test('a long press shows it, and a tap elsewhere hides it', async ({ page }) => {
+    await setUp(page, markup);
+    await touchPress(page, 600);
+    await expect(page.getByRole('tooltip')).toBeVisible();
+    await page.touchscreen.tap(10, 650);
+    await expect(page.getByRole('tooltip')).toBeHidden();
+  });
+});
+
+test.describe('tooltip with a mouse and keyboard', () => {
+  // tabindex="0": WebKit's default Tab order skips buttons without one.
+  const markup = `<button id="before" tabindex="0">Before</button><button id="save" tabindex="0" style="margin:100px">Save</button>
+    <a11y-tooltip anchor="save">Saves your changes</a11y-tooltip>`;
+
+  test('hover shows it; a click hides it until the pointer leaves and comes back', async ({ page }) => {
+    await setUp(page, markup);
+    await page.locator('#save').hover();
+    await expect(page.getByRole('tooltip')).toBeVisible();
+    await page.locator('#save').click();
+    await expect(page.getByRole('tooltip')).toBeHidden();
+    await page.waitForTimeout(500);
+    await expect(page.getByRole('tooltip')).toBeHidden();
+    await page.mouse.move(0, 0);
+    await page.locator('#save').hover();
+    await expect(page.getByRole('tooltip')).toBeVisible();
+  });
+
+  test('Tab focus shows it', async ({ page }) => {
+    await setUp(page, markup);
+    await page.locator('#before').focus();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#save')).toBeFocused();
+    await expect(page.getByRole('tooltip')).toBeVisible();
+  });
+});
+
+test.describe('tooltip when focus returns from a modal', () => {
+  // tabindex="0": WebKit's default Tab order skips buttons without one.
+  const markup = `<button id="before" tabindex="0">Before</button>
+    <button id="open" tabindex="0" style="margin:80px">Open</button>
+    <a11y-tooltip anchor="open" show-delay="0">Opens settings</a11y-tooltip>
+    <a11y-modal id="m"><h2>Settings</h2><button id="inside" tabindex="0">Inside</button><button id="close" tabindex="0">Close</button></a11y-modal>`;
+
+  async function setUpModal(page: Page): Promise<void> {
+    await setUp(page, markup);
+    await page.evaluate(() => {
+      const modal = document.getElementById('m') as HTMLElement & { open: boolean };
+      document.getElementById('open')!.addEventListener('click', () => (modal.open = true));
+      document.getElementById('close')!.addEventListener('click', () => (modal.open = false));
+    });
+  }
+
+  async function openWithKeyboard(page: Page): Promise<void> {
+    await page.locator('#before').focus();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+  }
+
+  test('shows it after Escape', async ({ page }) => {
+    await setUpModal(page);
+    await openWithKeyboard(page);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#open')).toBeFocused();
+    await expect(page.getByRole('tooltip')).toBeVisible();
+  });
+
+  test('shows it after the close button is pressed with the keyboard', async ({ page }) => {
+    await setUpModal(page);
+    await openWithKeyboard(page);
+    await page.locator('#close').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#open')).toBeFocused();
+    await expect(page.getByRole('tooltip')).toBeVisible();
+  });
+
+  test('shows it after Escape, even when the modal was opened with the mouse (Firefox has no focus ring then)', async ({ page }) => {
+    await setUpModal(page);
+    await page.locator('#open').click();
+    await page.mouse.move(0, 0);
+    await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#open')).toBeFocused();
+    await expect(page.getByRole('tooltip')).toBeVisible();
+  });
+
+  test('keeps it hidden after the close button is clicked', async ({ page }) => {
+    await setUpModal(page);
+    await page.locator('#open').click();
+    await page.locator('#close').click();
+    await page.mouse.move(0, 0);
+    await expect(page.locator('#open')).toBeFocused();
+    await page.waitForTimeout(300);
+    await expect(page.getByRole('tooltip')).toBeHidden();
+  });
+});

@@ -200,3 +200,42 @@ describe('a11y-notification-banner — translated dismiss button', () => {
     expect(dismissLabels(el)).toEqual(['Fermer']);
   });
 });
+
+describe('a11y-notification-banner — position', () => {
+  const positionOf = (el: HTMLElement, text: string): string | undefined => {
+    const banner = Array.from(el.querySelectorAll<HTMLElement>('.a11y-notification-banner')).find((b) => b.textContent!.includes(text));
+    if (banner?.closest('.a11y-notification-banner-region__top')) return 'top';
+    if (banner?.closest('.a11y-notification-banner-region__bottom')) return 'bottom';
+    return undefined;
+  };
+
+  it('defaults to top', () => {
+    const el = document.createElement('a11y-notification-banner') as any;
+    document.body.appendChild(el);
+    el.show('a');
+    expect(positionOf(el, 'a')).toBe('top');
+  });
+
+  it('defaults to --a11y-notification-banner-position, read when each banner is shown; the option wins', () => {
+    const el = document.createElement('a11y-notification-banner') as any;
+    document.body.appendChild(el);
+    el.style.setProperty('--a11y-notification-banner-position', ' bottom ');
+    el.show('a');
+    el.show('b', { position: 'top' });
+    el.style.setProperty('--a11y-notification-banner-position', "'top'");
+    el.show('c');
+    expect(positionOf(el, 'a')).toBe('bottom');
+    expect(positionOf(el, 'b')).toBe('top');
+    expect(positionOf(el, 'c')).toBe('top');
+  });
+
+  it('ignores a corner or unknown value, from CSS or the option, and falls back to top', () => {
+    const el = document.createElement('a11y-notification-banner') as any;
+    document.body.appendChild(el);
+    el.style.setProperty('--a11y-notification-banner-position', 'bottom-right');
+    el.show('a');
+    el.show('b', { position: 'top-left' });
+    expect(positionOf(el, 'a')).toBe('top');
+    expect(positionOf(el, 'b')).toBe('top');
+  });
+});

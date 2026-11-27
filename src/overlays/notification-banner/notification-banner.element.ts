@@ -5,9 +5,14 @@ import { doc } from '../../core/safe-dom.js';
 
 export type NotificationBannerType = 'info' | 'success' | 'error' | 'warning';
 
+export type NotificationBannerPosition = 'top' | 'bottom';
+
+const POSITIONS: readonly NotificationBannerPosition[] = ['top', 'bottom'];
+
 export interface NotificationBannerOptions {
   type?: NotificationBannerType;
-  position?: 'top' | 'bottom';
+  /** Defaults to `--a11y-notification-banner-position` from CSS, else `top`. */
+  position?: NotificationBannerPosition;
   actionText?: string;
   onAction?: () => void;
   onClose?: () => void;
@@ -37,6 +42,10 @@ interface NotificationBannerItem extends PassiveOverlayItem {
  *
  * Each item's close button is named by `dismiss-label="…"`, else
  * `setStrings({ dismiss })`.
+ *
+ * Each banner shows at its `position` option, else at the position set in
+ * CSS with `--a11y-notification-banner-position` (`top` or `bottom`; read
+ * when the banner is shown), else at the top.
  */
 export class NotificationBannerElement extends A11yPassiveOverlayElement<NotificationBannerItem> {
   private _topContainer!: HTMLElement;
@@ -106,7 +115,11 @@ export class NotificationBannerElement extends A11yPassiveOverlayElement<Notific
 
   protected _showItem(item: NotificationBannerItem): void {
     const type = item.type ?? 'info';
-    const position = item.position ?? 'top';
+    const option = item.position as NotificationBannerPosition | undefined;
+    const position =
+      (option && POSITIONS.includes(option) ? option : undefined) ??
+      this._cssPosition('--a11y-notification-banner-position', POSITIONS) ??
+      'top';
     const container = position === 'top' ? this._topContainer : this._bottomContainer;
 
     const el = doc.createElement('div');

@@ -1702,7 +1702,9 @@ Colors come from the shared `--a11y-color-*` tokens (see [Shared tokens](#shared
 
 ### `a11y-tooltip`
 
-A short description shown on hover or focus of its anchor, which gets `aria-describedby`. It stays open while the pointer is over it, and Escape hides it. Never traps focus. See [Anchored overlays](#anchored-overlays).
+A short description shown on mouse hover or keyboard focus of its anchor, which gets `aria-describedby`. It stays open while the pointer is over it, and Escape hides it. Never traps focus. See [Anchored overlays](#anchored-overlays).
+
+Pressing the anchor hides it, and hover doesn't bring it back until the pointer leaves and returns. On a touch screen a tap doesn't show it, since the tap is the action. Instead, a long press (500 ms) shows it, until the next tap elsewhere or on the anchor. Screen readers still announce the text through `aria-describedby`. Focus shows it only when the keyboard was used last (Tab, or Escape closing a modal that hands focus back), not after a click or tap. Before any input, it follows `:focus-visible`.
 
 ```html
 <button id="save-btn">Save</button>

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.3
 
 ### Changes
 
@@ -9,6 +9,10 @@
 - `<a11y-notification-banner>` takes its default position from CSS too: `--a11y-notification-banner-position`, `top` or `bottom` (read when each banner is shown). A `position` passed to `show()` still wins. Banners at the bottom now slide in from below.
 
 - New `onClose` option for `notify()`: called once the toast is gone, whether by its × button, its action button (after `onAction`), its timeout or `dismissAll()`. It isn't called for a queued toast that never showed. `dismissAll()`, and removing the region from the page, now call it for each toast on screen.
+
+### Fixes
+
+- On a touch screen, a `<a11y-tooltip>` showed after a tap on its anchor and stayed until the next tap elsewhere: the tap counts as a hover and focuses the button. Hover now only counts for a mouse, focus only when the keyboard was used last (so focus handed back by a modal closed with Escape still shows it, in every browser; before any input, `:focus-visible` decides), and pressing the anchor hides the tooltip (with a mouse, until the pointer leaves). A touch or pen long press (500 ms) shows it instead, until the next tap elsewhere or on the anchor.
 
 ## 1.0.2
 

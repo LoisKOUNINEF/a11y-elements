@@ -1624,7 +1624,8 @@ import { h, raw } from 'a11y-elements/core';
 
 notify('Saved');
 notify('Upload failed', { type: 'error', actionText: 'Retry', onAction: retryUpload });
-notify('Copied to clipboard', { position: 'top', duration: 1500 });
+notify('Copied to clipboard', { position: 'top-right', duration: 1500 });
+notify('Draft deleted', { actionText: 'Undo', onAction: restoreDraft, onClose: () => console.log('toast gone') });
 notify(raw('Saved. <a href="/files">View files</a>')); // markup: sanitized, see below
 notify(h('span', null, 'Saved. ', h('a', { href: '/files' }, 'View files'))); // nodes, no parsing at all
 ```
@@ -1635,7 +1636,7 @@ notify(h('span', null, 'Saved. ', h('a', { href: '/files' }, 'View files'))); //
 | `max-stack` | attribute | `3` | How many toasts show at once; the rest wait in a queue and show as earlier ones are dismissed. |
 | `maxStack` | property | `3` | Same as `max-stack`. `setMaxStack(n)` is an alias. |
 | `notify(message, options)` | method | — | Shows a toast (or queues it). |
-| `dismissAll()` | method | — | Removes every showing toast and drops queued ones, without running `onAction`. |
+| `dismissAll()` | method | — | Removes every showing toast (calling its `onClose`) and drops queued ones silently, without running `onAction`. |
 
 It's a page region, not an open/close overlay: it fires no open/close events and `dismissAllOverlays()` leaves it alone, so toasts outlive a SPA navigation while the region stays in the page. Call `dismissAll()` to clear them. Removing the region from the document (e.g. with `removeOverlaysWithin()`) drops its toasts, queued ones included, and cancels their timers; re-adding it starts empty. A toast enqueued while the region is detached waits until it's back in the page. Like every overlay it moves itself to `<body>`; see [Overlays in a framework](#overlays-in-a-framework) for `removeOverlaysWithin()`.
 
@@ -1646,10 +1647,21 @@ A `message` is text: a string is inserted as text, never parsed. A DOM node (e.g
 | Option | Default | Description |
 | --- | --- | --- |
 | `type` | `info` | `info`, `success`, `warning` or `error` (`error` uses `role="alert"`). |
-| `position` | `bottom` | `bottom` or `top`. |
+| `position` | `--a11y-snackbar-position`, else `bottom` | `top`, `bottom`, `top-left`, `top-right`, `bottom-left` or `bottom-right`. |
 | `duration` | `3000` (`10000` with an action) | Time on screen, in ms, not counting hover/focus. `Infinity` keeps the toast until it's dismissed. |
 | `actionText` / `onAction` | — | Adds an action button; clicking it dismisses the toast and runs `onAction`. |
+| `onClose` | — | Called once the toast is gone: × button, action button (after `onAction`), timeout, or `dismissAll()`. Not called for a queued toast that never showed. |
 | `maxStack` | — | Sets `max-stack` on the region (sticky for later toasts). |
+
+To set the default position for every toast, use CSS, like any other style property:
+
+```css
+:root {
+    --a11y-snackbar-position: top-right;
+}
+```
+
+It's read each time a toast is shown, so a change applies to the next toasts, not to those already on screen. A `position` passed to `notify()` wins. Toasts in the same position stack; each position has its own stack.
 
 Classes: `.a11y-snackbar--info` / `--success` / `--warning` / `--error`.
 
@@ -1669,6 +1681,7 @@ Colors come from the shared `--a11y-color-*` tokens (see [Shared tokens](#shared
 | `--a11y-snackbar-gap` | `1rem` |
 | `--a11y-snackbar-offset` | `1rem` |
 | `--a11y-snackbar-padding` | `0.75rem 1.5rem` |
+| `--a11y-snackbar-position` | `bottom` |
 | `--a11y-snackbar-shadow-blur` | `6px` |
 | `--a11y-snackbar-shadow-color` | `rgba(0, 0, 0, 0.3)` |
 | `--a11y-snackbar-shadow-offset-y` | `2px` |
@@ -1890,4 +1903,4 @@ MIT — see [`LICENSE.txt`](./LICENSE.txt).
 
 ## Support
 
-If you find a11y-elements useful, consider supporting its development via [Ko-fi](https://ko-fi.com/loiskouninef)
+If you find a11y-elements useful, consider supporting its development on [Ko-fi](https://ko-fi.com/loiskouninef)

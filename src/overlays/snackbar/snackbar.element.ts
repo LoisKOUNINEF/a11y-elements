@@ -1,4 +1,9 @@
-import { A11yPassiveOverlayElement, type PassiveOverlayItem } from '../core/a11y-passive-overlay-element.js';
+import {
+  A11yPassiveOverlayElement,
+  PASSIVE_OVERLAY_POSITIONS,
+  type PassiveOverlayItem,
+  type PassiveOverlayPosition,
+} from '../core/a11y-passive-overlay-element.js';
 import { getString } from '../../core/strings.js';
 import { h, type Content } from '../../core/dom.js';
 import { doc } from '../../core/safe-dom.js';
@@ -7,16 +12,26 @@ export type SnackbarType = 'info' | 'success' | 'error' | 'warning';
 
 export interface NotifyOptions {
   type?: SnackbarType;
-  position?: 'top' | 'bottom';
+  /** Defaults to `--a11y-snackbar-position` from CSS, else `bottom`. */
+  position?: PassiveOverlayPosition;
   duration?: number;
   actionText?: string;
   onAction?: () => void;
+  /** Called once the toast is gone: × button, action button (after `onAction`), timeout or `dismissAll()`. */
+  onClose?: () => void;
   /** Sets the concurrency limit for this and all future items — sticky on the shared region, same as the `max-stack` attribute. */
   maxStack?: number;
 }
 
 interface SnackbarItem extends PassiveOverlayItem {
   type?: SnackbarType;
+  onClose?: () => void;
+}
+
+interface ActiveToast {
+  el: HTMLElement;
+  onClose?: () => void;
+  cancelAutoDismiss: () => void;
 }
 
 /**
@@ -27,9 +42,13 @@ interface SnackbarItem extends PassiveOverlayItem {
  * on it — or skip placing one entirely and use the `notify()` convenience
  * export from this module, which finds-or-creates one automatically.
  *
- * Every toast has a round × close button in its top-right corner that
+ * Each toast shows at its `position` option, else at the position set in CSS
+ * with `--a11y-snackbar-position` (`top`, `bottom`, `top-left`, `top-right`,
+ * `bottom-left` or `bottom-right`; read when the toast is shown), else at the
+ * bottom. Every toast has a round × close button in its top-right corner that
  * dismisses it early (without calling `onAction`). It's named by
- * `dismiss-label="…"`, else `setStrings({ dismiss })`.
+ * `dismiss-label="…"`, else `setStrings({ dismiss })`. `onClose` runs
+ * whenever a toast that was shown goes away, timeout included.
  *
  * While the region stays in the page, toasts finish their own timers
  * regardless of navigation (call `dismissAll()` to clear them). Removing the
@@ -37,8 +56,9 @@ interface SnackbarItem extends PassiveOverlayItem {
  * cancels their timers; re-adding it starts empty.
  */
 export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
-  private _bottomContainer!: HTMLElement;
-  private _topContainer!: HTMLElement;
+  /** One container per position, created on first use. */
+  private _containers = new Map<PassiveOverlayPosition, HTMLElement>();
+  private _active: ActiveToast[] = [];
 
   static override get observedAttributes(): string[] {
     return [...super.observedAttributes, 'dismiss-label'];
@@ -65,22 +85,36 @@ export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
   override connectedCallback(): void {
     super.connectedCallback();
     this.classList.add('a11y-snackbar-region');
-    if (!this._bottomContainer) {
-      this._bottomContainer = doc.createElement('div');
-      this._bottomContainer.className = 'a11y-snackbar-region__bottom';
-      this._topContainer = doc.createElement('div');
-      this._topContainer.className = 'a11y-snackbar-region__top';
-      this.append(this._bottomContainer, this._topContainer);
-    }
     this._drainQueue();
   }
 
-  /** Removes every showing toast and drops queued ones, without calling `onAction`. */
+  private _container(position: PassiveOverlayPosition): HTMLElement {
+    let container = this._containers.get(position);
+    if (!container) {
+      container = doc.createElement('div');
+      // `__top` / `__bottom`: the class names of the two containers before corners existed.
+      container.className = `a11y-snackbar-region__stack${position === 'top' || position === 'bottom' ? ` a11y-snackbar-region__${position}` : ''}`;
+      container.dataset.position = position;
+      this._containers.set(position, container);
+      this.append(container);
+    }
+    return container;
+  }
+
+  /**
+   * Removes every showing toast (calling its `onClose`) and drops queued
+   * ones silently, without calling `onAction`.
+   */
   dismissAll(): void {
     this._queue = [];
     this._cancelAutoDismissTimers();
-    this.querySelectorAll('.a11y-snackbar').forEach((toast) => toast.remove());
+    const toClose = this._active;
+    this._active = [];
     this._activeCount = 0;
+    toClose.forEach(({ el, onClose }) => {
+      el.remove();
+      onClose?.();
+    });
   }
 
   protected override _onRemoved(): void {
@@ -96,14 +130,18 @@ export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
       duration: options.duration,
       actionText: options.actionText,
       onAction: options.onAction,
+      onClose: options.onClose,
     });
   }
 
   protected _showItem(item: SnackbarItem): void {
     const type = item.type ?? 'info';
-    const position = item.position ?? 'bottom';
+    const position =
+      (item.position && PASSIVE_OVERLAY_POSITIONS.includes(item.position) ? item.position : undefined) ??
+      this._cssPosition('--a11y-snackbar-position', PASSIVE_OVERLAY_POSITIONS) ??
+      'bottom';
     const duration = item.duration ?? (item.actionText ? 10_000 : 3000);
-    const container = position === 'bottom' ? this._bottomContainer : this._topContainer;
+    const container = this._container(position);
 
     const el = doc.createElement('div');
     el.className = `a11y-snackbar a11y-snackbar--${type}`;
@@ -116,17 +154,29 @@ export class SnackbarElement extends A11yPassiveOverlayElement<SnackbarItem> {
 
     container.appendChild(el);
 
-    const cancelAutoDismiss = this._autoDismiss(el, duration, () => this._onItemDismissed());
+    const entry: ActiveToast = { el, onClose: item.onClose, cancelAutoDismiss: () => {} };
+    this._active.push(entry);
 
-    const dismiss = (): void => {
-      cancelAutoDismiss();
+    /** Takes the toast off screen and counts it out; false if it was already gone (e.g. `dismissAll()` ran). */
+    const remove = (): boolean => {
+      if (!this._active.includes(entry)) return false;
+      entry.cancelAutoDismiss();
       el.remove();
+      this._active = this._active.filter((a) => a !== entry);
+      // Counted out before the callbacks run: a `dismissAll()` from there resets the count itself.
       this._onItemDismissed();
+      return true;
+    };
+    const dismiss = (): void => {
+      if (remove()) item.onClose?.();
     };
 
+    entry.cancelAutoDismiss = this._autoDismiss(el, duration, dismiss);
+
     el.querySelector<HTMLButtonElement>('.a11y-snackbar__action')?.addEventListener('click', () => {
-      dismiss();
+      if (!remove()) return;
       item.onAction?.();
+      item.onClose?.();
     });
     el.querySelector<HTMLButtonElement>('.a11y-snackbar__close')?.addEventListener('click', dismiss);
   }

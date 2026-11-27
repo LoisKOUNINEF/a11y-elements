@@ -303,3 +303,136 @@ describe('a11y-snackbar — teardown', () => {
     expect(el.querySelectorAll('.a11y-snackbar')).toHaveLength(2); // count reset: both fit in max-stack 2
   });
 });
+
+describe('a11y-snackbar — position', () => {
+  const positionOf = (el: HTMLElement, text: string): string | undefined => {
+    const toast = Array.from(el.querySelectorAll<HTMLElement>('.a11y-snackbar')).find((t) => t.textContent!.includes(text));
+    return toast?.closest<HTMLElement>('.a11y-snackbar-region__stack')?.dataset.position;
+  };
+
+  it.each(['top', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right'] as const)(
+    'shows a toast in the %s container with the position option',
+    (position) => {
+      const el = document.createElement('a11y-snackbar') as any;
+      document.body.appendChild(el);
+      el.notify('Saved', { position });
+      expect(positionOf(el, 'Saved')).toBe(position);
+    },
+  );
+
+  it('reuses one container per position, keeping the legacy __top / __bottom classes on the centered ones', () => {
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    el.notify('a', { position: 'top-right' });
+    el.notify('b', { position: 'top-right' });
+    el.notify('c', { position: 'top' });
+    expect(el.querySelectorAll('.a11y-snackbar-region__stack[data-position="top-right"]')).toHaveLength(1);
+    expect(el.querySelector('[data-position="top-right"]')!.children).toHaveLength(2);
+    expect(el.querySelector('[data-position="top"]')!.classList.contains('a11y-snackbar-region__top')).toBe(true);
+    expect(el.querySelector('[data-position="top-right"]')!.className).toBe('a11y-snackbar-region__stack');
+  });
+
+  it('defaults to --a11y-snackbar-position, read when each toast is shown; the option wins', () => {
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    el.style.setProperty('--a11y-snackbar-position', ' top-left ');
+    el.notify('a');
+    el.notify('b', { position: 'bottom-right' });
+    el.style.setProperty('--a11y-snackbar-position', '"bottom-left"');
+    el.notify('c');
+    expect(positionOf(el, 'a')).toBe('top-left');
+    expect(positionOf(el, 'b')).toBe('bottom-right');
+    expect(positionOf(el, 'c')).toBe('bottom-left');
+  });
+
+  it('falls back to bottom for an unknown CSS or option value', () => {
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    el.style.setProperty('--a11y-snackbar-position', 'middle');
+    el.notify('a');
+    el.notify('b', { position: 'center' });
+    expect(positionOf(el, 'a')).toBe('bottom');
+    expect(positionOf(el, 'b')).toBe('bottom');
+  });
+});
+
+describe('a11y-snackbar — onClose', () => {
+  it('runs on the × button, once', () => {
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    const onClose = vi.fn();
+    el.notify('a', { onClose });
+    const close = el.querySelector('.a11y-snackbar__close') as HTMLButtonElement;
+    close.click();
+    close.click();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs after onAction on the action button, with the toast already gone', () => {
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    const calls: string[] = [];
+    el.notify('a', {
+      actionText: 'Undo',
+      onAction: () => calls.push(`action:${el.querySelectorAll('.a11y-snackbar').length}`),
+      onClose: () => calls.push('close'),
+    });
+    (el.querySelector('.a11y-snackbar__action') as HTMLButtonElement).click();
+    expect(calls).toEqual(['action:0', 'close']);
+  });
+
+  it('runs when the toast times out', () => {
+    vi.useFakeTimers();
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    const onClose = vi.fn();
+    el.notify('a', { duration: 1000, onClose });
+    vi.advanceTimersByTime(999);
+    expect(onClose).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(el.querySelector('.a11y-snackbar')).toBeNull();
+  });
+
+  it('dismissAll() runs it for toasts on screen, not for queued ones, and never later from their timers', () => {
+    vi.useFakeTimers();
+    const el = document.createElement('a11y-snackbar') as any;
+    el.setAttribute('max-stack', '1');
+    document.body.appendChild(el);
+    const shown = vi.fn();
+    const queued = vi.fn();
+    el.notify('a', { onClose: shown });
+    el.notify('b', { onClose: queued });
+    el.dismissAll();
+    vi.runAllTimers();
+    expect(shown).toHaveBeenCalledTimes(1);
+    expect(queued).not.toHaveBeenCalled();
+  });
+
+  it('runs when the region is removed from the document', async () => {
+    const el = document.createElement('a11y-snackbar') as any;
+    document.body.appendChild(el);
+    const onClose = vi.fn();
+    el.notify('a', { onClose });
+    el.remove();
+    await Promise.resolve();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('an onClose that calls dismissAll() or notify() leaves the count consistent', () => {
+    const el = document.createElement('a11y-snackbar') as any;
+    el.setAttribute('max-stack', '2');
+    document.body.appendChild(el);
+    el.notify('a', { onClose: () => el.dismissAll() });
+    el.notify('b');
+    (el.querySelector('.a11y-snackbar__close') as HTMLButtonElement).click();
+    expect(el.querySelectorAll('.a11y-snackbar')).toHaveLength(0);
+
+    el.notify('c', { onClose: () => el.notify('d') });
+    el.notify('e');
+    (el.querySelector('.a11y-snackbar__close') as HTMLButtonElement).click();
+    expect(Array.from(el.querySelectorAll('.a11y-snackbar__message'), (m: Element) => m.textContent)).toEqual(['e', 'd']);
+    el.notify('f');
+    expect(el.querySelectorAll('.a11y-snackbar')).toHaveLength(2); // f queued behind max-stack 2
+  });
+});

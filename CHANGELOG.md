@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changes
+
+- `<a11y-snackbar>` toasts can show in 6 positions: `top`, `bottom`, `top-left`, `top-right`, `bottom-left` and `bottom-right`. Pass `position` to `notify()`, or set the default in CSS with `--a11y-snackbar-position` (read when each toast is shown). Each position has its own container, `.a11y-snackbar-region__stack[data-position]`; the `top` and `bottom` ones keep their `.a11y-snackbar-region__top` / `__bottom` classes. Containers are now created on first use, not when the region connects. Toasts at the top slide in from above.
+
+- New `onClose` option for `notify()`: called once the toast is gone, whether by its × button, its action button (after `onAction`), its timeout or `dismissAll()`. It isn't called for a queued toast that never showed. `dismissAll()`, and removing the region from the page, now call it for each toast on screen.
+
 ## 1.0.2
 
 ### Fixes

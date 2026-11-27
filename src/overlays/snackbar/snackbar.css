@@ -1,10 +1,11 @@
-/* Positioned containers — one per gravity direction. Items stack in column
-   inside; no JS offset calculation needed. */
-.a11y-snackbar-region__bottom,
-.a11y-snackbar-region__top {
+/* One fixed container per position (`data-position`), created on first use.
+   Toasts stack in column inside; no JS offset calculation needed.
+
+   The default position is `--a11y-snackbar-position` (default `bottom`): `top`,
+   `bottom`, `top-left`, `top-right`, `bottom-left` or `bottom-right`. It's read
+   by JS when a toast is shown, not used in a `var()` here. */
+.a11y-snackbar-region__stack {
   position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -15,18 +16,31 @@
   z-index: var(--a11y-z-snackbar, 400);
 }
 
-.a11y-snackbar-region__bottom .a11y-snackbar,
-.a11y-snackbar-region__top .a11y-snackbar {
+.a11y-snackbar-region__stack .a11y-snackbar {
   pointer-events: auto;
 }
 
-.a11y-snackbar-region__bottom {
+.a11y-snackbar-region__stack[data-position^='top'] {
+  top: var(--a11y-snackbar-offset, 1rem);
+}
+
+.a11y-snackbar-region__stack[data-position^='bottom'] {
   bottom: var(--a11y-snackbar-offset, 1rem);
   flex-direction: column-reverse; /* new items appear at bottom, push existing ones up */
 }
 
-.a11y-snackbar-region__top {
-  top: var(--a11y-snackbar-offset, 1rem);
+.a11y-snackbar-region__stack[data-position$='left'] {
+  left: var(--a11y-snackbar-offset, 1rem);
+}
+
+.a11y-snackbar-region__stack[data-position$='right'] {
+  right: var(--a11y-snackbar-offset, 1rem);
+}
+
+.a11y-snackbar-region__stack[data-position='top'],
+.a11y-snackbar-region__stack[data-position='bottom'] {
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .a11y-snackbar {
@@ -46,6 +60,11 @@
   gap: var(--a11y-snackbar-gap, 1rem);
   width: 100%;
   animation: a11y-snackbar-fade-in var(--a11y-snackbar-animation-duration, 0.3s) ease;
+}
+
+/* Slides in from the edge it's pinned to. */
+.a11y-snackbar-region__stack[data-position^='top'] .a11y-snackbar {
+  animation-name: a11y-snackbar-fade-in-down;
 }
 
 .a11y-snackbar--success {
@@ -105,6 +124,11 @@
 
 @keyframes a11y-snackbar-fade-in {
   from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes a11y-snackbar-fade-in-down {
+  from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 

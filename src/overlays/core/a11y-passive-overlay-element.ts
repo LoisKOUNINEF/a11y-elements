@@ -9,6 +9,8 @@ const MAX_TIMEOUT_MS = 2_147_483_647;
 
 export type PassiveOverlayPosition = 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
+export const PASSIVE_OVERLAY_POSITIONS: readonly PassiveOverlayPosition[] = ['top', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
 export interface PassiveOverlayItem {
   /** Text, nodes, or markup from `raw()`/`trustedRaw()`. */
   message: Content;
@@ -122,6 +124,19 @@ export abstract class A11yPassiveOverlayElement<TItem extends PassiveOverlayItem
   }
 
   protected abstract _showItem(item: TItem): void;
+
+  /**
+   * The default position set in CSS through `property` (e.g.
+   * `:root { --a11y-snackbar-position: top-right; }`), read when an item is
+   * shown, or `undefined` when it's unset or not one of `allowed`. Quotes and
+   * surrounding spaces are ignored. Also `undefined` without
+   * `getComputedStyle` (SSR DOMs).
+   */
+  protected _cssPosition<P extends PassiveOverlayPosition>(property: string, allowed: readonly P[]): P | undefined {
+    if (typeof getComputedStyle !== 'function') return undefined;
+    const value = getComputedStyle(this).getPropertyValue(property).trim().replace(/^(['"])(.*)\1$/, '$2').trim();
+    return (allowed as readonly string[]).includes(value) ? (value as P) : undefined;
+  }
 
   /**
    * Removes `element` and calls `onDone` after `duration`ms of it being
